@@ -1,10 +1,20 @@
 import { createBrowserRouter } from 'react-router-dom';
+import { LoginPage } from '../features/auth/login/pages/LoginPage';
+import { RegisterPage } from '../features/auth/register/pages/RegisterPage';
 import { AccountPage } from '../features/account/pages/AccountPage';
 import { RoutineFeedPage } from '../features/routineFeed/pages/RoutineFeedPage';
 import { CreateRoutinePage } from '../features/routinePost/pages/CreateRoutinePage';
 import { AppShell } from '../shared/navigation/AppShell';
 
 export const router = createBrowserRouter([
+  {
+    element: <LoginPage />,
+    path: 'login',
+  },
+  {
+    element: <RegisterPage />,
+    path: 'sign-up',
+  },
   {
     element: <AppShell />,
     children: [
