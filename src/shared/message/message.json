@@ -11,7 +11,25 @@
   },
   "routineFeed": {
     "title": "ルーティン一覧",
-    "placeholder": "フィードの表示は後続のIssueで実装します。"
+    "subtitle": "みんなの習慣から、今日を整えるヒントを見つけよう。",
+    "tabs": {
+      "ariaLabel": "ルーティンの並び替え",
+      "recommended": "おすすめ",
+      "popular": "人気",
+      "recent": "新着"
+    },
+    "loading": "ルーティンを読み込んでいます…",
+    "emptyTitle": "ルーティンが見つかりません",
+    "emptyDescription": "条件に合うルーティンがまだありません。",
+    "error": "ルーティンを読み込めませんでした。時間をおいて再試行してください。",
+    "retry": "再試行",
+    "moreSteps": "あと{count}項目…",
+    "like": "いいねする",
+    "unlike": "いいねを取り消す",
+    "customize": "カスタム",
+    "backToList": "一覧に戻る",
+    "notFound": "指定されたルーティンが見つかりません。",
+    "stepsTitle": "ルーティンの手順"
   },
   "account": {
     "title": "アカウント",
