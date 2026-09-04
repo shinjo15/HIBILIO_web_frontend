@@ -95,8 +95,8 @@ export function AppShell() {
                 color: 'text.secondary',
                 gap: 1,
                 mb: 0.5,
-                px: 1.5,
-                py: 1.25,
+                px: 1.25,
+                py: 1,
                 '&.Mui-selected': {
                   backgroundColor: 'var(--hibilio-color-muted)',
                   color: 'primary.main',
@@ -136,8 +136,8 @@ export function AppShell() {
               color: 'primary.contrastText',
               gap: 1,
               mt: 2,
-              px: 1.5,
-              py: 1.25,
+              px: 1.25,
+              py: 1,
               '&.Mui-selected': {
                 backgroundColor: 'primary.main',
               },
