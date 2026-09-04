@@ -4,6 +4,7 @@ import { RegisterPage } from '../features/auth/register/pages/RegisterPage';
 import { AccountPage } from '../features/account/pages/AccountPage';
 import { RoutineFeedPage } from '../features/routineFeed/pages/RoutineFeedPage';
 import { CreateRoutinePage } from '../features/routinePost/pages/CreateRoutinePage';
+import { RoutineDetailPage } from '../features/routineDetail/pages/RoutineDetailPage';
 import { AppShell } from '../shared/navigation/AppShell';
 
 export const router = createBrowserRouter([
@@ -29,6 +30,10 @@ export const router = createBrowserRouter([
       {
         element: <CreateRoutinePage />,
         path: 'routines/new',
+      },
+      {
+        element: <RoutineDetailPage />,
+        path: 'routines/:routineId',
       },
     ],
   },

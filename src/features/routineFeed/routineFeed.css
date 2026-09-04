@@ -259,6 +259,16 @@
   margin-bottom: 8px;
 }
 
+.routine-card__detail-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.routine-card__detail-link:hover,
+.routine-card__detail-link:focus-visible {
+  text-decoration: underline;
+}
+
 .routine-feed-page .routine-card__tags {
   display: flex;
   flex-direction: row;

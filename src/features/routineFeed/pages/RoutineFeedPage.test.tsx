@@ -44,6 +44,7 @@ describe('RoutineFeedPage', () => {
 
     resolveList?.([routine]);
     expect(await screen.findByRole('heading', { name: '朝の集中ルーティン' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '朝の集中ルーティン' })).toHaveAttribute('href', '/routines/routine-1');
 
     await userEvent.click(screen.getByRole('button', { name: 'いいねする' }));
     expect(screen.getByText('15')).toBeInTheDocument();
