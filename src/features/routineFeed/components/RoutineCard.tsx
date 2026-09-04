@@ -1,5 +1,6 @@
 import { Box, Paper, Stack, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import messages from '../../../shared/message/message.json';
 import { formatDuration, formatPostedAt, type Routine } from '../domain/routine';
 
@@ -42,7 +43,9 @@ export function RoutineCard({ routine, onLike }: RoutineCardProps) {
             </Stack>
           </Stack>
 
-          <Typography component="h2" className="routine-card__title">{routine.title}</Typography>
+          <Typography component="h2" className="routine-card__title">
+            <Link className="routine-card__detail-link" to={`/routines/${routine.id}`}>{routine.title}</Link>
+          </Typography>
           <Stack className="routine-card__tags">
             {routine.tags.slice(0, 3).map((tag) => <Box component="span" className="routine-card__tag" key={tag}>{tag}</Box>)}
           </Stack>
