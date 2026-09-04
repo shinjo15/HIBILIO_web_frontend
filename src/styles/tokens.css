@@ -1,19 +1,23 @@
 :root {
   --hibilio-color-background: #f8f5f2;
+  --hibilio-color-card: #ffffff;
   --hibilio-color-on-background: #1c1814;
-  --hibilio-color-surface: #ffffff;
+  --hibilio-color-muted: #f2ede8;
+  --hibilio-color-muted-text: #7a6e66;
   --hibilio-color-primary: #c2612a;
   --hibilio-color-on-primary: #ffffff;
-  --hibilio-color-outline: #e5ddd6;
+  --hibilio-color-border: #e5ddd6;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --hibilio-color-background: #18130f;
+    --hibilio-color-card: #231a13;
     --hibilio-color-on-background: #f0e8e0;
-    --hibilio-color-surface: #231a13;
+    --hibilio-color-muted: #2a1f18;
+    --hibilio-color-muted-text: #8c7b6e;
     --hibilio-color-primary: #d97240;
     --hibilio-color-on-primary: #ffffff;
-    --hibilio-color-outline: #3a2a1f;
+    --hibilio-color-border: #3a2a1f;
   }
 }
