@@ -1,0 +1,12 @@
+@import url('./tokens.css');
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background-color: var(--hibilio-color-background);
+  color: var(--hibilio-color-on-background);
+}
