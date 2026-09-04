@@ -1,1 +1,24 @@
-{}
+{
+  "app": {
+    "name": "HIBILIO",
+    "tagline": "今日を重ねるSNS"
+  },
+  "navigation": {
+    "ariaLabel": "メインナビゲーション",
+    "feed": "一覧",
+    "account": "アカウント",
+    "createRoutine": "ルーティンを投稿"
+  },
+  "routineFeed": {
+    "title": "ルーティン一覧",
+    "placeholder": "フィードの表示は後続のIssueで実装します。"
+  },
+  "account": {
+    "title": "アカウント",
+    "placeholder": "アカウント情報の表示は後続のIssueで実装します。"
+  },
+  "routinePost": {
+    "title": "ルーティンを投稿",
+    "placeholder": "ルーティン投稿フォームは後続のIssueで実装します。"
+  }
+}
