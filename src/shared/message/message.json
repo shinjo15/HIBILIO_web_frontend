@@ -9,6 +9,26 @@
     "account": "アカウント",
     "createRoutine": "ルーティンを投稿"
   },
+  "auth": {
+    "accountName": "アカウント名",
+    "accountNamePlaceholder": "例：山田 由紀",
+    "backToLogin": "ログインへ戻る",
+    "emailAddress": "メールアドレス",
+    "emailAddressPlaceholder": "mail@example.com",
+    "login": "ログイン",
+    "loginDescription": "登録済みのメールアドレスへログインパスコードを送信します。",
+    "loginTitle": "ログイン",
+    "passcode": "ログインパスコード",
+    "passcodeDescription": "メールで受け取った6桁のパスコードを入力してください。",
+    "passcodePlaceholder": "123456",
+    "requestPasscode": "パスコードを送信",
+    "sendAgain": "メールアドレスを変更する",
+    "signUp": "新規登録",
+    "signUpDescription": "登録後、ログインパスコードをメールで受け取れます。",
+    "signUpPrompt": "アカウントをお持ちでない方",
+    "signUpTitle": "新規登録",
+    "submitPasscode": "ログインする"
+  },
   "routineFeed": {
     "title": "ルーティン一覧",
     "placeholder": "フィードの表示は後続のIssueで実装します。"
