@@ -47,10 +47,4 @@ describe('routineFeedService', () => {
     await expect(service.list()).rejects.toThrow();
   });
 
-  it('IDから詳細用のルーティンを取得できる', async () => {
-    const service = createRoutineFeedService({ list: async () => routines });
-
-    await expect(service.getById('popular')).resolves.toEqual(routines[1]);
-    await expect(service.getById('missing')).resolves.toBeUndefined();
-  });
 });

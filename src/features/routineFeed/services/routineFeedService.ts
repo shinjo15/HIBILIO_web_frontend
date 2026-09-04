@@ -11,7 +11,6 @@ export type RoutineFeedAdapter = {
 
 export type RoutineFeedService = {
   list: (tab?: RoutineFeedTab) => Promise<Routine[]>;
-  getById: (id: string) => Promise<Routine | undefined>;
 };
 
 export type DummyRoutineFeedMode = 'success' | 'empty' | 'error';
@@ -137,7 +136,6 @@ export function createRoutineFeedService(adapter: RoutineFeedAdapter): RoutineFe
   }
 
   return {
-    getById: async (id) => (await list()).find((routine) => routine.id === id),
     list,
   };
 }

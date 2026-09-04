@@ -1,10 +1,5 @@
-import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
-import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import PlayArrowOutlinedIcon from '@mui/icons-material/PlayArrowOutlined';
-import ShuffleOutlinedIcon from '@mui/icons-material/ShuffleOutlined';
-import { Box, CardActionArea, Chip, IconButton, Paper, Stack, Typography } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Box, Paper, Stack, Typography } from '@mui/material';
+import type { ReactNode } from 'react';
 import messages from '../../../shared/message/message.json';
 import { formatDuration, formatPostedAt, type Routine } from '../domain/routine';
 
@@ -14,70 +9,107 @@ type RoutineCardProps = {
 };
 
 export function RoutineCard({ routine, onLike }: RoutineCardProps) {
+  const avatarClasses: Record<string, string> = {
+    H: 'routine-card__avatar--h',
+    N: 'routine-card__avatar--n',
+    S: 'routine-card__avatar--s',
+    T: 'routine-card__avatar--t',
+    Y: 'routine-card__avatar--y',
+  };
+  const avatarInitial = routine.author.handle.slice(0, 1).toUpperCase();
+  const avatarClass = avatarClasses[avatarInitial] ?? 'routine-card__avatar--default';
+  const likeClass = routine.liked ? 'routine-card__like routine-card__like--liked' : 'routine-card__like';
+
   return (
     <Paper
       component="article"
-      elevation={0}
-      sx={{
-        border: 1,
-        borderColor: 'divider',
-        overflow: 'hidden',
-        transition: 'border-color 120ms ease, box-shadow 120ms ease',
-        '&:hover': { borderColor: 'primary.main', boxShadow: '0 4px 16px rgba(28, 24, 20, 0.08)' },
-      }}
+      className="routine-card"
     >
-      <CardActionArea component={RouterLink} to={`/routines/${routine.id}`}>
-        <Box sx={{ p: { sm: 2.5, xs: 2 } }}>
-          <Stack direction="row" spacing={2} sx={{ alignItems: 'flex-start', justifyContent: 'space-between' }}>
-            <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center' }}>
-              <Box aria-hidden="true" sx={{ alignItems: 'center', bgcolor: 'primary.main', borderRadius: '50%', color: 'primary.contrastText', display: 'flex', flexShrink: 0, fontSize: 14, fontWeight: 600, height: 34, justifyContent: 'center', width: 34 }}>
-                {routine.author.name.slice(0, 1)}
+      <Box className="routine-card__content">
+          <Stack className="routine-card__header">
+            <Stack className="routine-card__author">
+              <Box aria-hidden="true" className={`routine-card__avatar ${avatarClass}`}>
+                {avatarInitial}
               </Box>
-              <Box>
-                <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{routine.author.name}</Typography>
-                <Typography color="text.secondary" sx={{ fontSize: 12 }}>@{routine.author.handle}</Typography>
-              </Box>
+              <Typography className="routine-card__handle">@{routine.author.handle}</Typography>
             </Stack>
-            <Stack spacing={0.25} sx={{ alignItems: 'flex-end' }}>
-              <Typography color="text.secondary" sx={{ fontSize: 12, whiteSpace: 'nowrap' }}>{formatPostedAt(routine.createdAt)}</Typography>
-              <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-                <AccessTimeOutlinedIcon sx={{ fontSize: 14 }} />
-                <Typography color="text.secondary" sx={{ fontSize: 12, whiteSpace: 'nowrap' }}>{formatDuration(routine.durationMinutes)}</Typography>
+            <Stack className="routine-card__metadata">
+              <Typography className="routine-card__metadata-text">{formatPostedAt(routine.createdAt)}</Typography>
+              <Stack className="routine-card__duration">
+                <ClockIcon />
+                <Typography className="routine-card__metadata-text">{formatDuration(routine.durationMinutes)}</Typography>
               </Stack>
             </Stack>
           </Stack>
 
-          <Typography component="h2" sx={{ fontSize: 17, fontWeight: 600, lineHeight: 1.4, mt: 2 }}>{routine.title}</Typography>
-          <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 0.75, mt: 1 }}>
-            {routine.tags.slice(0, 3).map((tag) => <Chip key={tag} label={tag} size="small" sx={{ bgcolor: 'var(--hibilio-color-muted)', color: 'text.secondary', fontSize: 11, height: 24 }} />)}
+          <Typography component="h2" className="routine-card__title">{routine.title}</Typography>
+          <Stack className="routine-card__tags">
+            {routine.tags.slice(0, 3).map((tag) => <Box component="span" className="routine-card__tag" key={tag}>{tag}</Box>)}
           </Stack>
-          <Stack spacing={0.5} sx={{ mt: 1.75 }}>
+          <Stack className="routine-card__steps">
             {routine.steps.slice(0, 3).map((step) => (
-              <Typography color="text.secondary" key={`${routine.id}-${step.time}`} sx={{ fontSize: 13 }}>
-                {step.action}{step.duration && `（${step.duration}）`}
+              <Typography className="routine-card__step" key={`${routine.id}-${step.time}`}>
+                {step.action}{step.duration && <Box component="span" className="routine-card__step-duration">（{step.duration}）</Box>}
               </Typography>
             ))}
-            {routine.steps.length > 3 && <Typography color="text.secondary" sx={{ fontSize: 12 }}>{messages.routineFeed.moreSteps.replace('{count}', String(routine.steps.length - 3))}</Typography>}
+            {routine.steps.length > 3 && <Typography className="routine-card__more-steps">{messages.routineFeed.moreSteps.replace('{count}', String(routine.steps.length - 3))}</Typography>}
           </Stack>
-        </Box>
-      </CardActionArea>
 
-      <Stack direction="row" divider={<Box sx={{ bgcolor: 'divider', height: 18, width: 1 }} />} spacing={1.5} sx={{ alignItems: 'center', borderTop: 1, borderColor: 'divider', px: { sm: 2.5, xs: 2 }, py: 0.75 }}>
-        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-          <IconButton aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} color={routine.liked ? 'primary' : 'default'} onClick={() => onLike(routine.id)} size="small">
-            {routine.liked ? <FavoriteIcon sx={{ fontSize: 18 }} /> : <FavoriteBorderOutlinedIcon sx={{ fontSize: 18 }} />}
-          </IconButton>
-          <Typography color="text.secondary" sx={{ fontSize: 12 }}>{routine.likes}</Typography>
-        </Stack>
-        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-          <PlayArrowOutlinedIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
-          <Typography color="text.secondary" sx={{ fontSize: 12 }}>{routine.executions}</Typography>
-        </Stack>
-        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-          <ShuffleOutlinedIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
-          <Typography color="text.secondary" sx={{ fontSize: 12 }}>{routine.customizations}</Typography>
-        </Stack>
-      </Stack>
+          <Stack className="routine-card__actions">
+            <Box component="button" aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass} onClick={() => onLike(routine.id)}>
+              <HeartIcon filled={routine.liked} />
+              <Typography component="span" className="routine-card__action-value">{routine.likes}</Typography>
+            </Box>
+            <ActionItem icon={<RunIcon />} value={routine.executions} />
+            <ActionItem icon={<ShuffleIcon />} value={routine.customizations} />
+          </Stack>
+      </Box>
     </Paper>
+  );
+}
+
+function ActionItem({ icon, value }: { icon: ReactNode; value: number }) {
+  return (
+    <Box className="routine-card__action">
+      {icon}
+      <Typography component="span" className="routine-card__action-value">{value}</Typography>
+    </Box>
+  );
+}
+
+function HeartIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg aria-hidden="true" fill={filled ? 'currentColor' : 'none'} height="16" viewBox="0 0 24 24" width="16">
+      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" height="13" viewBox="0 0 24 24" width="13">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+      <polyline points="12 6 12 12 16 14" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function RunIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 24 24" width="16">
+      <polygon points="5 3 19 12 5 21 5 3" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function ShuffleIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 24 24" width="16">
+      <polyline points="16 3 21 3 21 8" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <line stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="4" x2="21" y1="20" y2="3" />
+      <polyline points="21 16 21 21 16 21" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <line stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="15" x2="21" y1="15" y2="21" />
+      <line stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="4" x2="9" y1="4" y2="9" />
+    </svg>
   );
 }

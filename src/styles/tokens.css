@@ -9,15 +9,13 @@
   --hibilio-color-border: #e5ddd6;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --hibilio-color-background: #18130f;
-    --hibilio-color-card: #231a13;
-    --hibilio-color-on-background: #f0e8e0;
-    --hibilio-color-muted: #2a1f18;
-    --hibilio-color-muted-text: #8c7b6e;
-    --hibilio-color-primary: #d97240;
-    --hibilio-color-on-primary: #ffffff;
-    --hibilio-color-border: #3a2a1f;
-  }
+.hibilio-theme-dark {
+  --hibilio-color-background: #18130f;
+  --hibilio-color-card: #231a13;
+  --hibilio-color-on-background: #f0e8e0;
+  --hibilio-color-muted: #2a1f18;
+  --hibilio-color-muted-text: #8c7b6e;
+  --hibilio-color-primary: #d97240;
+  --hibilio-color-on-primary: #ffffff;
+  --hibilio-color-border: #3a2a1f;
 }

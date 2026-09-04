@@ -1,0 +1,50 @@
+/* Keep the rendered MUI Typography scale aligned with the HomePage mock. */
+.routine-feed-page .routine-feed-brand__name {
+  color: var(--hibilio-color-on-background);
+  font-family: Fraunces, serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.routine-feed-page .routine-feed-loading__text,
+.routine-feed-page .routine-feed-empty__description {
+  color: var(--hibilio-color-muted-text);
+  font-size: 13px;
+}
+
+.routine-feed-page .routine-feed-empty__title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.routine-feed-page .routine-card__handle,
+.routine-feed-page .routine-card__metadata-text,
+.routine-feed-page .routine-card__more-steps,
+.routine-feed-page .routine-card__action-value {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.routine-feed-page .routine-card__title {
+  color: var(--hibilio-color-on-background);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.375;
+  margin-bottom: 8px;
+}
+
+.routine-feed-page .routine-card__tag {
+  font-size: 10px;
+  line-height: 15px;
+}
+
+.routine-feed-page .routine-card__step {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.routine-feed-page .routine-card__step-duration {
+  font-size: 12px;
+  line-height: 16px;
+}

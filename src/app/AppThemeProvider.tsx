@@ -1,4 +1,4 @@
-import { CssBaseline, ThemeProvider, createTheme, useMediaQuery } from '@mui/material';
+import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 
@@ -16,19 +16,9 @@ const lightPalette = {
   text: '#1c1814',
 };
 
-const darkPalette = {
-  background: '#18130f',
-  card: '#231a13',
-  divider: '#3a2a1f',
-  muted: '#2a1f18',
-  mutedText: '#8c7b6e',
-  primary: '#d97240',
-  text: '#f0e8e0',
-};
-
 export function AppThemeProvider({ children }: AppThemeProviderProps) {
-  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
-  const palette = prefersDarkMode ? darkPalette : lightPalette;
+  const prefersDarkMode = false;
+  const palette = lightPalette;
   const theme = useMemo(
     () => createTheme({
       palette: {

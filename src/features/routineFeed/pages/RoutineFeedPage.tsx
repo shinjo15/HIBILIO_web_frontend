@@ -1,11 +1,15 @@
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
-import { Alert, Box, Button, CircularProgress, Container, Stack, Tab, Tabs, Typography } from '@mui/material';
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+import { Alert, Box, Button, CircularProgress, IconButton, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { RoutineCard } from '../components/RoutineCard';
 import type { Routine, RoutineFeedTab } from '../domain/routine';
 import { routineFeedService, type RoutineFeedService } from '../services/routineFeedService';
+import { HibilioMark } from '../../../shared/brand/HibilioMark';
 import messages from '../../../shared/message/message.json';
+import '../routineFeed.css';
+import '../routineFeedTypography.css';
 
 type RoutineFeedPageProps = { service?: RoutineFeedService };
 
@@ -69,58 +73,67 @@ export function RoutineFeedPage({ service = routineFeedService }: RoutineFeedPag
   }
 
   return (
-    <Box component="section" sx={{ minHeight: '100dvh' }}>
-      <Box sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
-        <Container maxWidth="md" sx={{ px: { sm: 3, xs: 2 }, pt: { sm: 4, xs: 2.5 } }}>
-          <Typography component="h1" sx={{ fontSize: { sm: 30, xs: 26 }, fontWeight: 600 }}>
-            {messages.routineFeed.title}
-          </Typography>
-          <Typography color="text.secondary" sx={{ fontSize: 13, mt: 0.75 }}>
-            {messages.routineFeed.subtitle}
-          </Typography>
+    <Box component="section" className="routine-feed-page">
+      <Box className="routine-feed-header">
+          <Stack className="routine-feed-header__top">
+            <Stack className="routine-feed-brand">
+              <HibilioMark />
+              <Typography component="h1" className="routine-feed-brand__name">
+                {messages.app.name}
+              </Typography>
+            </Stack>
+            <IconButton
+              aria-label={messages.routineFeed.search}
+              className="routine-feed-search"
+            >
+              <SearchOutlinedIcon className="routine-feed-search__icon" />
+            </IconButton>
+          </Stack>
           <Tabs
             aria-label={messages.routineFeed.tabs.ariaLabel}
+            className="routine-feed-tabs"
             onChange={(_, value: RoutineFeedTab) => handleTabChange(value)}
-            sx={{ mt: 2 }}
             value={activeTab}
           >
             {tabs.map((tab) => <Tab key={tab.value} label={tab.label} value={tab.value} />)}
           </Tabs>
-        </Container>
       </Box>
 
-      <Container maxWidth="md" sx={{ px: { sm: 3, xs: 2 }, py: { sm: 3, xs: 2 } }}>
+      <Box className="routine-feed-scroll">
+        <Box className="routine-feed-content">
         {isLoading && (
-          <Stack spacing={1.5} sx={{ alignItems: 'center', py: 10 }}>
-            <CircularProgress aria-label={messages.routineFeed.loading} color="primary" size={32} />
-            <Typography color="text.secondary" sx={{ fontSize: 13 }}>{messages.routineFeed.loading}</Typography>
+          <Stack className="routine-feed-loading">
+            <CircularProgress aria-label={messages.routineFeed.loading} className="routine-feed-loading__progress" />
+            <Typography className="routine-feed-loading__text">{messages.routineFeed.loading}</Typography>
           </Stack>
         )}
 
         {!isLoading && hasError && (
           <Alert
-            action={<Button color="inherit" onClick={() => void loadRoutines()} size="small" startIcon={<RefreshOutlinedIcon />}>{messages.routineFeed.retry}</Button>}
+            action={<Button className="routine-feed-error__retry" onClick={() => void loadRoutines()} startIcon={<RefreshOutlinedIcon />}>{messages.routineFeed.retry}</Button>}
             icon={<ErrorOutlineOutlinedIcon />}
             severity="error"
-            sx={{ mt: 2 }}
+            className="routine-feed-error"
           >
             {messages.routineFeed.error}
           </Alert>
         )}
 
         {!isLoading && !hasError && routines.length === 0 && (
-          <Stack spacing={1} sx={{ alignItems: 'center', py: 10, textAlign: 'center' }}>
-            <Typography component="h2" sx={{ fontSize: 18, fontWeight: 600 }}>{messages.routineFeed.emptyTitle}</Typography>
-            <Typography color="text.secondary" sx={{ fontSize: 13 }}>{messages.routineFeed.emptyDescription}</Typography>
+          <Stack className="routine-feed-empty">
+            <Typography component="h2" className="routine-feed-empty__title">{messages.routineFeed.emptyTitle}</Typography>
+            <Typography className="routine-feed-empty__description">{messages.routineFeed.emptyDescription}</Typography>
           </Stack>
         )}
 
         {!isLoading && !hasError && routines.length > 0 && (
-          <Stack spacing={1.5}>
+          <Stack className="routine-feed-list">
             {routines.map((routine) => <RoutineCard key={routine.id} onLike={handleLike} routine={routine} />)}
+            <Box className="routine-feed-list__spacer" />
           </Stack>
         )}
-      </Container>
+        </Box>
+      </Box>
     </Box>
   );
 }

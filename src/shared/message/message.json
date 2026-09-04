@@ -30,8 +30,7 @@
     "submitPasscode": "ログインする"
   },
   "routineFeed": {
-    "title": "ルーティン一覧",
-    "subtitle": "みんなの習慣から、今日を整えるヒントを見つけよう。",
+    "search": "ルーティンを検索",
     "tabs": {
       "ariaLabel": "ルーティンの並び替え",
       "recommended": "おすすめ",
@@ -46,10 +45,7 @@
     "moreSteps": "あと{count}項目…",
     "like": "いいねする",
     "unlike": "いいねを取り消す",
-    "customize": "カスタム",
-    "backToList": "一覧に戻る",
-    "notFound": "指定されたルーティンが見つかりません。",
-    "stepsTitle": "ルーティンの手順"
+    "customize": "カスタム"
   },
   "account": {
     "title": "アカウント",

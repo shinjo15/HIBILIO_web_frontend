@@ -15,6 +15,7 @@ import type { ReactNode } from 'react';
 import { Link as RouterLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { HibilioMark } from '../brand/HibilioMark';
 import messages from '../message/message.json';
+import './appShell.css';
 
 const desktopNavigationWidth = 224;
 
@@ -182,24 +183,8 @@ export function AppShell() {
 
       <Box
         aria-label={messages.navigation.ariaLabel}
+        className="hibilio-mobile-nav"
         component="nav"
-        sx={{
-          alignItems: 'center',
-          backgroundColor: 'background.paper',
-          borderColor: 'divider',
-          borderTop: 1,
-          bottom: 0,
-          display: {
-            lg: 'none',
-            xs: 'flex',
-          },
-          height: 64,
-          justifyContent: 'space-around',
-          left: 0,
-          position: 'fixed',
-          right: 0,
-          zIndex: 1100,
-        }}
       >
         {navigationItems.map((item) => {
           const isSelected = activePath === item.path;

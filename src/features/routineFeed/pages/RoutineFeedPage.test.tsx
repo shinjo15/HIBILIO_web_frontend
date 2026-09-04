@@ -28,19 +28,22 @@ function renderPage(service: RoutineFeedService) {
 }
 
 describe('RoutineFeedPage', () => {
-  it('loading 中の表示から一覧を表示し、詳細導線といいね操作を提供する', async () => {
+  it('loading 中の表示から一覧を表示し、いいね操作を提供する', async () => {
     let resolveList: ((value: Routine[]) => void) | undefined;
     const service: RoutineFeedService = {
-      getById: async () => routine,
       list: () => new Promise((resolve) => { resolveList = resolve; }),
     };
 
     renderPage(service);
+    expect(screen.getByRole('heading', { name: 'HIBILIO' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ルーティンを検索' })).toBeInTheDocument();
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['おすすめ', '人気', '新着']);
+    expect(screen.queryByText('ルーティン一覧')).not.toBeInTheDocument();
+    expect(screen.queryByText('みんなの習慣から、今日を整えるヒントを見つけよう。')).not.toBeInTheDocument();
     expect(screen.getByText('ルーティンを読み込んでいます…')).toBeInTheDocument();
 
     resolveList?.([routine]);
     expect(await screen.findByRole('heading', { name: '朝の集中ルーティン' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /朝の集中ルーティン/ })).toHaveAttribute('href', '/routines/routine-1');
 
     await userEvent.click(screen.getByRole('button', { name: 'いいねする' }));
     expect(screen.getByText('15')).toBeInTheDocument();
@@ -48,7 +51,7 @@ describe('RoutineFeedPage', () => {
   });
 
   it('empty 状態を表示する', async () => {
-    const service: RoutineFeedService = { getById: async () => undefined, list: async () => [] };
+    const service: RoutineFeedService = { list: async () => [] };
 
     renderPage(service);
 
@@ -57,7 +60,6 @@ describe('RoutineFeedPage', () => {
 
   it('error 状態と再試行導線を表示する', async () => {
     const service: RoutineFeedService = {
-      getById: async () => undefined,
       list: vi.fn().mockRejectedValue(new Error('failed')),
     };
 
@@ -69,7 +71,7 @@ describe('RoutineFeedPage', () => {
 
   it('人気タブへ切り替えると service に選択値を渡す', async () => {
     const list = vi.fn().mockResolvedValue([routine]);
-    const service: RoutineFeedService = { getById: async () => routine, list };
+    const service: RoutineFeedService = { list };
     const user = userEvent.setup();
 
     renderPage(service);

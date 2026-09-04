@@ -1,0 +1,340 @@
+.routine-feed-page {
+  --routine-feed-accent: color(srgb 0.8784 0.4824 0.2275);
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.routine-feed-header {
+  background-color: var(--hibilio-color-card);
+  border-bottom: 1px solid var(--hibilio-color-border);
+  flex-shrink: 0;
+  padding: 16px 16px 0;
+}
+
+.routine-feed-page .routine-feed-header__top {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.routine-feed-page .routine-feed-brand {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.routine-feed-brand__name {
+  color: var(--hibilio-color-on-background);
+  font-family: Fraunces, serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.routine-feed-page .MuiIconButton-root.routine-feed-search {
+  border-radius: 0;
+  color: var(--hibilio-color-muted-text);
+  height: 20px;
+  padding: 0;
+  width: 20px;
+}
+
+.routine-feed-page .MuiIconButton-root.routine-feed-search:hover {
+  background-color: transparent;
+  color: var(--hibilio-color-on-background);
+}
+
+.routine-feed-page .MuiSvgIcon-root.routine-feed-search__icon {
+  font-size: 20px;
+}
+
+.routine-feed-page .routine-feed-tabs {
+  min-height: 42px;
+}
+
+.routine-feed-page .routine-feed-tabs .MuiTab-root {
+  color: var(--hibilio-color-muted-text);
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  min-height: 42px;
+  min-width: 0;
+  padding: 10px 16px;
+  text-transform: none;
+}
+
+.routine-feed-page .routine-feed-tabs .MuiTab-root.Mui-selected {
+  color: var(--hibilio-color-primary);
+}
+
+.routine-feed-page .routine-feed-tabs .MuiTabs-indicator {
+  background-color: var(--hibilio-color-primary);
+  height: 2px;
+}
+
+.routine-feed-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.routine-feed-content {
+  border-left: 1px solid var(--hibilio-color-border);
+  border-right: 1px solid var(--hibilio-color-border);
+  box-sizing: border-box;
+  margin: 0 auto;
+  max-width: 672px;
+  padding: 16px;
+}
+
+.routine-feed-page .routine-feed-loading {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-block: 80px;
+}
+
+.routine-feed-page .MuiCircularProgress-root.routine-feed-loading__progress {
+  color: var(--hibilio-color-primary);
+  height: 32px !important;
+  width: 32px !important;
+}
+
+.routine-feed-loading__text {
+  color: var(--hibilio-color-muted-text);
+  font-size: 13px;
+}
+
+.routine-feed-page .routine-feed-error {
+  margin-top: 16px;
+}
+
+.routine-feed-page .routine-feed-error__retry {
+  color: inherit;
+  font-size: 0.8125rem;
+  padding: 4px 5px;
+}
+
+.routine-feed-page .routine-feed-empty {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-block: 80px;
+  text-align: center;
+}
+
+.routine-feed-empty__title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.routine-feed-empty__description {
+  color: var(--hibilio-color-muted-text);
+  font-size: 13px;
+}
+
+.routine-feed-page .routine-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.routine-feed-list__spacer {
+  height: 16px;
+}
+
+.routine-feed-page .MuiPaper-root.routine-card {
+  background-color: var(--hibilio-color-card);
+  border: 1px solid var(--hibilio-color-border);
+  border-radius: 12px;
+  box-shadow: none;
+  color: var(--hibilio-color-on-background);
+  font-family: Inter, sans-serif;
+  overflow: hidden;
+  transition: border-color 150ms ease;
+}
+
+.routine-feed-page .MuiPaper-root.routine-card:hover {
+  border-color: var(--hibilio-color-primary);
+}
+
+.routine-feed-page .MuiPaper-root.routine-card:active {
+  transform: scale(0.99);
+}
+
+.routine-card__content {
+  padding: 16px;
+}
+
+.routine-feed-page .routine-card__header {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.routine-feed-page .routine-card__author {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+
+.routine-card__avatar {
+  align-items: center;
+  border-radius: 50%;
+  color: var(--hibilio-color-on-primary);
+  display: flex;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  height: 32px;
+  justify-content: center;
+  line-height: 16px;
+  width: 32px;
+}
+
+.routine-card__avatar--h {
+  background-color: color(srgb 0.5451 0.3686 0.2353);
+}
+
+.routine-card__avatar--n {
+  background-color: color(srgb 0.4196 0.3569 0.5843);
+}
+
+.routine-card__avatar--s {
+  background-color: color(srgb 0.3569 0.4353 0.651);
+}
+
+.routine-card__avatar--t {
+  background-color: color(srgb 0.2392 0.4196 0.3098);
+}
+
+.routine-card__avatar--y {
+  background-color: color(srgb 0.7216 0.3608 0.2196);
+}
+
+.routine-card__avatar--default {
+  background-color: color(srgb 0.4784 0.4588 0.4392);
+}
+
+.routine-card__handle,
+.routine-card__metadata-text {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.routine-feed-page .routine-card__metadata {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.routine-feed-page .routine-card__duration {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+}
+
+.routine-card__metadata-text {
+  white-space: nowrap;
+}
+
+.routine-card__title {
+  color: var(--hibilio-color-on-background);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.375;
+  margin-bottom: 8px;
+}
+
+.routine-feed-page .routine-card__tags {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.routine-card__tag {
+  background-color: var(--hibilio-color-muted);
+  border-radius: 9999px;
+  color: var(--hibilio-color-muted-text);
+  display: inline-flex;
+  font-size: 10px;
+  line-height: 15px;
+  padding: 2px 8px;
+}
+
+.routine-feed-page .routine-card__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.routine-card__step {
+  color: var(--hibilio-color-muted-text);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.routine-card__step-duration {
+  font-size: 12px;
+  line-height: 16px;
+  margin-left: 4px;
+}
+
+.routine-card__more-steps {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.routine-feed-page .routine-card__actions {
+  align-items: center;
+  border-top: 1px solid var(--hibilio-color-border);
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  padding-top: 12px;
+}
+
+.routine-card__like,
+.routine-card__action {
+  align-items: center;
+  color: var(--hibilio-color-muted-text);
+  display: flex;
+  gap: 6px;
+}
+
+.routine-card__like {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+.routine-card__like--liked {
+  color: var(--routine-feed-accent);
+}
+
+.routine-card__action-value {
+  color: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 16px;
+}
