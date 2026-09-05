@@ -1,6 +1,7 @@
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
+import SendIcon from '@mui/icons-material/Send';
 import {
   Box,
   ButtonBase,
@@ -11,7 +12,7 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link as RouterLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { HibilioMark } from '../brand/HibilioMark';
 import messages from '../message/message.json';
@@ -54,6 +55,17 @@ export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const activePath = selectedPath(location.pathname);
+  const isRoutineCreate = activePath === '/routines/new';
+  const [canSubmitRoutineCreate, setCanSubmitRoutineCreate] = useState(false);
+
+  useEffect(() => {
+    function updateRoutineCreateSubmissionState(event: Event) {
+      setCanSubmitRoutineCreate((event as CustomEvent<{ canSubmit: boolean }>).detail.canSubmit);
+    }
+
+    window.addEventListener('routine-create-submission-state', updateRoutineCreateSubmissionState);
+    return () => window.removeEventListener('routine-create-submission-state', updateRoutineCreateSubmissionState);
+  }, []);
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100dvh' }}>
@@ -214,8 +226,12 @@ export function AppShell() {
         }).slice(0, 1)}
         <ButtonBase
           aria-current={activePath === '/routines/new' ? 'page' : undefined}
-          aria-label={messages.navigation.createRoutine}
-          onClick={() => navigate('/routines/new')}
+          aria-label={isRoutineCreate ? messages.routineCreate.submit : messages.navigation.createRoutine}
+          className={isRoutineCreate && !canSubmitRoutineCreate ? 'hibilio-mobile-nav__create-trigger hibilio-mobile-nav__create-trigger--disabled' : 'hibilio-mobile-nav__create-trigger'}
+          disabled={isRoutineCreate && !canSubmitRoutineCreate}
+          form={isRoutineCreate ? 'routine-create-form' : undefined}
+          onClick={isRoutineCreate ? undefined : () => navigate('/routines/new')}
+          type={isRoutineCreate ? 'submit' : 'button'}
           sx={{
             alignItems: 'center',
             display: 'flex',
@@ -225,6 +241,7 @@ export function AppShell() {
           }}
         >
           <Box
+            className="hibilio-mobile-nav__create-icon"
             sx={{
               alignItems: 'center',
               backgroundColor: 'primary.main',
@@ -237,7 +254,7 @@ export function AppShell() {
               width: 48,
             }}
           >
-            <AddIcon />
+            {isRoutineCreate ? <SendIcon fontSize="small" /> : <AddIcon />}
           </Box>
         </ButtonBase>
         {navigationItems.slice(1).map((item) => {

@@ -80,8 +80,47 @@
     "title": "アカウント",
     "placeholder": "アカウント情報の表示は後続のIssueで実装します。"
   },
-  "routinePost": {
+  "routineCreate": {
     "title": "ルーティンを投稿",
-    "placeholder": "ルーティン投稿フォームは後続のIssueで実装します。"
+    "backToFeed": "一覧へ戻る",
+    "submit": "投稿",
+    "submitting": "投稿しています…",
+    "success": "ルーティンを投稿しました。",
+    "successDescription": "一覧へ移動します。",
+    "error": "ルーティンを投稿できませんでした。時間をおいて再試行してください。",
+    "routineName": "ルーティン名",
+    "routineNamePlaceholder": "例：朝の集中ルーティン｜平日版",
+    "routineMemo": "説明（任意）",
+    "routineMemoPlaceholder": "どんなルーティンか、目的や効果を簡単に",
+    "routineExecutionMinutes": "ルーティン全体の所要時間（分・任意）",
+    "routineExecutionMinutesPlaceholder": "例：30",
+    "actions": "ステップ",
+    "actionName": "行動の内容",
+    "actionNamePlaceholder": "行動の内容",
+    "actionMemo": "補足メモ（任意）",
+    "actionMemoPlaceholder": "このステップの補足",
+    "actionMinutes": "所要時間（分・任意）",
+    "actionMinutesPlaceholder": "所要時間",
+    "minuteUnit": "分",
+    "actionTime": "実行時刻（表示用）",
+    "actionTimePlaceholder": "--:--",
+    "addAction": "ステップを追加",
+    "removeAction": "ステップを削除",
+    "moveActionUp": "上へ移動",
+    "moveActionDown": "下へ移動",
+    "validation": {
+      "routineNameRequired": "ルーティン名を入力してください。",
+      "routineNameTooLong": "ルーティン名は50文字以内で入力してください。",
+      "routineMemoTooLong": "説明は300文字以内で入力してください。",
+      "routineExecutionMinutesInteger": "所要時間は1以上の整数で入力してください。",
+      "routineExecutionMinutesMin": "所要時間は1以上で入力してください。",
+      "actionRequired": "ステップを1つ以上追加してください。",
+      "actionNameRequired": "行動の内容を入力してください。",
+      "actionNameTooLong": "行動の内容は50文字以内で入力してください。",
+      "actionMemoTooLong": "補足メモは300文字以内で入力してください。",
+      "actionMinutesInteger": "ステップの所要時間は1以上の整数で入力してください。",
+      "actionMinutesMin": "ステップの所要時間は1以上で入力してください。",
+      "generic": "入力内容を確認してください。"
+    }
   }
 }
