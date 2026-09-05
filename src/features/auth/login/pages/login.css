@@ -1,0 +1,261 @@
+.hibilio-login {
+  align-items: center;
+  background: var(--hibilio-color-background);
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 40px 24px;
+}
+
+.hibilio-login__content {
+  max-width: 384px;
+  width: 100%;
+}
+
+.hibilio-login__brand {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.hibilio-login__brand > div {
+  text-align: center;
+}
+
+.hibilio-login__brand h1 {
+  color: var(--hibilio-color-on-background);
+  font-family: Fraunces, serif;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.hibilio-login__brand p,
+.hibilio-login__field > span,
+.hibilio-login__divider,
+.hibilio-login__footer span,
+.hibilio-login__passcode-help p {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.hibilio-login__brand p {
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.hibilio-login__credentials {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.hibilio-login__passcode-form {
+  display: grid;
+  gap: 24px;
+}
+
+.hibilio-login__passcode-introduction {
+  text-align: center;
+}
+
+.hibilio-login__passcode-introduction h2 {
+  color: var(--hibilio-color-on-background);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 0 0 4px;
+}
+
+.hibilio-login__passcode-introduction p {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.hibilio-login__passcode-introduction strong {
+  color: var(--hibilio-color-on-background);
+  font-weight: 500;
+}
+
+.hibilio-login__passcode-form .MuiAlert-root,
+.hibilio-login__credentials + .MuiAlert-root {
+  border: 1px solid var(--hibilio-color-border);
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.hibilio-login__field {
+  display: grid;
+  gap: 6px;
+}
+
+.hibilio-login__field input,
+.hibilio-login__passcode-inputs input {
+  background-color: var(--hibilio-color-card);
+  border: 1px solid var(--hibilio-color-border);
+  border-radius: 12px;
+  box-sizing: border-box;
+  color: var(--hibilio-color-on-background);
+  font: inherit;
+  outline: 0;
+}
+
+.hibilio-login__field input {
+  font-size: 14px;
+  min-height: 48px;
+  padding: 12px 16px;
+  width: 100%;
+}
+
+.hibilio-login__field input::placeholder {
+  color: var(--hibilio-color-muted-text);
+}
+
+.hibilio-login__field input:focus,
+.hibilio-login__passcode-inputs input:focus {
+  border-color: var(--hibilio-color-primary);
+  box-shadow: 0 0 0 1px var(--hibilio-color-primary);
+}
+
+.hibilio-login__submit.MuiButton-root {
+  background-color: var(--hibilio-color-primary);
+  border-radius: 12px;
+  box-shadow: none;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  min-height: 52px;
+  text-transform: none;
+}
+
+.hibilio-login__passcode-form .hibilio-login__submit.MuiButton-root {
+  margin-bottom: 0;
+}
+
+.hibilio-login__submit.MuiButton-root:hover {
+  background-color: color-mix(in srgb, var(--hibilio-color-primary) 90%, var(--hibilio-color-on-background));
+  box-shadow: none;
+}
+
+.hibilio-login__divider {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.hibilio-login__divider::before,
+.hibilio-login__divider::after {
+  background-color: var(--hibilio-color-border);
+  content: '';
+  flex: 1;
+  height: 1px;
+}
+
+.hibilio-login__providers {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.hibilio-login__provider.MuiButton-root {
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  min-height: 48px;
+  text-transform: none;
+}
+
+.hibilio-login__provider .MuiButton-icon {
+  margin-right: 12px;
+}
+
+.hibilio-login__provider--google.MuiButton-root {
+  background-color: var(--hibilio-color-card);
+  border-color: var(--hibilio-color-border);
+  color: var(--hibilio-color-on-background);
+}
+
+.hibilio-login__provider--google.MuiButton-root:hover {
+  background-color: var(--hibilio-color-muted);
+  border-color: var(--hibilio-color-border);
+}
+
+.hibilio-login__provider--apple.MuiButton-root {
+  background-color: var(--hibilio-color-on-background);
+  box-shadow: none;
+  color: var(--hibilio-color-background);
+}
+
+.hibilio-login__provider--apple.MuiButton-root:hover {
+  background-color: var(--hibilio-color-on-background);
+  box-shadow: none;
+}
+
+.hibilio-login__footer,
+.hibilio-login__passcode-help {
+  align-items: center;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  text-align: center;
+}
+
+.hibilio-login__sign-up {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.hibilio-login__sign-up-link.MuiButton-root,
+.hibilio-login__passcode-help .MuiButton-root,
+.hibilio-login__edit-email.MuiButton-root {
+  color: var(--hibilio-color-primary);
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 0;
+  padding: 0 4px;
+  text-transform: none;
+}
+
+.hibilio-login__passcode-inputs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.hibilio-login__passcode-inputs input {
+  font-size: 18px;
+  font-weight: 600;
+  height: 52px;
+  padding: 0;
+  text-align: center;
+  width: 44px;
+}
+
+.hibilio-login__edit-email.MuiButton-root {
+  color: var(--hibilio-color-muted-text);
+  font-weight: 400;
+  justify-self: stretch;
+}
+
+.hibilio-login__edit-email.MuiButton-root::before {
+  content: '←';
+  margin-right: 4px;
+}
+
+@media (width <= 600px) {
+  .hibilio-login {
+    padding: 40px 24px;
+  }
+}

@@ -51,11 +51,18 @@ export function useLoginPasscode(onAuthenticated: () => void) {
     }
   }
 
+  function returnToEmailAddress(): void {
+    setErrorMessage(null);
+    setPasscode('');
+    setStep('email');
+  }
+
   return {
     emailAddress,
     errorMessage,
     isSubmitting,
     passcode,
+    returnToEmailAddress,
     setEmailAddress,
     setPasscode,
     step,
