@@ -20,6 +20,11 @@ describe('LoginPage', () => {
     expect(screen.getByRole('heading', { name: 'HIBILIO' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'ログイン' })).not.toBeInTheDocument();
     expect(screen.getByLabelText('メールアドレス')).toHaveAttribute('type', 'email');
+    expect(screen.getByLabelText('パスワード')).toHaveAttribute('type', 'password');
+    expect(screen.getByRole('button', { name: 'ログイン' })).toHaveAttribute('type', 'button');
+    expect(screen.getByRole('button', { name: 'Googleでログイン' })).toHaveAttribute('type', 'button');
+    expect(screen.getByRole('button', { name: 'Appleでログイン' })).toHaveAttribute('type', 'button');
+    expect(screen.getByRole('button', { name: 'パスワードを忘れた方' })).toHaveAttribute('type', 'button');
     expect(screen.getByRole('button', { name: 'パスコードを送信' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '新規登録' })).toBeInTheDocument();
 

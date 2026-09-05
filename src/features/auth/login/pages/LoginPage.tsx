@@ -49,7 +49,35 @@ export function LoginPage() {
             type={isEmailStep ? 'email' : 'text'}
             value={isEmailStep ? login.emailAddress : login.passcode}
           />
-          <Button className="hibilio-login__submit" disabled={login.isSubmitting} fullWidth size="large" type="submit" variant="contained">
+          {isEmailStep && (
+            <>
+              <TextField
+                autoComplete="current-password"
+                className="hibilio-login__field"
+                label={messages.auth.password}
+                placeholder={messages.auth.passwordPlaceholder}
+                type="password"
+              />
+              <Button className="hibilio-login__submit" fullWidth size="large" type="button" variant="contained">
+                {messages.auth.login}
+              </Button>
+              <div aria-hidden="true" className="hibilio-login__divider">
+                <span>{messages.auth.or}</span>
+              </div>
+              <div className="hibilio-login__providers">
+                <Button className="hibilio-login__provider hibilio-login__provider--google" fullWidth type="button" variant="outlined">
+                  {messages.auth.googleLogin}
+                </Button>
+                <Button className="hibilio-login__provider hibilio-login__provider--apple" fullWidth type="button" variant="contained">
+                  {messages.auth.appleLogin}
+                </Button>
+              </div>
+              <Button className="hibilio-login__forgot-password" type="button" variant="text">
+                {messages.auth.forgotPassword}
+              </Button>
+            </>
+          )}
+          <Button className="hibilio-login__passcode-submit" disabled={login.isSubmitting} fullWidth size="large" type="submit" variant="outlined">
             {isEmailStep ? messages.auth.requestPasscode : messages.auth.submitPasscode}
           </Button>
           {isEmailStep ? (
