@@ -38,8 +38,15 @@ export async function verifyLoginPasscode(passcode: string): Promise<void> {
   }));
 }
 
-export async function createAccount(accountName: string, emailAddress: string): Promise<void> {
+type CreateAccountInput = {
+  accountBio: string;
+  accountName: string;
+  emailAddress: string;
+};
+
+export async function createAccount({ accountBio, accountName, emailAddress }: CreateAccountInput): Promise<void> {
   await postNoContent('/api/accounts', JSON.stringify({
+    account_bio: accountBio === '' ? null : accountBio,
     account_name: accountName,
     email_address: emailAddress,
     favorite_tag_identifiers: [],
