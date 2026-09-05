@@ -1,5 +1,7 @@
-import { Button } from '@mui/material';
+import { Alert, Button } from '@mui/material';
+import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLoginPasscode } from '../hooks/useLoginPasscode';
 import messages from '../../../../shared/message/message.json';
 import './login.css';
 
@@ -24,6 +26,13 @@ function AppleIcon() {
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const login = useLoginPasscode(() => navigate('/'));
+  const isPasscodeStep = login.step === 'passcode';
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void (isPasscodeStep ? login.submitPasscode() : login.submitEmailAddress());
+  }
 
   return (
     <main className="hibilio-login">
@@ -33,45 +42,79 @@ export function LoginPage() {
           <p>{messages.app.tagline}</p>
         </header>
 
-        <div className="hibilio-login__credentials">
-          <label className="hibilio-login__field">
-            <span>{messages.auth.emailAddress}</span>
-            <input autoComplete="email" placeholder={messages.auth.emailAddressPlaceholder} type="email" />
-          </label>
-          <label className="hibilio-login__field">
-            <span>{messages.auth.password}</span>
-            <input autoComplete="current-password" placeholder={messages.auth.passwordPlaceholder} type="password" />
-          </label>
-        </div>
-
-        <Button className="hibilio-login__submit" fullWidth size="large" type="button" variant="contained">
-          {messages.auth.login}
-        </Button>
-
-        <div aria-hidden="true" className="hibilio-login__divider">
-          <span>{messages.auth.or}</span>
-        </div>
-
-        <div className="hibilio-login__providers">
-          <Button className="hibilio-login__provider hibilio-login__provider--google" fullWidth startIcon={<GoogleIcon />} type="button" variant="outlined">
-            {messages.auth.googleLogin}
-          </Button>
-          <Button className="hibilio-login__provider hibilio-login__provider--apple" fullWidth startIcon={<AppleIcon />} type="button" variant="contained">
-            {messages.auth.appleLogin}
-          </Button>
-        </div>
-
-        <footer className="hibilio-login__footer">
-          <Button className="hibilio-login__forgot-password" type="button" variant="text">
-            {messages.auth.forgotPassword}
-          </Button>
-          <div className="hibilio-login__sign-up">
-            <span>{messages.auth.signUpPrompt}</span>
-            <Button className="hibilio-login__sign-up-link" onClick={() => navigate('/sign-up')} variant="text">
-              {messages.auth.signUp}
+        {isPasscodeStep ? (
+          <form className="hibilio-login__passcode-form" noValidate onSubmit={handleSubmit}>
+            <p>{messages.auth.passcodeDescription}</p>
+            {login.errorMessage !== null && <Alert severity="error">{login.errorMessage}</Alert>}
+            <label className="hibilio-login__field">
+              <span>{messages.auth.passcode}</span>
+              <input
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                maxLength={6}
+                onChange={(event) => login.setPasscode(event.target.value)}
+                pattern="[0-9]*"
+                placeholder={messages.auth.passcodePlaceholder}
+                value={login.passcode}
+              />
+            </label>
+            <Button className="hibilio-login__submit" disabled={login.isSubmitting} fullWidth size="large" type="submit" variant="contained">
+              {messages.auth.submitPasscode}
             </Button>
-          </div>
-        </footer>
+            <Button className="hibilio-login__edit-email" onClick={login.returnToEmailAddress} type="button" variant="text">
+              {messages.auth.sendAgain}
+            </Button>
+          </form>
+        ) : (
+          <form noValidate onSubmit={handleSubmit}>
+            <div className="hibilio-login__credentials">
+              <label className="hibilio-login__field">
+                <span>{messages.auth.emailAddress}</span>
+                <input
+                  autoComplete="email"
+                  onChange={(event) => login.setEmailAddress(event.target.value)}
+                  placeholder={messages.auth.emailAddressPlaceholder}
+                  type="email"
+                  value={login.emailAddress}
+                />
+              </label>
+              <label className="hibilio-login__field">
+                <span>{messages.auth.password}</span>
+                <input autoComplete="current-password" placeholder={messages.auth.passwordPlaceholder} type="password" />
+              </label>
+            </div>
+
+            {login.errorMessage !== null && <Alert severity="error">{login.errorMessage}</Alert>}
+            <Button className="hibilio-login__submit" disabled={login.isSubmitting} fullWidth size="large" type="submit" variant="contained">
+              {messages.auth.login}
+            </Button>
+
+            <div aria-hidden="true" className="hibilio-login__divider">
+              <span>{messages.auth.or}</span>
+            </div>
+
+            <div className="hibilio-login__providers">
+              <Button className="hibilio-login__provider hibilio-login__provider--google" fullWidth startIcon={<GoogleIcon />} type="button" variant="outlined">
+                {messages.auth.googleLogin}
+              </Button>
+              <Button className="hibilio-login__provider hibilio-login__provider--apple" fullWidth startIcon={<AppleIcon />} type="button" variant="contained">
+                {messages.auth.appleLogin}
+              </Button>
+            </div>
+
+            <footer className="hibilio-login__footer">
+              <Button className="hibilio-login__forgot-password" type="button" variant="text">
+                {messages.auth.forgotPassword}
+              </Button>
+              <div className="hibilio-login__sign-up">
+                <span>{messages.auth.signUpPrompt}</span>
+                <Button className="hibilio-login__sign-up-link" onClick={() => navigate('/sign-up')} type="button" variant="text">
+                  {messages.auth.signUp}
+                </Button>
+              </div>
+            </footer>
+          </form>
+        )}
       </section>
     </main>
   );

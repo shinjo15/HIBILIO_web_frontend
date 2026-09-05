@@ -48,6 +48,26 @@
   margin-bottom: 20px;
 }
 
+.hibilio-login__passcode-form {
+  display: grid;
+  gap: 20px;
+}
+
+.hibilio-login__passcode-form > p {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+  text-align: center;
+}
+
+.hibilio-login__passcode-form .MuiAlert-root,
+.hibilio-login__credentials + .MuiAlert-root {
+  border: 1px solid var(--hibilio-color-border);
+  border-radius: 12px;
+  font-size: 13px;
+}
+
 .hibilio-login__field {
   display: grid;
   gap: 6px;
@@ -177,6 +197,15 @@
 .hibilio-login__sign-up-link.MuiButton-root {
   color: var(--hibilio-color-primary);
   font-weight: 500;
+}
+
+.hibilio-login__edit-email.MuiButton-root {
+  color: var(--hibilio-color-primary);
+  font-size: 12px;
+  justify-self: center;
+  min-width: 0;
+  padding: 0 4px;
+  text-transform: none;
 }
 
 @media (width <= 600px) {
