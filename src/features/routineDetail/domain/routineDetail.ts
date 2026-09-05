@@ -4,6 +4,7 @@ import { formatDuration } from '../../routineFeed/domain/routine';
 export const routineDetailStepDtoSchema = z.object({
   action: z.string().min(1),
   duration: z.string().optional(),
+  memo: z.string().min(1).optional(),
   time: z.string().min(1),
 });
 

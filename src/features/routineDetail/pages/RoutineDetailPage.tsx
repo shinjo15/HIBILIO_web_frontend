@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { RoutineDetailViewModel } from '../domain/routineDetail';
 import {
   routineDetailService,
@@ -55,10 +55,12 @@ export function RoutineDetailPage({ service = routineDetailService }: RoutineDet
 }
 
 function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) {
+  const navigate = useNavigate();
   const [liked, setLiked] = useState(routine.liked);
   const [likeCount, setLikeCount] = useState(routine.likes);
   const [activeTab, setActiveTab] = useState<DetailTab>('executionPosts');
   const [supportedPosts, setSupportedPosts] = useState<Record<string, boolean>>({});
+  const [openStepMemos, setOpenStepMemos] = useState<Record<number, boolean>>({});
   const [stepsOpen, setStepsOpen] = useState(true);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
 
@@ -130,8 +132,12 @@ function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) 
             </button>
             {stepsOpen && (
               <div className="routine-detail-steps" id="routine-steps">
-                {routine.steps.map((step, index) => (
-                  <div className="routine-detail-step" key={`${routine.id}-${step.time}`}>
+                {routine.steps.map((step, index) => {
+                  const stepMemoOpen = openStepMemos[index] ?? false;
+                  const stepMemoId = `routine-step-memo-${index}`;
+
+                  return (
+                  <div className="routine-detail-step" key={`${routine.id}-${index}`}>
                     <div className="routine-detail-step__marker-column">
                       <span className="routine-detail-step__number">{index + 1}</span>
                       {index < routine.steps.length - 1 && <span className="routine-detail-step__line" />}
@@ -139,9 +145,25 @@ function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) 
                     <div className="routine-detail-step__body">
                       <p>{step.action}</p>
                       {step.duration && <span>{step.duration}</span>}
+                      {step.memo && (
+                        <>
+                          <button
+                            aria-controls={stepMemoId}
+                            aria-expanded={stepMemoOpen}
+                            className="routine-detail-step__memo-toggle"
+                            onClick={() => setOpenStepMemos((current) => ({ ...current, [index]: !stepMemoOpen }))}
+                            type="button"
+                          >
+                            {messages.routineDetail.stepMemo}
+                            <ChevronIcon open={stepMemoOpen} />
+                          </button>
+                          {stepMemoOpen && <p className="routine-detail-step__memo" id={stepMemoId}>{step.memo}</p>}
+                        </>
+                      )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -158,7 +180,11 @@ function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) 
               <strong>{likeCount}</strong>
             </button>
             <div className="routine-detail-primary-actions">
-              <button className="routine-detail-action routine-detail-action--primary" type="button">
+              <button
+                className="routine-detail-action routine-detail-action--primary"
+                onClick={() => navigate(`/routines/${routine.id}/execute`)}
+                type="button"
+              >
                 <RunIcon />
                 {messages.routineDetail.execute}
               </button>

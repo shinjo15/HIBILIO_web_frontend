@@ -31,7 +31,7 @@ const detail = {
   liked: false,
   likes: 4,
   steps: [
-    { action: '開始', time: '07:00' },
+    { action: '開始', memo: '開始前に深呼吸します。', time: '07:00' },
     { action: '終了', duration: '10分', time: '07:20' },
   ],
   tags: ['習慣'],
@@ -67,6 +67,9 @@ describe('RoutineDetailPage', () => {
     expect(screen.queryByText('開始')).not.toBeInTheDocument();
     await user.click(stepsToggle);
     expect(screen.getByText('開始')).toBeInTheDocument();
+    expect(screen.queryByText('開始前に深呼吸します。')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'メモ' }));
+    expect(screen.getByText('開始前に深呼吸します。')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'いいね' }));
     expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toBeInTheDocument();
@@ -97,5 +100,22 @@ describe('RoutineDetailPage', () => {
 
     expect(await screen.findByText('ルーティンが見つかりませんでした。')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '一覧へ戻る' })).toHaveAttribute('href', '/');
+  });
+
+  it('実行する操作から実行画面の URL へ遷移する', async () => {
+    const user = userEvent.setup();
+    const service = createRoutineDetailService({ get: async () => detail });
+    render(
+      <MemoryRouter initialEntries={['/routines/routine-1']}>
+        <Routes>
+          <Route element={<RoutineDetailPage service={service} />} path="/routines/:routineId" />
+          <Route element={<p>実行画面</p>} path="/routines/:routineId/execute" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('heading', { name: 'テストルーティン' });
+    await user.click(screen.getByRole('button', { name: '実行する' }));
+    expect(screen.getByText('実行画面')).toBeInTheDocument();
   });
 });
