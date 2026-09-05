@@ -4,7 +4,7 @@ import { validateEmailAddress, validateLoginPasscode } from '../../services/auth
 import messages from '../../../../shared/message/message.json';
 import { requestRegistrationPasscode, verifyRegistrationPasscode } from '../services/registrationPasscodeDummyAdapter';
 
-type RegistrationStep = 'email' | 'passcode' | 'profile' | 'social';
+type RegistrationStep = 'email' | 'passcode' | 'profile' | 'social' | 'tags';
 type RegistrationSocialLink = CreateAccountInput['socialLinks'][number];
 
 export function useAccountRegistration(onRegistered: () => void) {
@@ -12,6 +12,7 @@ export function useAccountRegistration(onRegistered: () => void) {
   const [accountName, setAccountName] = useState('');
   const [emailAddress, setEmailAddress] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [favoriteTagIdentifiers, setFavoriteTagIdentifiers] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passcode, setPasscode] = useState('');
   const [socialLinks, setSocialLinks] = useState<RegistrationSocialLink[]>([]);
@@ -41,11 +42,16 @@ export function useAccountRegistration(onRegistered: () => void) {
     setStep('social');
   }
 
-  async function submitSocialLinks(): Promise<void> {
+  function continueToTags(): void {
+    setErrorMessage(null);
+    setStep('tags');
+  }
+
+  async function submitFavoriteTags(): Promise<void> {
     setErrorMessage(null);
     setIsSubmitting(true);
     try {
-      await createAccount({ accountBio, accountName, emailAddress, socialLinks });
+      await createAccount({ accountBio, accountName, emailAddress, favoriteTagIdentifiers, socialLinks });
       onRegistered();
     } catch (error) {
       setErrorMessage(error instanceof AuthenticationApiError ? error.message : messages.auth.accountRegistrationFailed);
@@ -56,12 +62,15 @@ export function useAccountRegistration(onRegistered: () => void) {
     setSocialLinks((current) => [...current.filter((item) => item.socialType !== socialLink.socialType), socialLink]);
   }
 
-  function removeSocialLink(socialType: RegistrationSocialLink['socialType']): void {
-    setSocialLinks((current) => current.filter((socialLink) => socialLink.socialType !== socialType));
+  function toggleFavoriteTag(identifier: string): void {
+    setFavoriteTagIdentifiers((current) => current.includes(identifier)
+      ? current.filter((currentIdentifier) => currentIdentifier !== identifier)
+      : [...current, identifier]);
   }
 
   function returnToEmailAddress(): void { setErrorMessage(null); setPasscode(''); setStep('email'); }
   function returnToProfile(): void { setErrorMessage(null); setStep('profile'); }
+  function returnToSocialLinks(): void { setErrorMessage(null); setStep('social'); }
 
-  return { accountBio, accountName, addSocialLink, continueToSocialLinks, emailAddress, errorMessage, isSubmitting, passcode, removeSocialLink, returnToEmailAddress, returnToProfile, setAccountBio, setAccountName, setEmailAddress, setPasscode, setUserHandle, socialLinks, step, submitEmailAddress, submitPasscode, submitSocialLinks, userHandle };
+  return { accountBio, accountName, addSocialLink, continueToSocialLinks, continueToTags, emailAddress, errorMessage, favoriteTagIdentifiers, isSubmitting, passcode, returnToEmailAddress, returnToProfile, returnToSocialLinks, setAccountBio, setAccountName, setEmailAddress, setPasscode, setUserHandle, socialLinks, step, submitEmailAddress, submitFavoriteTags, submitPasscode, toggleFavoriteTag, userHandle };
 }

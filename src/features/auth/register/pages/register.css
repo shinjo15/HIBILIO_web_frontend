@@ -322,6 +322,70 @@
   width: 100%;
 }
 
+.hibilio-register__social-icon--x,
+.hibilio-register__social-icon--tiktok,
+.hibilio-register__social-icon--threads,
+.hibilio-register__social-icon--bereal {
+  color: var(--hibilio-color-social-black);
+}
+
+.hibilio-register__social-icon--instagram {
+  color: var(--hibilio-color-social-instagram);
+}
+
+.hibilio-register__social-icon--youtube {
+  color: var(--hibilio-color-social-youtube);
+}
+
+.hibilio-register__social-icon--twitch {
+  color: var(--hibilio-color-social-twitch);
+}
+
+.hibilio-register__social-icon--discord {
+  color: var(--hibilio-color-social-discord);
+}
+
+.hibilio-register__skip.MuiButton-root {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+  justify-self: center;
+  text-transform: none;
+}
+
+.hibilio-register__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hibilio-register__tags .MuiButton-root {
+  background: var(--hibilio-color-card);
+  border-color: var(--hibilio-color-border);
+  border-radius: 999px;
+  color: var(--hibilio-color-on-background);
+  font-size: 14px;
+  padding: 8px 14px;
+  text-transform: none;
+}
+
+.hibilio-register__tags .MuiButton-root:hover,
+.hibilio-register__tags .MuiButton-root.is-selected {
+  border-color: var(--hibilio-color-primary);
+}
+
+.hibilio-register__tags .MuiButton-root.is-selected,
+.hibilio-register__tags .MuiButton-root.is-selected:hover {
+  background: var(--hibilio-color-primary);
+  color: var(--hibilio-color-on-primary);
+}
+
+.hibilio-register__tag-count {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+  margin: 0;
+  text-align: center;
+}
+
 @media (width <= 600px) {
   .hibilio-register__content {
     padding: 40px 24px;
