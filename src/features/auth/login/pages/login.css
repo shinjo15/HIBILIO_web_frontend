@@ -1,0 +1,134 @@
+.hibilio-login {
+  align-items: center;
+  background: var(--hibilio-color-background);
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 40px 24px;
+}
+
+.hibilio-login__content {
+  max-width: 384px;
+  width: 100%;
+}
+
+.hibilio-login__brand {
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.hibilio-login__brand h1 {
+  color: var(--hibilio-color-on-background);
+  font-family: Fraunces, serif;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  margin: 0 0 8px;
+}
+
+.hibilio-login__brand p,
+.hibilio-login__description,
+.hibilio-login__sign-up span {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.hibilio-login__form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.hibilio-login__description {
+  text-align: center;
+}
+
+.hibilio-login__error.MuiAlert-root {
+  align-items: center;
+  border: 1px solid var(--hibilio-color-border);
+  border-radius: 12px;
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+.hibilio-login__field.MuiTextField-root {
+  margin: 0;
+}
+
+.hibilio-login__field .MuiInputLabel-root {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+}
+
+.hibilio-login__field .MuiOutlinedInput-root {
+  background-color: var(--hibilio-color-card);
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.hibilio-login__field .MuiOutlinedInput-input {
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 13px 16px;
+}
+
+.hibilio-login__field .MuiOutlinedInput-notchedOutline {
+  border-color: var(--hibilio-color-border);
+}
+
+.hibilio-login__field .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--hibilio-color-primary);
+  border-width: 1px;
+}
+
+.hibilio-login__submit.MuiButton-root {
+  background-color: var(--hibilio-color-primary);
+  border-radius: 12px;
+  box-shadow: none;
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 52px;
+  text-transform: none;
+}
+
+.hibilio-login__submit.MuiButton-root:hover {
+  background-color: color-mix(in srgb, var(--hibilio-color-primary) 90%, var(--hibilio-color-on-background));
+  box-shadow: none;
+}
+
+.hibilio-login__sign-up {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.hibilio-login__sign-up-link.MuiButton-root,
+.hibilio-login__edit-email.MuiButton-root {
+  color: var(--hibilio-color-primary);
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 0;
+  padding: 0 4px;
+  text-transform: none;
+}
+
+.hibilio-login__edit-email.MuiButton-root {
+  align-self: center;
+  margin-top: 4px;
+}
+
+@media (width <= 600px) {
+  .hibilio-login {
+    padding: 40px 24px;
+  }
+
+  .hibilio-login__brand {
+    margin-bottom: 40px;
+  }
+}
