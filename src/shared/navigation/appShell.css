@@ -12,6 +12,19 @@
   z-index: 1100;
 }
 
+.hibilio-mobile-nav__create-trigger--disabled.MuiButtonBase-root {
+  cursor: not-allowed;
+}
+
+.hibilio-mobile-nav__create-icon.MuiBox-root {
+  border: 1px solid var(--hibilio-color-primary);
+}
+
+.hibilio-mobile-nav__create-trigger--disabled .hibilio-mobile-nav__create-icon.MuiBox-root {
+  background-color: var(--hibilio-color-muted) !important;
+  color: var(--hibilio-color-muted-text) !important;
+}
+
 @media (min-width: 1200px) {
   .hibilio-mobile-nav.MuiBox-root {
     display: none;
