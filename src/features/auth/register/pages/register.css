@@ -291,6 +291,37 @@
   padding-left: 32px;
 }
 
+.hibilio-register__social-platforms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hibilio-register__social-platforms .MuiButton-root {
+  background: var(--hibilio-color-card);
+  border-color: var(--hibilio-color-border);
+  border-radius: 999px;
+  color: var(--hibilio-color-on-background);
+  font-size: 12px;
+  text-transform: none;
+}
+
+.hibilio-register__social-add {
+  display: grid;
+  gap: 8px;
+}
+
+.hibilio-register__social-add input {
+  background: var(--hibilio-color-card);
+  border: 1px solid var(--hibilio-color-border);
+  border-radius: 12px;
+  box-sizing: border-box;
+  font: inherit;
+  min-height: 48px;
+  padding: 12px 16px;
+  width: 100%;
+}
+
 @media (width <= 600px) {
   .hibilio-register__content {
     padding: 40px 24px;

@@ -1,18 +1,21 @@
 import { Alert, Button } from '@mui/material';
 import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HibilioMark } from '../../../../shared/brand/HibilioMark';
 import messages from '../../../../shared/message/message.json';
 import { useAccountRegistration } from '../hooks/useAccountRegistration';
+import { registrationSocialPlatforms, type RegistrationSocialPlatform } from '../services/registrationSocialPlatforms';
 import './register.css';
 
 export function RegisterPage() {
   const navigate = useNavigate();
   const registration = useAccountRegistration(() => navigate('/login'));
+  const [linkValue, setLinkValue] = useState('');
   const passcodeInputReferences = useRef<Array<HTMLInputElement | null>>([]);
+  const [selectedSocialPlatform, setSelectedSocialPlatform] = useState<RegistrationSocialPlatform | null>(null);
   const passcodeDigits = Array.from({ length: 6 }, (_, index) => registration.passcode[index] ?? '');
-  const stepIndex = registration.step === 'email' ? 0 : registration.step === 'passcode' ? 1 : 2;
+  const stepIndex = registration.step === 'email' ? 0 : registration.step === 'passcode' ? 1 : registration.step === 'profile' ? 2 : 3;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,7 +30,12 @@ export function RegisterPage() {
       return;
     }
 
-    void registration.submitProfile();
+    if (registration.step === 'profile') {
+      registration.continueToSocialLinks();
+      return;
+    }
+
+    void registration.submitSocialLinks();
   }
 
   function updatePasscodeDigit(index: number, event: ChangeEvent<HTMLInputElement>) {
@@ -46,6 +54,16 @@ export function RegisterPage() {
     }
   }
 
+  function addSocialLink() {
+    if (selectedSocialPlatform === null || linkValue.trim() === '') {
+      return;
+    }
+
+    registration.addSocialLink({ socialType: selectedSocialPlatform.socialType, socialUrl: `${selectedSocialPlatform.urlPrefix}${linkValue.trim()}` });
+    setLinkValue('');
+    setSelectedSocialPlatform(null);
+  }
+
   return (
     <main className="hibilio-register">
       <header className="hibilio-register__header">
@@ -61,8 +79,8 @@ export function RegisterPage() {
       <section className="hibilio-register__content">
         <div className="hibilio-register__intro">
           <HibilioMark size={56} />
-          <h2>{registration.step === 'email' ? messages.auth.accountCreationTitle : registration.step === 'passcode' ? messages.auth.registrationPasscodeTitle : messages.auth.profileSetupTitle}</h2>
-          <p>{registration.step === 'email' ? messages.auth.accountCreationStep : registration.step === 'passcode' ? messages.auth.registrationPasscodeStep : messages.auth.profileSetupStep}</p>
+          <h2>{registration.step === 'email' ? messages.auth.accountCreationTitle : registration.step === 'passcode' ? messages.auth.registrationPasscodeTitle : registration.step === 'profile' ? messages.auth.profileSetupTitle : messages.auth.socialLinksTitle}</h2>
+          <p>{registration.step === 'email' ? messages.auth.accountCreationStep : registration.step === 'passcode' ? messages.auth.registrationPasscodeStep : registration.step === 'profile' ? messages.auth.profileSetupStep : messages.auth.socialLinksStep}</p>
         </div>
 
         <form className="hibilio-register__form" noValidate onSubmit={handleSubmit}>
@@ -134,8 +152,23 @@ export function RegisterPage() {
                 <textarea maxLength={300} onChange={(event) => registration.setAccountBio(event.target.value)} placeholder={messages.auth.profileBioPlaceholder} rows={3} value={registration.accountBio} />
               </label>
               <Button className="hibilio-register__submit" disabled={registration.isSubmitting || registration.accountName === '' || registration.userHandle === ''} fullWidth size="large" type="submit" variant="contained">
-                {messages.auth.profileStart}
+                {messages.auth.profileNext}
               </Button>
+            </>
+          )}
+          {registration.step === 'social' && (
+            <>
+              {selectedSocialPlatform === null ? (
+                <div className="hibilio-register__social-platforms">
+                  {registrationSocialPlatforms.map((platform) => <Button key={platform.socialType} onClick={() => setSelectedSocialPlatform(platform)} type="button" variant="outlined">{platform.label}</Button>)}
+                </div>
+              ) : (
+                <div className="hibilio-register__social-add">
+                  <input aria-label={messages.auth.socialLinkInput.replace('{platform}', selectedSocialPlatform.label)} onChange={(event) => setLinkValue(event.target.value)} placeholder={selectedSocialPlatform.placeholder} value={linkValue} />
+                  <Button onClick={addSocialLink} type="button" variant="contained">{messages.auth.add}</Button>
+                </div>
+              )}
+              <Button className="hibilio-register__submit" fullWidth size="large" type="submit" variant="contained">{messages.auth.profileStart}</Button>
             </>
           )}
         </form>
