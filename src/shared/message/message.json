@@ -103,8 +103,30 @@
     }
   },
   "account": {
-    "title": "アカウント",
-    "placeholder": "アカウント情報の表示は後続のIssueで実装します。"
+    "achievementRate": "達成率",
+    "achieved": "達成",
+    "complete": "完璧",
+    "countLoading": "-",
+    "duration": "所要時間",
+    "edit": "編集",
+    "error": "アカウント情報を読み込めませんでした。時間をおいて再試行してください。",
+    "executionHistoryEmpty": "実行履歴はまだありません",
+    "likedRoutine": "いいねしたルーティン",
+    "likesEmpty": "いいねしたルーティンはまだありません",
+    "likesError": "いいねしたルーティンを読み込めませんでした。時間をおいて再試行してください。",
+    "likesLoading": "いいねしたルーティンを読み込んでいます…",
+    "loading": "アカウント情報を読み込んでいます…",
+    "minuteUnit": "分",
+    "postsEmpty": "投稿したルーティンはまだありません",
+    "settings": "設定",
+    "support": "応援",
+    "tabs": {
+      "ariaLabel": "アカウント情報の表示切り替え",
+      "executionHistory": "実行履歴",
+      "likes": "いいね",
+      "posts": "投稿"
+    },
+    "title": "アカウント"
   },
   "routineCreate": {
     "title": "ルーティンを投稿",
