@@ -312,6 +312,37 @@
   margin-top: 2px;
 }
 
+.routine-detail-step__memo-toggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--hibilio-color-muted-text);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 12px;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 0;
+}
+
+.routine-detail-step__memo-toggle:hover,
+.routine-detail-step__memo-toggle:focus-visible {
+  color: var(--hibilio-color-primary);
+}
+
+.routine-detail-step__memo-toggle .routine-detail-chevron {
+  height: 14px;
+  width: 14px;
+}
+
+.routine-detail-step__memo {
+  color: var(--hibilio-color-muted-text);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 8px 0 0;
+}
+
 .routine-detail-actions {
   padding: 0 20px 20px;
 }

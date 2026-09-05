@@ -39,15 +39,19 @@ describe('RoutineExecutionPage', () => {
     renderPage({ complete, get: vi.fn().mockResolvedValue(routine) });
 
     expect(await screen.findByRole('button', { name: '実行を開始する' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '実行をキャンセルする' }).querySelector('svg')).toHaveAttribute('stroke', 'currentColor');
 
     await user.click(screen.getByRole('button', { name: /水を飲む/ }));
-    expect(screen.getByRole('button', { name: '終了する' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '実行結果を投稿する' })).toBeInTheDocument();
     expect(screen.getByText('1/2 完了')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /水を飲む/ })).toHaveClass('routine-execution-step--checked');
+    expect(screen.getByRole('button', { name: /水を飲む/ }).querySelector('polyline')).toHaveAttribute('stroke', 'currentColor');
 
     await user.type(screen.getByLabelText('ひとこと（任意）'), '今日も完了');
-    await user.click(screen.getByRole('button', { name: '終了する' }));
+    await user.click(screen.getByRole('button', { name: '実行結果を投稿する' }));
 
     expect(await screen.findByText('お疲れ様でした！')).toBeInTheDocument();
+    expect(screen.getByText('実行結果を投稿しました。')).toBeInTheDocument();
     expect(complete).toHaveBeenCalledWith(expect.objectContaining({
       achieved: 1,
       comment: '今日も完了',
@@ -64,7 +68,7 @@ describe('RoutineExecutionPage', () => {
     renderPage({ complete, get: vi.fn().mockResolvedValue(routine) });
 
     await user.click(await screen.findByRole('button', { name: /水を飲む/ }));
-    await user.click(screen.getByRole('button', { name: 'ルーティン詳細へ戻る' }));
+    await user.click(screen.getByRole('button', { name: '実行をキャンセルする' }));
     expect(screen.getByRole('link', { name: '詳細' })).toBeInTheDocument();
     expect(screen.queryByText('戻ると未送信の進捗は破棄されます。')).not.toBeInTheDocument();
 

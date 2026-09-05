@@ -74,9 +74,9 @@ const detailRoutines: RoutineDetailDto[] = [
     liked: false,
     likes: 148,
     steps: [
-      { action: '起床・水を飲む', time: '06:00' },
+      { action: '起床・水を飲む', memo: '常温の水をコップ一杯飲みます。', time: '06:00' },
       { action: 'ストレッチ', duration: '10分', time: '06:10' },
-      { action: '読書', duration: '30分', time: '06:20' },
+      { action: '読書', duration: '30分', memo: 'スマホは見ずに、前日に決めた本を読みます。', time: '06:20' },
       { action: 'シャワー', duration: '15分', time: '06:50' },
       { action: '朝食', time: '07:05' },
     ],

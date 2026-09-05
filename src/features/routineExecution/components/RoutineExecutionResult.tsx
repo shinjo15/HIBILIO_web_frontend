@@ -35,5 +35,5 @@ export function RoutineExecutionResult({ onHome, result, title }: RoutineExecuti
 }
 
 function CheckIcon() {
-  return <svg aria-hidden="true" fill="none" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>;
+  return <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>;
 }
