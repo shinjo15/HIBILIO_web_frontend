@@ -1,8 +1,10 @@
 import { Alert, Button } from '@mui/material';
-import type { FormEvent } from 'react';
+import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
+import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLoginPasscode } from '../hooks/useLoginPasscode';
+import { HibilioMark } from '../../../../shared/brand/HibilioMark';
 import messages from '../../../../shared/message/message.json';
+import { useLoginPasscode } from '../hooks/useLoginPasscode';
 import './login.css';
 
 function GoogleIcon() {
@@ -27,42 +29,80 @@ function AppleIcon() {
 export function LoginPage() {
   const navigate = useNavigate();
   const login = useLoginPasscode(() => navigate('/'));
+  const passcodeInputReferences = useRef<Array<HTMLInputElement | null>>([]);
   const isPasscodeStep = login.step === 'passcode';
+  const passcodeDigits = Array.from({ length: 6 }, (_, index) => login.passcode[index] ?? '');
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void (isPasscodeStep ? login.submitPasscode() : login.submitEmailAddress());
   }
 
+  function updatePasscodeDigit(index: number, event: ChangeEvent<HTMLInputElement>) {
+    const digits = event.target.value.replace(/\D/g, '');
+    const nextPasscode = `${login.passcode.slice(0, index)}${digits}${login.passcode.slice(index + digits.length)}`.slice(0, 6);
+    login.setPasscode(nextPasscode);
+
+    const nextIndex = Math.min(index + Math.max(digits.length, 1), 5);
+    if (digits !== '') {
+      passcodeInputReferences.current[nextIndex]?.focus();
+    }
+  }
+
+  function movePasscodeFocusOnBackspace(index: number, event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Backspace' && passcodeDigits[index] === '' && index > 0) {
+      passcodeInputReferences.current[index - 1]?.focus();
+    }
+  }
+
   return (
     <main className="hibilio-login">
       <section aria-labelledby="hibilio-login-brand" className="hibilio-login__content">
         <header className="hibilio-login__brand">
-          <h1 id="hibilio-login-brand">{messages.app.name}</h1>
-          <p>{messages.app.tagline}</p>
+          <HibilioMark size={56} />
+          <div>
+            <h1 id="hibilio-login-brand">{messages.app.name}</h1>
+            <p>{messages.app.tagline}</p>
+          </div>
         </header>
 
         {isPasscodeStep ? (
           <form className="hibilio-login__passcode-form" noValidate onSubmit={handleSubmit}>
-            <p>{messages.auth.passcodeDescription}</p>
+            <div className="hibilio-login__passcode-introduction">
+              <h2>{messages.auth.passcodeTitle}</h2>
+              <p>
+                <strong>{login.emailAddress}</strong>
+                <br />
+                {messages.auth.passcodeSentDescription}
+              </p>
+            </div>
             {login.errorMessage !== null && <Alert severity="error">{login.errorMessage}</Alert>}
-            <label className="hibilio-login__field">
-              <span>{messages.auth.passcode}</span>
-              <input
-                autoComplete="one-time-code"
-                inputMode="numeric"
-                maxLength={6}
-                onChange={(event) => login.setPasscode(event.target.value)}
-                pattern="[0-9]*"
-                placeholder={messages.auth.passcodePlaceholder}
-                value={login.passcode}
-              />
-            </label>
-            <Button className="hibilio-login__submit" disabled={login.isSubmitting} fullWidth size="large" type="submit" variant="contained">
-              {messages.auth.submitPasscode}
+            <div aria-label={messages.auth.passcode} className="hibilio-login__passcode-inputs">
+              {passcodeDigits.map((digit, index) => (
+                <input
+                  aria-label={messages.auth.passcodeDigit.replace('{index}', String(index + 1))}
+                  autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                  inputMode="numeric"
+                  key={index}
+                  maxLength={6}
+                  onChange={(event) => updatePasscodeDigit(index, event)}
+                  onKeyDown={(event) => movePasscodeFocusOnBackspace(index, event)}
+                  ref={(element) => { passcodeInputReferences.current[index] = element; }}
+                  value={digit}
+                />
+              ))}
+            </div>
+            <Button className="hibilio-login__submit" disabled={login.isSubmitting || login.passcode.length !== 6} fullWidth size="large" type="submit" variant="contained">
+              {messages.auth.login}
             </Button>
+            <div className="hibilio-login__passcode-help">
+              <p>{messages.auth.passcodeNotReceived}</p>
+              <Button disabled={login.isSubmitting} onClick={() => void login.submitEmailAddress()} type="button" variant="text">
+                {messages.auth.resendPasscode}
+              </Button>
+            </div>
             <Button className="hibilio-login__edit-email" onClick={login.returnToEmailAddress} type="button" variant="text">
-              {messages.auth.sendAgain}
+              {messages.auth.changeEmailAddress}
             </Button>
           </form>
         ) : (
@@ -81,7 +121,7 @@ export function LoginPage() {
             </div>
 
             {login.errorMessage !== null && <Alert severity="error">{login.errorMessage}</Alert>}
-            <Button className="hibilio-login__submit" disabled={login.isSubmitting} fullWidth size="large" type="submit" variant="contained">
+            <Button className="hibilio-login__submit" disabled={login.isSubmitting || login.emailAddress === ''} fullWidth size="large" type="submit" variant="contained">
               {messages.auth.requestPasscode}
             </Button>
 
@@ -99,9 +139,6 @@ export function LoginPage() {
             </div>
 
             <footer className="hibilio-login__footer">
-              <Button className="hibilio-login__forgot-password" type="button" variant="text">
-                {messages.auth.forgotPassword}
-              </Button>
               <div className="hibilio-login__sign-up">
                 <span>{messages.auth.signUpPrompt}</span>
                 <Button className="hibilio-login__sign-up-link" onClick={() => navigate('/sign-up')} type="button" variant="text">

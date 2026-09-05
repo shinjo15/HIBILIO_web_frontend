@@ -14,7 +14,14 @@
 }
 
 .hibilio-login__brand {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   margin-bottom: 40px;
+}
+
+.hibilio-login__brand > div {
   text-align: center;
 }
 
@@ -25,13 +32,14 @@
   font-weight: 600;
   letter-spacing: 0.025em;
   line-height: 1.2;
-  margin: 0 0 8px;
+  margin: 0;
 }
 
 .hibilio-login__brand p,
 .hibilio-login__field > span,
 .hibilio-login__divider,
-.hibilio-login__footer span {
+.hibilio-login__footer span,
+.hibilio-login__passcode-help p {
   color: var(--hibilio-color-muted-text);
   font-size: 12px;
   line-height: 1.5;
@@ -40,25 +48,42 @@
 
 .hibilio-login__brand p {
   font-size: 14px;
+  margin-top: 4px;
 }
 
 .hibilio-login__credentials {
   display: grid;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .hibilio-login__passcode-form {
   display: grid;
-  gap: 20px;
+  gap: 24px;
 }
 
-.hibilio-login__passcode-form > p {
+.hibilio-login__passcode-introduction {
+  text-align: center;
+}
+
+.hibilio-login__passcode-introduction h2 {
+  color: var(--hibilio-color-on-background);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 0 0 4px;
+}
+
+.hibilio-login__passcode-introduction p {
   color: var(--hibilio-color-muted-text);
   font-size: 12px;
   line-height: 1.5;
   margin: 0;
-  text-align: center;
+}
+
+.hibilio-login__passcode-introduction strong {
+  color: var(--hibilio-color-on-background);
+  font-weight: 500;
 }
 
 .hibilio-login__passcode-form .MuiAlert-root,
@@ -73,16 +98,20 @@
   gap: 6px;
 }
 
-.hibilio-login__field input {
+.hibilio-login__field input,
+.hibilio-login__passcode-inputs input {
   background-color: var(--hibilio-color-card);
   border: 1px solid var(--hibilio-color-border);
   border-radius: 12px;
   box-sizing: border-box;
   color: var(--hibilio-color-on-background);
   font: inherit;
+  outline: 0;
+}
+
+.hibilio-login__field input {
   font-size: 14px;
   min-height: 48px;
-  outline: 0;
   padding: 12px 16px;
   width: 100%;
 }
@@ -91,7 +120,8 @@
   color: var(--hibilio-color-muted-text);
 }
 
-.hibilio-login__field input:focus {
+.hibilio-login__field input:focus,
+.hibilio-login__passcode-inputs input:focus {
   border-color: var(--hibilio-color-primary);
   box-shadow: 0 0 0 1px var(--hibilio-color-primary);
 }
@@ -105,6 +135,10 @@
   margin-bottom: 16px;
   min-height: 52px;
   text-transform: none;
+}
+
+.hibilio-login__passcode-form .hibilio-login__submit.MuiButton-root {
+  margin-bottom: 0;
 }
 
 .hibilio-login__submit.MuiButton-root:hover {
@@ -167,24 +201,13 @@
   box-shadow: none;
 }
 
-.hibilio-login__footer {
+.hibilio-login__footer,
+.hibilio-login__passcode-help {
   align-items: center;
   display: grid;
-  gap: 8px;
+  gap: 4px;
   justify-items: center;
   text-align: center;
-}
-
-.hibilio-login__forgot-password.MuiButton-root,
-.hibilio-login__sign-up-link.MuiButton-root {
-  font-size: 12px;
-  min-width: 0;
-  padding: 0 4px;
-  text-transform: none;
-}
-
-.hibilio-login__forgot-password.MuiButton-root {
-  color: var(--hibilio-color-muted-text);
 }
 
 .hibilio-login__sign-up {
@@ -194,18 +217,41 @@
   justify-content: center;
 }
 
-.hibilio-login__sign-up-link.MuiButton-root {
-  color: var(--hibilio-color-primary);
-  font-weight: 500;
-}
-
+.hibilio-login__sign-up-link.MuiButton-root,
+.hibilio-login__passcode-help .MuiButton-root,
 .hibilio-login__edit-email.MuiButton-root {
   color: var(--hibilio-color-primary);
   font-size: 12px;
-  justify-self: center;
+  font-weight: 500;
   min-width: 0;
   padding: 0 4px;
   text-transform: none;
+}
+
+.hibilio-login__passcode-inputs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.hibilio-login__passcode-inputs input {
+  font-size: 18px;
+  font-weight: 600;
+  height: 52px;
+  padding: 0;
+  text-align: center;
+  width: 44px;
+}
+
+.hibilio-login__edit-email.MuiButton-root {
+  color: var(--hibilio-color-muted-text);
+  font-weight: 400;
+  justify-self: stretch;
+}
+
+.hibilio-login__edit-email.MuiButton-root::before {
+  content: '←';
+  margin-right: 4px;
 }
 
 @media (width <= 600px) {
