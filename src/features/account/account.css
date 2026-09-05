@@ -1,0 +1,288 @@
+.account-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.account-page__header {
+  align-items: center;
+  background-color: var(--hibilio-color-card);
+  border-bottom: 1px solid var(--hibilio-color-border);
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 16px;
+}
+
+.account-page__header-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.account-page__settings,
+.account-page__edit,
+.account-page__card {
+  color: inherit;
+  font: inherit;
+}
+
+.account-page__settings {
+  background: none;
+  border: 0;
+  color: var(--hibilio-color-muted-text);
+  cursor: pointer;
+  display: grid;
+  padding: 2px;
+  place-items: center;
+}
+
+.account-page__settings:hover,
+.account-page__settings:focus-visible {
+  color: var(--hibilio-color-on-background);
+}
+
+.account-page__content {
+  border-left: 1px solid var(--hibilio-color-border);
+  border-right: 1px solid var(--hibilio-color-border);
+  box-sizing: border-box;
+  margin: 0 auto;
+  max-width: 672px;
+  width: 100%;
+}
+
+.account-profile {
+  background-color: var(--hibilio-color-card);
+  border-bottom: 1px solid var(--hibilio-color-border);
+}
+
+.account-profile__banner {
+  background: linear-gradient(
+    135deg,
+    var(--hibilio-color-primary),
+    color-mix(in srgb, var(--hibilio-color-primary) 65%, var(--hibilio-color-on-background)) 55%,
+    var(--hibilio-color-on-background)
+  );
+  height: 112px;
+  position: relative;
+}
+
+.account-profile__avatar {
+  align-items: center;
+  background-color: var(--hibilio-color-primary);
+  border: 4px solid var(--hibilio-color-card);
+  border-radius: 50%;
+  bottom: -36px;
+  color: var(--hibilio-color-on-primary);
+  display: flex;
+  font-size: 24px;
+  font-weight: 600;
+  height: 72px;
+  justify-content: center;
+  left: 20px;
+  position: absolute;
+  width: 72px;
+}
+
+.account-profile__body {
+  padding: 8px 20px 16px;
+}
+
+.account-profile__actions {
+  display: flex;
+  justify-content: flex-end;
+  min-height: 36px;
+}
+
+.account-page__edit {
+  background: transparent;
+  border: 1px solid var(--hibilio-color-border);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.account-profile__details {
+  margin-top: 16px;
+}
+
+.account-profile__name {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.account-profile__handle,
+.account-profile__bio {
+  color: var(--hibilio-color-muted-text);
+  font-size: 14px;
+  margin: 4px 0 0;
+}
+
+.account-profile__bio {
+  line-height: 1.5;
+  margin-top: 8px;
+}
+
+.account-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 16px;
+}
+
+.account-tabs__tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--hibilio-color-muted-text);
+  cursor: pointer;
+  font: inherit;
+  padding: 10px 4px;
+}
+
+.account-tabs__tab--selected {
+  border-bottom-color: var(--hibilio-color-primary);
+  color: var(--hibilio-color-primary);
+}
+
+.account-tabs__count,
+.account-tabs__label {
+  display: block;
+}
+
+.account-tabs__count {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.account-tabs__label {
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.account-page__list,
+.account-page__state {
+  padding: 16px;
+}
+
+.account-page__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.account-page__card {
+  background-color: var(--hibilio-color-card);
+  border: 1px solid var(--hibilio-color-border);
+  border-radius: 12px;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+}
+
+.account-page__card:hover,
+.account-page__card:focus-visible {
+  border-color: var(--hibilio-color-primary);
+}
+
+.account-page__card-body {
+  padding: 16px;
+}
+
+.account-page__card-header,
+.account-page__card-metrics {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.account-page__card-title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.account-page__card-date,
+.account-page__card-metrics {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+}
+
+.account-page__card-date {
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.account-page__card-metrics {
+  align-items: center;
+  border-top: 1px solid var(--hibilio-color-border);
+  gap: 16px;
+  justify-content: flex-start;
+  padding: 10px 16px;
+}
+
+.account-page__metric {
+  align-items: center;
+  display: inline-flex;
+  gap: 5px;
+}
+
+.account-page__metric--accent {
+  color: var(--hibilio-color-primary);
+}
+
+.account-page__progress {
+  background-color: var(--hibilio-color-muted);
+  border-radius: 999px;
+  display: block;
+  height: 6px;
+  margin-top: 12px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.account-page__progress::-webkit-progress-bar {
+  background-color: var(--hibilio-color-muted);
+}
+
+.account-page__progress::-webkit-progress-value {
+  background-color: var(--hibilio-color-primary);
+  border-radius: inherit;
+}
+
+.account-page__progress::-moz-progress-bar {
+  background-color: var(--hibilio-color-primary);
+  border-radius: inherit;
+}
+
+.account-page__completion {
+  margin-left: auto;
+}
+
+.account-page__completion--complete {
+  color: var(--hibilio-color-primary);
+}
+
+.account-page__state {
+  color: var(--hibilio-color-muted-text);
+  margin: 0;
+  text-align: center;
+}
+
+.account-page__state--loading {
+  padding-block: 80px;
+}
+
+.account-page__state--error {
+  color: var(--hibilio-color-primary);
+}
+
+@media (min-width: 1200px) {
+  .account-page__header {
+    display: none;
+  }
+}

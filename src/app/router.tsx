@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { LoginPage } from '../features/auth/login/pages/LoginPage';
 import { RegisterPage } from '../features/auth/register/pages/RegisterPage';
 import { AccountPage } from '../features/account/pages/AccountPage';
+import { AccountExecutionHistoryPage } from '../features/account/pages/AccountExecutionHistoryPage';
 import { RoutineFeedPage } from '../features/routineFeed/pages/RoutineFeedPage';
 import { RoutineCreatePage } from '../features/routineCreate/pages/RoutineCreatePage';
 import { RoutineDetailPage } from '../features/routineDetail/pages/RoutineDetailPage';
@@ -16,6 +17,10 @@ export const router = createBrowserRouter([
   {
     element: <RegisterPage />,
     path: 'sign-up',
+  },
+  {
+    element: <AccountExecutionHistoryPage />,
+    path: 'routines/:routineId/executions/:executionId',
   },
   {
     element: <RoutineExecutionPage />,
