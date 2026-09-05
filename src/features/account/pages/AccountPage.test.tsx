@@ -77,4 +77,14 @@ describe('AccountPage', () => {
 
     await waitFor(() => expect(screen.getByText('アカウント情報を読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument());
   });
+
+  it('設定ボタンからアカウント設定画面へ遷移する', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('山田 由紀');
+
+    await user.click(screen.getByRole('button', { name: '設定' }));
+
+    expect(screen.getByText('/account/settings')).toBeInTheDocument();
+  });
 });

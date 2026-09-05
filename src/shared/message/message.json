@@ -130,6 +130,20 @@
     },
     "title": "アカウント"
   },
+  "settings": {
+    "backToAccount": "アカウントに戻る",
+    "darkMode": "ダークモード",
+    "likeNotification": "いいね通知",
+    "privateAccount": "鍵アカウント",
+    "sections": {
+      "display": "表示",
+      "notifications": "通知",
+      "privacy": "プライバシー"
+    },
+    "signOut": "ログアウト",
+    "supportNotification": "応援通知",
+    "title": "設定"
+  },
   "routineCreate": {
     "title": "ルーティンを投稿",
     "backToFeed": "一覧へ戻る",
