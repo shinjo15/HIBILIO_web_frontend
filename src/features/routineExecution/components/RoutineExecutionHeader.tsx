@@ -3,20 +3,21 @@ import type { RoutineExecutionPhase } from '../hooks/useRoutineExecution';
 
 type RoutineExecutionHeaderProps = {
   achieved: number;
+  label?: string;
   onBack: () => void;
   phase: RoutineExecutionPhase;
   title: string;
   total: number;
 };
 
-export function RoutineExecutionHeader({ achieved, onBack, phase, title, total }: RoutineExecutionHeaderProps) {
+export function RoutineExecutionHeader({ achieved, label = messages.routineExecution.runningLabel, onBack, phase, title, total }: RoutineExecutionHeaderProps) {
   return (
     <header className="routine-execution-header">
       <button aria-label={messages.routineExecution.cancel} className="routine-execution-header__back" onClick={onBack} type="button">
         <CloseIcon />
       </button>
       <div className="routine-execution-header__title">
-        <p>{messages.routineExecution.runningLabel}</p>
+        <p>{label}</p>
         <h1>{title}</h1>
       </div>
       {phase === 'running' && (

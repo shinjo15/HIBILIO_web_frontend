@@ -33,6 +33,7 @@ type AccountLikesAdapter = {
 };
 
 export type AccountService = {
+  getExecutionHistory: (executionId: string) => Promise<AccountExecutionHistory | null>;
   getProfile: () => Promise<AccountProfile>;
   listExecutionHistories: () => Promise<AccountExecutionHistory[]>;
   listLikes: () => Promise<LikedRoutine[]>;
@@ -47,9 +48,9 @@ const accountDummyAdapter: AccountDummyAdapter = {
     name: '山田 由紀',
   }),
   listExecutionHistories: async () => [
-    { achievedActions: 5, completed: false, executedAtLabel: '今日', id: 'execution-1', minutes: 75, routineId: 'routine-2', routineTitle: '夜のリラックスルーティン', totalActions: 6 },
-    { achievedActions: 4, completed: false, executedAtLabel: '昨日', id: 'execution-2', minutes: 58, routineId: 'routine-1', routineTitle: '朝の集中ルーティン｜平日版', totalActions: 5 },
-    { achievedActions: 6, completed: true, executedAtLabel: '2日前', id: 'execution-3', minutes: 80, routineId: 'routine-2', routineTitle: '夜のリラックスルーティン', totalActions: 6 },
+    { achievedActions: 5, completedActionIndexes: [0, 1, 2, 3, 4], completed: false, executedAtLabel: '今日', id: 'execution-1', minutes: 75, routineId: 'routine-2', routineTitle: '夜のリラックスルーティン', totalActions: 6 },
+    { achievedActions: 4, completedActionIndexes: [0, 1, 3, 4], completed: false, executedAtLabel: '昨日', id: 'execution-2', minutes: 58, routineId: 'routine-1', routineTitle: '朝の集中ルーティン｜平日版', totalActions: 5 },
+    { achievedActions: 6, completedActionIndexes: [0, 1, 2, 3, 4, 5], completed: true, executedAtLabel: '2日前', id: 'execution-3', minutes: 80, routineId: 'routine-2', routineTitle: '夜のリラックスルーティン', totalActions: 6 },
   ],
   listPosts: async () => [
     { createdAtLabel: '3日前', executions: 45, id: 'post-1', likes: 23, routineId: 'routine-3', title: '週3筋トレルーティン' },
@@ -77,6 +78,10 @@ export function createAccountService(
   likesAdapter: AccountLikesAdapter = accountLikesApiAdapter,
 ): AccountService {
   return {
+    getExecutionHistory: async (executionId) => {
+      const histories = z.array(accountExecutionHistorySchema).parse(await dummyAdapter.listExecutionHistories());
+      return histories.find((history) => history.id === executionId) ?? null;
+    },
     getProfile: async () => accountProfileSchema.parse(await dummyAdapter.getProfile()),
     listExecutionHistories: async () => z.array(accountExecutionHistorySchema).parse(await dummyAdapter.listExecutionHistories()),
     listLikes: async () => getMyLikesResponseSchema.parse(await likesAdapter.listLikes()).likes.map((like) => likedRoutineSchema.parse({

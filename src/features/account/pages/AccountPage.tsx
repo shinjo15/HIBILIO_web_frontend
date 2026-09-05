@@ -130,7 +130,7 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
 
         {activeTab === 'posts' && <PostsList posts={posts} onSelectRoutine={(routineId) => navigate(`/routines/${routineId}`)} />}
         {activeTab === 'likes' && <LikesList likes={likes} status={likesStatus} onSelectRoutine={(routineId) => navigate(`/routines/${routineId}`)} />}
-        {activeTab === 'executionHistory' && <ExecutionHistoryList histories={executionHistories} onSelectRoutine={(routineId) => navigate(`/routines/${routineId}`)} />}
+        {activeTab === 'executionHistory' && <ExecutionHistoryList histories={executionHistories} onSelectHistory={(history) => navigate(`/routines/${history.routineId}/executions/${history.id}`)} />}
       </div>
     </section>
   );
@@ -187,7 +187,7 @@ function LikesList({ likes, status, onSelectRoutine }: { likes: LikedRoutine[]; 
   ))}</div>;
 }
 
-function ExecutionHistoryList({ histories, onSelectRoutine }: { histories: AccountExecutionHistory[]; onSelectRoutine: (routineId: string) => void }) {
+function ExecutionHistoryList({ histories, onSelectHistory }: { histories: AccountExecutionHistory[]; onSelectHistory: (history: AccountExecutionHistory) => void }) {
   if (histories.length === 0) {
     return <p className="account-page__state">{messages.account.executionHistoryEmpty}</p>;
   }
@@ -195,7 +195,7 @@ function ExecutionHistoryList({ histories, onSelectRoutine }: { histories: Accou
   return <div className="account-page__list" role="tabpanel">{histories.map((history) => {
     const achievementRate = Math.round((history.achievedActions / history.totalActions) * 100);
     return (
-      <button className="account-page__card" key={history.id} onClick={() => onSelectRoutine(history.routineId)} type="button">
+      <button className="account-page__card" key={history.id} onClick={() => onSelectHistory(history)} type="button">
         <div className="account-page__card-body">
           <div className="account-page__card-header">
             <h2 className="account-page__card-title">{history.routineTitle}</h2>

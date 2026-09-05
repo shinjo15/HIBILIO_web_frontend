@@ -136,6 +136,11 @@
   color: var(--hibilio-color-on-primary);
 }
 
+.routine-execution-step:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
 .routine-execution-step__check {
   align-items: center;
   border: 1px solid var(--hibilio-color-border);

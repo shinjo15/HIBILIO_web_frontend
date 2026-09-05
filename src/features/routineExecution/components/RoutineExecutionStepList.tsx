@@ -4,18 +4,20 @@ import type { RoutineExecutionStepViewModel } from '../domain/routineExecution';
 type RoutineExecutionStepListProps = {
   checked: boolean[];
   onToggle: (index: number) => void;
+  readOnly?: boolean;
   steps: RoutineExecutionStepViewModel[];
 };
 
-export function RoutineExecutionStepList({ checked, onToggle, steps }: RoutineExecutionStepListProps) {
+export function RoutineExecutionStepList({ checked, onToggle, readOnly = false, steps }: RoutineExecutionStepListProps) {
   return (
     <div className="routine-execution-steps">
       {steps.map((step, index) => (
         <button
           aria-pressed={checked[index] ?? false}
           className={checked[index] ? 'routine-execution-step routine-execution-step--checked' : 'routine-execution-step'}
+          disabled={readOnly}
           key={`${index}-${step.action}`}
-          onClick={() => onToggle(index)}
+          onClick={() => { if (!readOnly) { onToggle(index); } }}
           type="button"
         >
           <span className="routine-execution-step__check"><CheckIcon /></span>

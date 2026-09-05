@@ -18,6 +18,7 @@ export const accountPostSchema = z.object({
 
 export const accountExecutionHistorySchema = z.object({
   achievedActions: z.number().int().nonnegative(),
+  completedActionIndexes: z.array(z.number().int().nonnegative()),
   completed: z.boolean(),
   executedAtLabel: z.string().min(1),
   id: z.string().min(1),
