@@ -19,13 +19,12 @@ describe('LoginPage', () => {
 
     expect(screen.getByRole('heading', { name: 'HIBILIO' })).toBeInTheDocument();
     expect(screen.getByLabelText('メールアドレス')).toHaveAttribute('type', 'email');
-    expect(screen.getByLabelText('パスワード')).toHaveAttribute('type', 'password');
     expect(screen.getByRole('button', { name: 'Googleでログイン' })).toHaveAttribute('type', 'button');
     expect(screen.getByRole('button', { name: 'Appleでログイン' })).toHaveAttribute('type', 'button');
     expect(screen.getByRole('button', { name: 'パスワードを忘れた方' })).toHaveAttribute('type', 'button');
 
     await user.type(screen.getByLabelText('メールアドレス'), 'member@example.com');
-    await user.click(screen.getByRole('button', { name: 'ログイン' }));
+    await user.click(screen.getByRole('button', { name: 'パスコードを送信' }));
 
     expect(fetchMock).toHaveBeenCalledWith('/api/login-passcodes', expect.objectContaining({
       body: JSON.stringify({ email_address: 'member@example.com' }),

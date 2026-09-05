@@ -22,8 +22,6 @@
     "loginDescription": "登録済みのメールアドレスへログインパスコードを送信します。",
     "loginTitle": "ログイン",
     "or": "または",
-    "password": "パスワード",
-    "passwordPlaceholder": "••••••••",
     "passcode": "ログインパスコード",
     "passcodeDescription": "メールで受け取った6桁のパスコードを入力してください。",
     "passcodePlaceholder": "123456",

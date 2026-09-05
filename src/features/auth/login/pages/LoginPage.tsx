@@ -78,15 +78,11 @@ export function LoginPage() {
                   value={login.emailAddress}
                 />
               </label>
-              <label className="hibilio-login__field">
-                <span>{messages.auth.password}</span>
-                <input autoComplete="current-password" placeholder={messages.auth.passwordPlaceholder} type="password" />
-              </label>
             </div>
 
             {login.errorMessage !== null && <Alert severity="error">{login.errorMessage}</Alert>}
             <Button className="hibilio-login__submit" disabled={login.isSubmitting} fullWidth size="large" type="submit" variant="contained">
-              {messages.auth.login}
+              {messages.auth.requestPasscode}
             </Button>
 
             <div aria-hidden="true" className="hibilio-login__divider">
