@@ -91,7 +91,7 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
     <section className="account-page">
       <header className="account-page__header">
         <h1 className="account-page__header-title">{messages.account.title}</h1>
-        <button aria-label={messages.account.settings} className="account-page__settings" type="button">
+        <button aria-label={messages.account.settings} className="account-page__settings" onClick={() => navigate('/account/settings')} type="button">
           <SettingsOutlinedIcon fontSize="small" />
         </button>
       </header>

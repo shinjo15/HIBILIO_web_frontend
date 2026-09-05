@@ -40,7 +40,7 @@ const navigationItems: NavigationItem[] = [
 ];
 
 function selectedPath(pathname: string): string {
-  if (pathname === '/account') {
+  if (pathname === '/account' || pathname === '/account/settings') {
     return '/account';
   }
 
