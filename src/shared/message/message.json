@@ -76,6 +76,31 @@
     "title": "ルーティン詳細",
     "unlike": "いいねを取り消す"
   },
+  "routineExecution": {
+    "achieved": "達成",
+    "backToDetail": "ルーティン詳細へ戻る",
+    "backToHome": "ホームに戻る",
+    "commentLabel": "ひとこと（任意）",
+    "commentPlaceholder": "今日の実行を一言で",
+    "completedUnit": "完了",
+    "completing": "結果を確認しています…",
+    "duration": "所要時間",
+    "error": "実行画面を表示できませんでした。時間をおいて再試行してください。",
+    "finish": "終了する",
+    "loading": "実行画面を読み込んでいます…",
+    "minuteUnit": "分",
+    "notFound": "実行するルーティンが見つかりませんでした。",
+    "readyDescription": "チェックを入れながら進めてください。",
+    "resultDescription": "実行結果を確認しました。今回の結果は保存されません。",
+    "resultTitle": "お疲れ様でした！",
+    "runningLabel": "実行中",
+    "start": "実行を開始する",
+    "stepCompleted": "完了",
+    "stepIncomplete": "未完了",
+    "validation": {
+      "commentTooLong": "コメントは300文字以内で入力してください。"
+    }
+  },
   "account": {
     "title": "アカウント",
     "placeholder": "アカウント情報の表示は後続のIssueで実装します。"

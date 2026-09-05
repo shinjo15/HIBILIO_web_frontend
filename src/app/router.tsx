@@ -5,6 +5,7 @@ import { AccountPage } from '../features/account/pages/AccountPage';
 import { RoutineFeedPage } from '../features/routineFeed/pages/RoutineFeedPage';
 import { RoutineCreatePage } from '../features/routineCreate/pages/RoutineCreatePage';
 import { RoutineDetailPage } from '../features/routineDetail/pages/RoutineDetailPage';
+import { RoutineExecutionPage } from '../features/routineExecution/pages/RoutineExecutionPage';
 import { AppShell } from '../shared/navigation/AppShell';
 
 export const router = createBrowserRouter([
@@ -15,6 +16,10 @@ export const router = createBrowserRouter([
   {
     element: <RegisterPage />,
     path: 'sign-up',
+  },
+  {
+    element: <RoutineExecutionPage />,
+    path: 'routines/:routineId/execute',
   },
   {
     element: <AppShell />,

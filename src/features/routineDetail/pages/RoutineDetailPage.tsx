@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { RoutineDetailViewModel } from '../domain/routineDetail';
 import {
   routineDetailService,
@@ -55,6 +55,7 @@ export function RoutineDetailPage({ service = routineDetailService }: RoutineDet
 }
 
 function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) {
+  const navigate = useNavigate();
   const [liked, setLiked] = useState(routine.liked);
   const [likeCount, setLikeCount] = useState(routine.likes);
   const [activeTab, setActiveTab] = useState<DetailTab>('executionPosts');
@@ -158,7 +159,11 @@ function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) 
               <strong>{likeCount}</strong>
             </button>
             <div className="routine-detail-primary-actions">
-              <button className="routine-detail-action routine-detail-action--primary" type="button">
+              <button
+                className="routine-detail-action routine-detail-action--primary"
+                onClick={() => navigate(`/routines/${routine.id}/execute`)}
+                type="button"
+              >
                 <RunIcon />
                 {messages.routineDetail.execute}
               </button>

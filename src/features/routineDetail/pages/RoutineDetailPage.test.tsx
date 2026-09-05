@@ -98,4 +98,21 @@ describe('RoutineDetailPage', () => {
     expect(await screen.findByText('ルーティンが見つかりませんでした。')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '一覧へ戻る' })).toHaveAttribute('href', '/');
   });
+
+  it('実行する操作から実行画面の URL へ遷移する', async () => {
+    const user = userEvent.setup();
+    const service = createRoutineDetailService({ get: async () => detail });
+    render(
+      <MemoryRouter initialEntries={['/routines/routine-1']}>
+        <Routes>
+          <Route element={<RoutineDetailPage service={service} />} path="/routines/:routineId" />
+          <Route element={<p>実行画面</p>} path="/routines/:routineId/execute" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('heading', { name: 'テストルーティン' });
+    await user.click(screen.getByRole('button', { name: '実行する' }));
+    expect(screen.getByText('実行画面')).toBeInTheDocument();
+  });
 });
