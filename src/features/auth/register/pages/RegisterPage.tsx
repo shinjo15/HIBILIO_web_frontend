@@ -160,7 +160,7 @@ export function RegisterPage() {
             <>
               {selectedSocialPlatform === null ? (
                 <div className="hibilio-register__social-platforms">
-                  {registrationSocialPlatforms.map((platform) => <Button key={platform.socialType} onClick={() => setSelectedSocialPlatform(platform)} type="button" variant="outlined">{platform.label}</Button>)}
+                  {registrationSocialPlatforms.map((platform) => <Button key={platform.socialType} onClick={() => setSelectedSocialPlatform(platform)} startIcon={<platform.Icon />} type="button" variant="outlined">{platform.label}</Button>)}
                 </div>
               ) : (
                 <div className="hibilio-register__social-add">
