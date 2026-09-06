@@ -169,6 +169,28 @@
     },
     "title": "アカウント"
   },
+  "profileEdit": {
+    "apiUnavailable": "更新APIは未提供のため、この画面では変更内容を画面内で確認できます。",
+    "add": "追加",
+    "back": "アカウントに戻る",
+    "bio": "自己紹介",
+    "changeEmail": "メールアドレスを変更",
+    "changeHeader": "ヘッダーを変更",
+    "changeIcon": "アイコンを変更",
+    "cancel": "キャンセル",
+    "emailChangeUnavailable": "メールアドレス変更は、変更用パスコードAPIの提供後に利用できます。",
+    "handle": "ユーザーID",
+    "loadError": "プロフィールを読み込めませんでした。",
+    "name": "表示名",
+    "other": "その他",
+    "remove": "削除",
+    "required": "表示名とユーザーIDを入力してください。",
+    "save": "保存",
+    "saveError": "プロフィールを保存できませんでした。",
+    "saved": "変更内容を保存しました。",
+    "socialLinks": "ソーシャルリンク",
+    "title": "プロフィール編集"
+  },
   "settings": {
     "backToAccount": "アカウントに戻る",
     "darkMode": "ダークモード",
