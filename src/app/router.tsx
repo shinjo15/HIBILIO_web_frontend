@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { LoginPage } from '../features/auth/login/pages/LoginPage';
 import { RegisterPage } from '../features/auth/register/pages/RegisterPage';
 import { AccountPage } from '../features/account/pages/AccountPage';
+import { ProfileEditPage } from '../features/account/pages/ProfileEditPage';
 import { AccountExecutionHistoryPage } from '../features/account/pages/AccountExecutionHistoryPage';
 import { SettingsPage } from '../features/settings/pages/SettingsPage';
 import { RoutineFeedPage } from '../features/routineFeed/pages/RoutineFeedPage';
@@ -37,6 +38,10 @@ export const router = createBrowserRouter([
       {
         element: <AccountPage />,
         path: 'account',
+      },
+      {
+        element: <ProfileEditPage />,
+        path: 'account/edit',
       },
       {
         element: <SettingsPage />,

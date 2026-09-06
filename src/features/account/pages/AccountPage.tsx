@@ -103,7 +103,7 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
           </div>
           <div className="account-profile__body">
             <div className="account-profile__actions">
-              <button className="account-page__edit" type="button">{messages.account.edit}</button>
+              <button className="account-page__edit" onClick={() => navigate('/account/edit')} type="button">{messages.account.edit}</button>
             </div>
             <div className="account-profile__details">
               <p className="account-profile__name">{profile.name}</p>
