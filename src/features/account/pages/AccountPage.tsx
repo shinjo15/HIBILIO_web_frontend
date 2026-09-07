@@ -9,6 +9,7 @@ import type {
   LikedRoutine,
 } from '../domain/account';
 import { accountService, type AccountService } from '../services/accountService';
+import { registrationSocialPlatforms } from '../../auth/register/services/registrationSocialPlatforms';
 import messages from '../../../shared/message/message.json';
 import '../account.css';
 
@@ -109,6 +110,15 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
               <p className="account-profile__name">{profile.name}</p>
               <p className="account-profile__handle">@{profile.handle}</p>
               <p className="account-profile__bio">{profile.bio}</p>
+              {profile.socialLinks.length > 0 && <div className="account-profile__social-links">
+                {profile.socialLinks.map((link) => {
+                  const platform = registrationSocialPlatforms.find((item) => item.socialType === link.socialType);
+                  return platform === undefined ? null : <a className="account-profile__social-link" href={link.socialUrl} key={link.socialType} rel="noreferrer" target="_blank"><platform.Icon className={`account-profile__social-icon account-profile__social-icon--${link.socialType}`} /><span>{link.socialUrl.replace(platform.urlPrefix, '')}</span></a>;
+                })}
+              </div>}
+              {profile.favoriteTags.length > 0 && <div className="account-profile__favorite-tags">
+                {profile.favoriteTags.map((tag) => <span className="account-profile__favorite-tag" key={tag}>{tag}</span>)}
+              </div>}
             </div>
           </div>
           <div aria-label={messages.account.tabs.ariaLabel} className="account-tabs" role="tablist">

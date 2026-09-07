@@ -43,9 +43,11 @@ export type AccountService = {
 const accountDummyAdapter: AccountDummyAdapter = {
   getProfile: async () => ({
     bio: '夜のルーティンで睡眠の質を改善中。毎日続けることが目標。',
+    favoriteTags: ['睡眠', '瞑想', '読書', 'ストレッチ'],
     handle: 'yuki_sleep',
     initial: 'Y',
     name: '山田 由紀',
+    socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/yuki_sleep' }],
   }),
   listExecutionHistories: async () => [
     { achievedActions: 5, completedActionIndexes: [0, 1, 2, 3, 4], completed: false, executedAtLabel: '今日', id: 'execution-1', minutes: 75, routineId: 'routine-2', routineTitle: '夜のリラックスルーティン', totalActions: 6 },

@@ -125,6 +125,46 @@
   margin-top: 8px;
 }
 
+.account-profile__social-links,
+.account-profile__favorite-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.account-profile__social-link,
+.account-profile__favorite-tag {
+  align-items: center;
+  background: var(--hibilio-color-card);
+  border: 1px solid var(--hibilio-color-border);
+  border-radius: 999px;
+  color: var(--hibilio-color-muted-text);
+  display: inline-flex;
+  font-size: 12px;
+  gap: 6px;
+  padding: 5px 10px;
+  text-decoration: none;
+}
+
+.account-profile__social-link:hover,
+.account-profile__social-link:focus-visible {
+  border-color: var(--hibilio-color-primary);
+  color: var(--hibilio-color-on-background);
+}
+
+.account-profile__social-icon {
+  font-size: 14px;
+}
+
+.account-profile__social-icon--x {
+  color: var(--hibilio-color-social-black);
+}
+
+.account-profile__favorite-tag {
+  background: var(--hibilio-color-muted);
+}
+
 .account-tabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

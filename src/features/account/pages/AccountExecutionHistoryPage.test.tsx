@@ -17,7 +17,7 @@ const accountService: AccountService = {
     routineTitle: 'テストルーティン',
     totalActions: 2,
   }),
-  getProfile: async () => ({ bio: '', handle: 'test', initial: 'T', name: 'テスト' }),
+  getProfile: async () => ({ bio: '', favoriteTags: [], handle: 'test', initial: 'T', name: 'テスト', socialLinks: [] }),
   listExecutionHistories: async () => [],
   listLikes: async () => [],
   listPosts: async () => [],

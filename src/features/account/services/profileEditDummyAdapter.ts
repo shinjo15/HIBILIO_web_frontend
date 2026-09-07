@@ -1,5 +1,6 @@
 export type EditableProfile = {
   bio: string;
+  favoriteTags: string[];
   handle: string;
   headerImageName: string | null;
   iconImageName: string | null;
@@ -9,6 +10,7 @@ export type EditableProfile = {
 
 const initialProfile: EditableProfile = {
   bio: '夜のルーティンで睡眠の質を改善中。毎日続けることが目標。',
+  favoriteTags: ['睡眠', '瞑想', '読書', 'ストレッチ'],
   handle: 'yuki_sleep',
   headerImageName: null,
   iconImageName: null,
