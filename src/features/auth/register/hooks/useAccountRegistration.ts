@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AuthenticationApiError, createAccount, requestRegistrationPasscode, verifyRegistrationPasscode, type CreateAccountInput } from '../../services/authApi';
 import { validateEmailAddress, validateLoginPasscode } from '../../services/authValidation';
 import messages from '../../../../shared/message/message.json';
+import { getPickupTags, type PickupTag } from '../services/pickupTagService';
 
 type RegistrationStep = 'email' | 'passcode' | 'profile' | 'social' | 'tags';
 type RegistrationSocialLink = CreateAccountInput['socialLinks'][number];
@@ -14,9 +15,15 @@ export function useAccountRegistration(onRegistered: () => void) {
   const [favoriteTagIdentifiers, setFavoriteTagIdentifiers] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passcode, setPasscode] = useState('');
+  const [pickupTags, setPickupTags] = useState<PickupTag[]>([]);
   const [socialLinks, setSocialLinks] = useState<RegistrationSocialLink[]>([]);
   const [step, setStep] = useState<RegistrationStep>('email');
+  const [tagLoadError, setTagLoadError] = useState(false);
   const [userHandle, setUserHandle] = useState('');
+
+  useEffect(() => {
+    void getPickupTags().then(setPickupTags).catch(() => setTagLoadError(true));
+  }, []);
 
   async function submitEmailAddress(): Promise<void> {
     const validation = validateEmailAddress(emailAddress);
@@ -71,5 +78,5 @@ export function useAccountRegistration(onRegistered: () => void) {
   function returnToProfile(): void { setErrorMessage(null); setStep('profile'); }
   function returnToSocialLinks(): void { setErrorMessage(null); setStep('social'); }
 
-  return { accountBio, accountName, addSocialLink, continueToSocialLinks, continueToTags, emailAddress, errorMessage, favoriteTagIdentifiers, isSubmitting, passcode, returnToEmailAddress, returnToProfile, returnToSocialLinks, setAccountBio, setAccountName, setEmailAddress, setPasscode, setUserHandle, socialLinks, step, submitEmailAddress, submitFavoriteTags, submitPasscode, toggleFavoriteTag, userHandle };
+  return { accountBio, accountName, addSocialLink, continueToSocialLinks, continueToTags, emailAddress, errorMessage, favoriteTagIdentifiers, isSubmitting, passcode, pickupTags, returnToEmailAddress, returnToProfile, returnToSocialLinks, setAccountBio, setAccountName, setEmailAddress, setPasscode, setUserHandle, socialLinks, step, submitEmailAddress, submitFavoriteTags, submitPasscode, tagLoadError, toggleFavoriteTag, userHandle };
 }

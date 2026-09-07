@@ -5,9 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RegisterPage } from './RegisterPage';
 
 function csrfAwareFetch(status = 204) {
-  return vi.fn((path: string) => Promise.resolve(path === '/api/csrf-token'
-    ? new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 })
-    : new Response(null, { status })));
+  return vi.fn((path: string) => {
+    if (path === '/api/csrf-token') return Promise.resolve(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }));
+    if (path === '/api/tags/pickup') return Promise.resolve(new Response(JSON.stringify({
+      tags: [{ tag_identifier: '20000000-0000-4000-8000-000000000001', tag_name: '朝活' }],
+    }), { status: 200 }));
+    return Promise.resolve(new Response(null, { status }));
+  });
 }
 
 beforeEach(() => vi.stubGlobal('fetch', csrfAwareFetch()));
@@ -56,15 +60,15 @@ describe('RegisterPage', () => {
     await user.click(await screen.findByRole('button', { name: '次へ' }));
     await user.click(await screen.findByRole('button', { name: 'HIBILIOをはじめる' }));
 
-    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/registration-passcodes', expect.objectContaining({
+    expect(fetchMock).toHaveBeenCalledWith('/api/registration-passcodes', expect.objectContaining({
       body: JSON.stringify({ email_address: 'new-member@example.com' }),
       method: 'POST',
     }));
-    expect(fetchMock).toHaveBeenNthCalledWith(4, '/api/registration-passcodes/verification', expect.objectContaining({
+    expect(fetchMock).toHaveBeenCalledWith('/api/registration-passcodes/verification', expect.objectContaining({
       body: JSON.stringify({ passcode: '123456' }),
       method: 'POST',
     }));
-    expect(fetchMock).toHaveBeenNthCalledWith(6, '/api/accounts', expect.objectContaining({
+    expect(fetchMock).toHaveBeenCalledWith('/api/accounts', expect.objectContaining({
       body: JSON.stringify({
         account_bio: '朝のルーティンを続けています。',
         account_name: '山田 由紀',
@@ -155,7 +159,7 @@ describe('RegisterPage', () => {
     await user.click(screen.getByRole('button', { name: 'HIBILIOをはじめる' }));
 
     expect(fetchMock).toHaveBeenCalledWith('/api/accounts', expect.objectContaining({
-      body: expect.stringContaining('"favorite_tag_identifiers":["f9401de1-9f2e-4d28-bc08-6d987a926501"]'),
+      body: expect.stringContaining('"favorite_tag_identifiers":["20000000-0000-4000-8000-000000000001"]'),
       method: 'POST',
     }));
   });

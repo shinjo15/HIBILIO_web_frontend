@@ -6,7 +6,6 @@ import { HibilioMark } from '../../../../shared/brand/HibilioMark';
 import messages from '../../../../shared/message/message.json';
 import { useAccountRegistration } from '../hooks/useAccountRegistration';
 import { registrationSocialPlatforms, type RegistrationSocialPlatform } from '../services/registrationSocialPlatforms';
-import { registrationTags } from '../services/registrationTagDummyAdapter';
 import './register.css';
 
 export function RegisterPage() {
@@ -164,8 +163,9 @@ export function RegisterPage() {
 
           {registration.step === 'tags' && <>
             <div className="hibilio-register__tags">
-              {registrationTags.map((tag) => <Button className={registration.favoriteTagIdentifiers.includes(tag.identifier) ? 'is-selected' : ''} key={tag.identifier} onClick={() => registration.toggleFavoriteTag(tag.identifier)} type="button" variant="outlined">{registration.favoriteTagIdentifiers.includes(tag.identifier) && '✓ '}{tag.label}</Button>)}
+              {registration.pickupTags.map((tag) => <Button className={registration.favoriteTagIdentifiers.includes(tag.identifier) ? 'is-selected' : ''} key={tag.identifier} onClick={() => registration.toggleFavoriteTag(tag.identifier)} type="button" variant="outlined">{registration.favoriteTagIdentifiers.includes(tag.identifier) && '✓ '}{tag.label}</Button>)}
             </div>
+            {registration.tagLoadError && <Alert severity="error">{messages.auth.pickupTagsLoadFailed}</Alert>}
             {registration.favoriteTagIdentifiers.length > 0 && <p className="hibilio-register__tag-count">{messages.auth.favoriteTagsSelected.replace('{count}', String(registration.favoriteTagIdentifiers.length))}</p>}
             <Button className="hibilio-register__submit" disabled={registration.isSubmitting} fullWidth size="large" type="submit" variant="contained">{messages.auth.profileStart}</Button>
             <Button className="hibilio-register__skip" disabled={registration.isSubmitting} onClick={() => void registration.submitFavoriteTags()} type="button" variant="text">{messages.auth.skip}</Button>

@@ -59,6 +59,7 @@
     "socialLinkInput": "{platform}のリンク",
     "favoriteTagsTitle": "好きなジャンルを選ぶ",
     "favoriteTagsStep": "STEP 5／5　任意・あとから変更できます",
+    "pickupTagsLoadFailed": "タグを読み込めませんでした。時間をおいて再度お試しください。",
     "favoriteTagsSelected": "{count}件選択中",
     "add": "追加",
     "cancel": "キャンセル",
