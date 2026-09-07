@@ -93,6 +93,29 @@ describe('RoutineDetailPage', () => {
     expect(screen.getByText('まだカスタマイズはありません')).toBeInTheDocument();
   });
 
+  it('カスタマイズ一覧を表示し、各ルーティンの詳細へ遷移できる', async () => {
+    const user = userEvent.setup();
+    const service = createRoutineDetailService({
+      get: async () => ({
+        ...detail,
+        customizationsList: [{
+          authorName: 'カスタマイズした人',
+          description: '短縮したバージョンです。',
+          id: 'customized-routine',
+          routineId: 'routine-1',
+          title: '短縮版',
+        }],
+      }),
+    });
+
+    renderPage(service);
+
+    await screen.findByRole('heading', { name: 'テストルーティン' });
+    await user.click(screen.getByRole('tab', { name: 'カスタマイズ' }));
+    expect(screen.getByText('カスタマイズ版 — カスタマイズした人')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '短縮版' })).toHaveAttribute('href', '/routines/customized-routine');
+  });
+
   it('一覧へ戻るリンクと、存在しないルーティンの空状態を表示する', async () => {
     const service: RoutineDetailService = createRoutineDetailService({ get: async () => null });
 

@@ -23,8 +23,8 @@ export const executionPostDtoSchema = z.object({
 });
 
 export const customizationDtoSchema = z.object({
-  authorHandle: z.string().min(1),
-  description: z.string().min(1),
+  authorName: z.string().min(1),
+  description: z.string(),
   id: z.string().min(1),
   routineId: z.string().min(1),
   title: z.string().min(1),
@@ -76,7 +76,7 @@ export type RoutineDetailViewModel = {
   tags: string[];
   title: string;
   customizationsList: Array<{
-    authorHandle: string;
+    authorName: string;
     description: string;
     id: string;
     title: string;
@@ -92,8 +92,8 @@ export function toRoutineDetailViewModel(input: unknown): RoutineDetailViewModel
       initial: dto.author.handle.slice(0, 1).toUpperCase(),
     },
     customizations: dto.customizations,
-    customizationsList: dto.customizationsList.map(({ authorHandle, description, id, title }) => ({
-      authorHandle,
+    customizationsList: dto.customizationsList.map(({ authorName, description, id, title }) => ({
+      authorName,
       description,
       id,
       title,

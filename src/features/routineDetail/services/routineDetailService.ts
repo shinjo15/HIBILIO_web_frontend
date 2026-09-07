@@ -21,7 +21,7 @@ const detailRoutines: RoutineDetailDto[] = [
     customizations: 24,
     customizationsList: [
       {
-        authorHandle: 'yuki_sleep',
+        authorName: '山田 由紀',
         description: '起床を7:00に変更・筋トレを省略したバージョン',
         id: 'customization-1',
         routineId: 'routine-1',
@@ -89,7 +89,7 @@ const detailRoutines: RoutineDetailDto[] = [
     customizations: 41,
     customizationsList: [
       {
-        authorHandle: 'tanaka_morning',
+        authorName: '田中 陽介',
         description: '入浴を短くして、読書の時間を増やした平日向けのアレンジです。',
         id: 'customization-2',
         routineId: 'routine-2',
@@ -248,21 +248,48 @@ const routineDetailsResponseSchema = z.object({
   routine_name: z.string().min(1),
 });
 
+const customizedRoutinesResponseSchema = z.object({
+  items: z.array(z.object({
+    account_identifier: z.string().uuid(),
+    account_name: z.string().min(1),
+    customization_count: z.number().int().nonnegative(),
+    execution_count: z.number().int().nonnegative(),
+    like_count: z.number().int().nonnegative(),
+    routine_execution_minutes: z.number().int().positive().nullable(),
+    routine_identifier: z.string().uuid(),
+    routine_memo: z.string().nullable(),
+    routine_name: z.string().min(1),
+  })),
+  total: z.number().int().nonnegative(),
+});
+
 export const apiRoutineDetailAdapter: RoutineDetailAdapter = {
   get: async (routineId) => {
-    const response = await fetch(`/api/routines/${routineId}`);
-    if (response.status === 404) {
+    const [detailResponse, customizationsResponse] = await Promise.all([
+      fetch(`/api/routines/${routineId}`),
+      fetch(`/api/routines/${routineId}/customized?page=1&number_of_items_per_page=20`),
+    ]);
+    if (detailResponse.status === 404) {
       return null;
     }
-    if (!response.ok) {
+    if (!detailResponse.ok || !customizationsResponse.ok) {
       throw new Error('Routine details could not be loaded.');
     }
 
-    const detail = routineDetailsResponseSchema.parse(await response.json());
+    const [detail, customizations] = await Promise.all([
+      detailResponse.json().then((body) => routineDetailsResponseSchema.parse(body)),
+      customizationsResponse.json().then((body) => customizedRoutinesResponseSchema.parse(body)),
+    ]);
     return {
       author: { handle: '', name: detail.account_name },
       customizations: detail.customization_count,
-      customizationsList: [],
+      customizationsList: customizations.items.map((customization) => ({
+        authorName: customization.account_name,
+        description: customization.routine_memo ?? '',
+        id: customization.routine_identifier,
+        routineId,
+        title: customization.routine_name,
+      })),
       description: detail.routine_memo ?? '',
       durationMinutes: detail.routine_execution_minutes,
       executions: detail.execution_count,

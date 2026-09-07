@@ -257,9 +257,9 @@ function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) 
                 {routine.customizationsList.length === 0 && <DetailEmptyState message={messages.routineDetail.customizationsEmpty} />}
                 {routine.customizationsList.map((customization) => (
                   <article className="routine-detail-customization" key={customization.id}>
-                    <p className="routine-detail-customization__author">{messages.routineDetail.customizationVersion} — @{customization.authorHandle}</p>
-                    <h2>{customization.title}</h2>
-                    <p>{customization.description}</p>
+                    <p className="routine-detail-customization__author">{messages.routineDetail.customizationVersion} — {customization.authorName}</p>
+                    <h2><Link to={`/routines/${customization.id}`}>{customization.title}</Link></h2>
+                    {customization.description !== '' && <p>{customization.description}</p>}
                   </article>
                 ))}
               </div>

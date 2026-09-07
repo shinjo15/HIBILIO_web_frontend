@@ -504,6 +504,17 @@
   margin: 0 0 8px;
 }
 
+.routine-detail-customization h2 a {
+  color: var(--hibilio-color-on-background);
+  text-decoration: none;
+}
+
+.routine-detail-customization h2 a:hover,
+.routine-detail-customization h2 a:focus-visible {
+  color: var(--hibilio-color-primary);
+  text-decoration: underline;
+}
+
 .routine-detail-customization__author { margin-bottom: 4px; }
 
 .routine-detail-empty,
