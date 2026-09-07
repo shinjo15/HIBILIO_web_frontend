@@ -9,7 +9,7 @@ const service: AccountService = {
   getExecutionHistory: async (executionId) => executionId === 'execution-1'
     ? { achievedActions: 2, completedActionIndexes: [0, 1], completed: true, executedAtLabel: '今日', id: 'execution-1', minutes: 30, routineId: 'routine-1', routineTitle: '朝の集中ルーティン', totalActions: 2 }
     : null,
-  getProfile: async () => ({ bio: '毎日続けることが目標。', handle: 'yuki_sleep', initial: 'Y', name: '山田 由紀' }),
+  getProfile: async () => ({ bio: '毎日続けることが目標。', favoriteTags: ['睡眠'], handle: 'yuki_sleep', initial: 'Y', name: '山田 由紀', socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/yuki_sleep' }] }),
   listExecutionHistories: async () => [{ achievedActions: 2, completedActionIndexes: [0, 1], completed: true, executedAtLabel: '今日', id: 'execution-1', minutes: 30, routineId: 'routine-1', routineTitle: '朝の集中ルーティン', totalActions: 2 }],
   listLikes: async () => [{ likedAt: '2026-09-03T12:00:00.000Z', postCategory: 'routine', postId: 'post-1', routineId: 'routine-2', supports: 4, totalLikes: 2 }],
   listPosts: async () => [{ createdAtLabel: '今日', executions: 3, id: 'post-1', likes: 2, routineId: 'routine-1', title: '朝の集中ルーティン' }],
