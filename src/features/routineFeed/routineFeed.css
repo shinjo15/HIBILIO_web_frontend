@@ -342,8 +342,6 @@
 .routine-card__like {
   background: none;
   border: 0;
-  cursor: pointer;
-  font: inherit;
   margin: 0;
   padding: 0;
 }

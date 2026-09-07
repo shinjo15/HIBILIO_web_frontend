@@ -72,6 +72,7 @@
     "search": "ルーティンを検索",
     "tabs": {
       "ariaLabel": "ルーティンの並び替え",
+      "following": "フォロー中",
       "recommended": "おすすめ",
       "popular": "人気",
       "recent": "新着"

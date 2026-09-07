@@ -2,47 +2,28 @@ import { z } from 'zod';
 
 export const routineStepSchema = z.object({
   action: z.string().min(1),
-  duration: z.string().optional(),
-  time: z.string().min(1),
+  durationMinutes: z.number().int().positive().nullable(),
 });
 
 export const routineSchema = z.object({
-  author: z.object({
-    handle: z.string().min(1),
-    name: z.string().min(1),
-  }),
-  createdAt: z.string().datetime(),
+  authorName: z.string().min(1),
+  createdAt: z.string().datetime({ offset: true }),
   customizations: z.number().int().nonnegative(),
-  description: z.string(),
-  durationMinutes: z.number().int().positive(),
+  durationMinutes: z.number().int().positive().nullable(),
   executions: z.number().int().nonnegative(),
   id: z.string().min(1),
   liked: z.boolean(),
   likes: z.number().int().nonnegative(),
-  steps: z.array(routineStepSchema).min(1),
-  tags: z.array(z.string().min(1)).max(5),
+  routineId: z.string().min(1),
+  steps: z.array(routineStepSchema),
+  supports: z.number().int().nonnegative().optional(),
+  tags: z.array(z.string().min(1)),
   title: z.string().min(1),
 });
 
-export const routineListSchema = z.array(routineSchema);
-
 export type Routine = z.infer<typeof routineSchema>;
 export type RoutineStep = z.infer<typeof routineStepSchema>;
-export type RoutineFeedTab = 'recommended' | 'popular' | 'recent';
-
-export function sortRoutines(routines: Routine[], tab: RoutineFeedTab): Routine[] {
-  const sorted = [...routines];
-
-  if (tab === 'popular') {
-    return sorted.sort((a, b) => b.likes - a.likes);
-  }
-
-  if (tab === 'recent') {
-    return sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }
-
-  return sorted;
-}
+export type RoutineFeedTab = 'following' | 'recommended' | 'popular';
 
 export function formatDuration(minutes: number): string {
   if (minutes < 60) {

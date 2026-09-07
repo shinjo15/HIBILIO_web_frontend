@@ -6,10 +6,9 @@ import { formatDuration, formatPostedAt, type Routine } from '../domain/routine'
 
 type RoutineCardProps = {
   routine: Routine;
-  onLike: (id: string) => void;
 };
 
-export function RoutineCard({ routine, onLike }: RoutineCardProps) {
+export function RoutineCard({ routine }: RoutineCardProps) {
   const avatarClasses: Record<string, string> = {
     H: 'routine-card__avatar--h',
     N: 'routine-card__avatar--n',
@@ -17,7 +16,7 @@ export function RoutineCard({ routine, onLike }: RoutineCardProps) {
     T: 'routine-card__avatar--t',
     Y: 'routine-card__avatar--y',
   };
-  const avatarInitial = routine.author.handle.slice(0, 1).toUpperCase();
+  const avatarInitial = routine.authorName.slice(0, 1).toUpperCase();
   const avatarClass = avatarClasses[avatarInitial] ?? 'routine-card__avatar--default';
   const likeClass = routine.liked ? 'routine-card__like routine-card__like--liked' : 'routine-card__like';
 
@@ -32,34 +31,36 @@ export function RoutineCard({ routine, onLike }: RoutineCardProps) {
               <Box aria-hidden="true" className={`routine-card__avatar ${avatarClass}`}>
                 {avatarInitial}
               </Box>
-              <Typography className="routine-card__handle">@{routine.author.handle}</Typography>
+              <Typography className="routine-card__handle">{routine.authorName}</Typography>
             </Stack>
             <Stack className="routine-card__metadata">
               <Typography className="routine-card__metadata-text">{formatPostedAt(routine.createdAt)}</Typography>
-              <Stack className="routine-card__duration">
-                <ClockIcon />
-                <Typography className="routine-card__metadata-text">{formatDuration(routine.durationMinutes)}</Typography>
-              </Stack>
+              {routine.durationMinutes !== null && (
+                <Stack className="routine-card__duration">
+                  <ClockIcon />
+                  <Typography className="routine-card__metadata-text">{formatDuration(routine.durationMinutes)}</Typography>
+                </Stack>
+              )}
             </Stack>
           </Stack>
 
           <Typography component="h2" className="routine-card__title">
-            <Link className="routine-card__detail-link" to={`/routines/${routine.id}`}>{routine.title}</Link>
+            <Link className="routine-card__detail-link" to={`/routines/${routine.routineId}`}>{routine.title}</Link>
           </Typography>
           <Stack className="routine-card__tags">
             {routine.tags.slice(0, 3).map((tag) => <Box component="span" className="routine-card__tag" key={tag}>{tag}</Box>)}
           </Stack>
           <Stack className="routine-card__steps">
             {routine.steps.slice(0, 3).map((step) => (
-              <Typography className="routine-card__step" key={`${routine.id}-${step.time}`}>
-                {step.action}{step.duration && <Box component="span" className="routine-card__step-duration">（{step.duration}）</Box>}
+              <Typography className="routine-card__step" key={`${routine.id}-${step.action}`}>
+                {step.action}{step.durationMinutes !== null && <Box component="span" className="routine-card__step-duration">（{formatDuration(step.durationMinutes)}）</Box>}
               </Typography>
             ))}
             {routine.steps.length > 3 && <Typography className="routine-card__more-steps">{messages.routineFeed.moreSteps.replace('{count}', String(routine.steps.length - 3))}</Typography>}
           </Stack>
 
           <Stack className="routine-card__actions">
-            <Box component="button" aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass} onClick={() => onLike(routine.id)}>
+            <Box aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass}>
               <HeartIcon filled={routine.liked} />
               <Typography component="span" className="routine-card__action-value">{routine.likes}</Typography>
             </Box>

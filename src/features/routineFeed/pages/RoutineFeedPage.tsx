@@ -14,9 +14,9 @@ import '../routineFeedTypography.css';
 type RoutineFeedPageProps = { service?: RoutineFeedService };
 
 const tabs: Array<{ label: string; value: RoutineFeedTab }> = [
+  { label: messages.routineFeed.tabs.following, value: 'following' },
   { label: messages.routineFeed.tabs.recommended, value: 'recommended' },
   { label: messages.routineFeed.tabs.popular, value: 'popular' },
-  { label: messages.routineFeed.tabs.recent, value: 'recent' },
 ];
 
 export function RoutineFeedPage({ service = routineFeedService }: RoutineFeedPageProps) {
@@ -64,13 +64,6 @@ export function RoutineFeedPage({ service = routineFeedService }: RoutineFeedPag
     setActiveTab(tab);
   }
 
-  function handleLike(id: string) {
-    setRoutines((current) => current.map((routine) => (
-      routine.id === id
-        ? { ...routine, liked: !routine.liked, likes: routine.liked ? routine.likes - 1 : routine.likes + 1 }
-        : routine
-    )));
-  }
 
   return (
     <Box component="section" className="routine-feed-page">
@@ -128,7 +121,7 @@ export function RoutineFeedPage({ service = routineFeedService }: RoutineFeedPag
 
         {!isLoading && !hasError && routines.length > 0 && (
           <Stack className="routine-feed-list">
-            {routines.map((routine) => <RoutineCard key={routine.id} onLike={handleLike} routine={routine} />)}
+            {routines.map((routine) => <RoutineCard key={routine.id} routine={routine} />)}
             <Box className="routine-feed-list__spacer" />
           </Stack>
         )}
