@@ -3,6 +3,7 @@ import {
   type RoutineDetailDto,
   type RoutineDetailViewModel,
 } from '../domain/routineDetail';
+import { formatPostedAt } from '../../routineFeed/domain/routine';
 import { z } from 'zod';
 
 export type RoutineDetailAdapter = {
@@ -263,22 +264,37 @@ const customizedRoutinesResponseSchema = z.object({
   total: z.number().int().nonnegative(),
 });
 
+const routineExecutionPostsResponseSchema = z.object({
+  items: z.array(z.object({
+    account_identifier: z.string().uuid(),
+    account_name: z.string().min(1),
+    executed_action_count: z.number().int().nonnegative(),
+    posted_at: z.string().datetime({ offset: true }),
+    routine_execution_identifier: z.string().uuid(),
+    routine_execution_memo: z.string().nullable(),
+    support_count: z.number().int().nonnegative(),
+  })),
+  total: z.number().int().nonnegative(),
+});
+
 export const apiRoutineDetailAdapter: RoutineDetailAdapter = {
   get: async (routineId) => {
-    const [detailResponse, customizationsResponse] = await Promise.all([
+    const [detailResponse, customizationsResponse, executionPostsResponse] = await Promise.all([
       fetch(`/api/routines/${routineId}`),
       fetch(`/api/routines/${routineId}/customized?page=1&number_of_items_per_page=20`),
+      fetch(`/api/routines/${routineId}/execution-posts?page=1&number_of_items_per_page=20`),
     ]);
     if (detailResponse.status === 404) {
       return null;
     }
-    if (!detailResponse.ok || !customizationsResponse.ok) {
+    if (!detailResponse.ok || !customizationsResponse.ok || !executionPostsResponse.ok) {
       throw new Error('Routine details could not be loaded.');
     }
 
-    const [detail, customizations] = await Promise.all([
+    const [detail, customizations, executionPosts] = await Promise.all([
       detailResponse.json().then((body) => routineDetailsResponseSchema.parse(body)),
       customizationsResponse.json().then((body) => customizedRoutinesResponseSchema.parse(body)),
+      executionPostsResponse.json().then((body) => routineExecutionPostsResponseSchema.parse(body)),
     ]);
     return {
       author: { handle: '', name: detail.account_name },
@@ -293,7 +309,18 @@ export const apiRoutineDetailAdapter: RoutineDetailAdapter = {
       description: detail.routine_memo ?? '',
       durationMinutes: detail.routine_execution_minutes,
       executions: detail.execution_count,
-      executionPosts: [],
+      executionPosts: executionPosts.items.map((post) => ({
+        achieved: post.executed_action_count,
+        avatar: post.account_name.slice(0, 1).toUpperCase(),
+        cheers: post.support_count,
+        comment: post.routine_execution_memo ?? undefined,
+        date: formatPostedAt(post.posted_at),
+        id: post.routine_execution_identifier,
+        routineId,
+        total: detail.routine_actions.length,
+        userHandle: '',
+        userName: post.account_name,
+      })),
       id: routineId,
       liked: false,
       likes: detail.like_count,

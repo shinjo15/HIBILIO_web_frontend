@@ -233,7 +233,6 @@ function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) 
                       </div>
                       <div className="routine-detail-post__metrics">
                         <span>{messages.routineDetail.achieved} <strong>{post.achieved} / {post.total} {messages.routineDetail.itemUnit}</strong></span>
-                        <span>{messages.routineDetail.duration} <strong>{post.minutes}{messages.routineDetail.minuteUnit}</strong></span>
                       </div>
                       {post.comment && <p className="routine-detail-post__comment">「{post.comment}」</p>}
                       <button
