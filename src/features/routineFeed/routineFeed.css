@@ -27,6 +27,16 @@
   gap: 8px;
 }
 
+@media (min-width: 1200px) {
+  .routine-feed-page .routine-feed-brand {
+    display: none;
+  }
+
+  .routine-feed-page .routine-feed-header__top {
+    justify-content: flex-end;
+  }
+}
+
 .routine-feed-brand__name {
   color: var(--hibilio-color-on-background);
   font-family: Fraunces, serif;
