@@ -64,12 +64,25 @@ describe('routineDetailService', () => {
           routine_name: '朝の集中ルーティンをカスタマイズ',
         }],
         total: 1,
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        items: [{
+          account_identifier: '10000000-0000-4000-8000-000000000001',
+          account_name: '実行した人',
+          executed_action_count: 1,
+          posted_at: '2026-09-07T14:26:31+00:00',
+          routine_execution_identifier: '70000000-0000-4000-8000-000000000001',
+          routine_execution_memo: '実行メモです。',
+          support_count: 2,
+        }],
+        total: 1,
       }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(createRoutineDetailService(apiRoutineDetailAdapter).get('30000000-0000-4000-8000-000000000001')).resolves.toMatchObject({
       customizationsList: [{ authorName: '美香', id: '30000000-0000-4000-8000-000000000004' }],
       duration: '10分',
+      executionPosts: [{ achieved: 1, cheers: 2, comment: '実行メモです。', id: '70000000-0000-4000-8000-000000000001', total: 1, userName: '実行した人' }],
       executions: 3,
       likes: 2,
       steps: [{ action: '水を飲む', duration: '10分' }],
@@ -77,6 +90,7 @@ describe('routineDetailService', () => {
     });
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/routines/30000000-0000-4000-8000-000000000001');
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines/30000000-0000-4000-8000-000000000001/customized?page=1&number_of_items_per_page=20');
+    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/routines/30000000-0000-4000-8000-000000000001/execution-posts?page=1&number_of_items_per_page=20');
   });
 
   it('routine ID を adapter に渡し、DTO を画面用 ViewModel に変換する', async () => {

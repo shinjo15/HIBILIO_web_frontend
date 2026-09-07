@@ -15,10 +15,10 @@ export const executionPostDtoSchema = z.object({
   comment: z.string().optional(),
   date: z.string().min(1),
   id: z.string().min(1),
-  minutes: z.number().int().positive(),
+  minutes: z.number().int().positive().optional(),
   routineId: z.string().min(1),
   total: z.number().int().positive(),
-  userHandle: z.string().min(1),
+  userHandle: z.string(),
   userName: z.string().min(1),
 });
 
@@ -64,7 +64,7 @@ export type RoutineDetailViewModel = {
     comment?: string;
     date: string;
     id: string;
-    minutes: number;
+    minutes?: number;
     total: number;
     userHandle: string;
     userName: string;
