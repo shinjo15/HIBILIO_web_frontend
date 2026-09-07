@@ -33,6 +33,8 @@ const routineFeedResponseSchema = z.object({
 
 type RoutineFeedResponse = z.infer<typeof routineFeedResponseSchema>;
 
+export class RoutineFeedUnauthorizedError extends Error {}
+
 export type RoutineFeedAdapter = {
   list: (tab: RoutineFeedTab) => Promise<unknown>;
 };
@@ -57,6 +59,10 @@ const routineFeedApiAdapter: RoutineFeedAdapter = {
       credentials: 'include',
       method: 'GET',
     });
+
+    if (response.status === 401) {
+      throw new RoutineFeedUnauthorizedError('Routine feed requires authentication');
+    }
 
     if (!response.ok) {
       throw new Error(`Failed to fetch routine feed: ${response.status}`);

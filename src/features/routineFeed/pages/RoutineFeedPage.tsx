@@ -3,15 +3,17 @@ import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import { Alert, Box, Button, CircularProgress, IconButton, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { RoutineCard } from '../components/RoutineCard';
 import type { Routine, RoutineFeedTab } from '../domain/routine';
-import { routineFeedService, type RoutineFeedService } from '../services/routineFeedService';
+import { routineFeedService, RoutineFeedUnauthorizedError, type RoutineFeedService } from '../services/routineFeedService';
+import { clearAuthenticated, isAuthenticated as hasAuthenticatedSession } from '../../auth/services/authSession';
 import { HibilioMark } from '../../../shared/brand/HibilioMark';
 import messages from '../../../shared/message/message.json';
 import '../routineFeed.css';
 import '../routineFeedTypography.css';
 
-type RoutineFeedPageProps = { service?: RoutineFeedService };
+type RoutineFeedPageProps = { isAuthenticated?: boolean; service?: RoutineFeedService };
 
 const tabs: Array<{ label: string; value: RoutineFeedTab }> = [
   { label: messages.routineFeed.tabs.following, value: 'following' },
@@ -19,8 +21,11 @@ const tabs: Array<{ label: string; value: RoutineFeedTab }> = [
   { label: messages.routineFeed.tabs.popular, value: 'popular' },
 ];
 
-export function RoutineFeedPage({ service = routineFeedService }: RoutineFeedPageProps) {
-  const [activeTab, setActiveTab] = useState<RoutineFeedTab>('recommended');
+export function RoutineFeedPage({ isAuthenticated, service = routineFeedService }: RoutineFeedPageProps) {
+  const navigate = useNavigate();
+  const authenticated = isAuthenticated ?? hasAuthenticatedSession();
+  const availableTabs = authenticated ? tabs : tabs.filter((tab) => tab.value === 'popular');
+  const [activeTab, setActiveTab] = useState<RoutineFeedTab>(authenticated ? 'recommended' : 'popular');
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -31,13 +36,19 @@ export function RoutineFeedPage({ service = routineFeedService }: RoutineFeedPag
 
     try {
       setRoutines(await service.list(activeTab));
-    } catch {
+    } catch (error) {
+      if (error instanceof RoutineFeedUnauthorizedError) {
+        clearAuthenticated();
+        navigate('/login');
+        return;
+      }
+
       setRoutines([]);
       setHasError(true);
     } finally {
       setIsLoading(false);
     }
-  }, [activeTab, service]);
+  }, [activeTab, navigate, service]);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,8 +58,14 @@ export function RoutineFeedPage({ service = routineFeedService }: RoutineFeedPag
         setRoutines(result);
         setIsLoading(false);
       }
-    }).catch(() => {
+    }).catch((error: unknown) => {
       if (!cancelled) {
+        if (error instanceof RoutineFeedUnauthorizedError) {
+          clearAuthenticated();
+          navigate('/login');
+          return;
+        }
+
         setRoutines([]);
         setHasError(true);
         setIsLoading(false);
@@ -56,7 +73,7 @@ export function RoutineFeedPage({ service = routineFeedService }: RoutineFeedPag
     });
 
     return () => { cancelled = true; };
-  }, [activeTab, service]);
+  }, [activeTab, navigate, service]);
 
   function handleTabChange(tab: RoutineFeedTab) {
     setIsLoading(true);
@@ -88,7 +105,7 @@ export function RoutineFeedPage({ service = routineFeedService }: RoutineFeedPag
             onChange={(_, value: RoutineFeedTab) => handleTabChange(value)}
             value={activeTab}
           >
-            {tabs.map((tab) => <Tab key={tab.value} label={tab.label} value={tab.value} />)}
+            {availableTabs.map((tab) => <Tab key={tab.value} label={tab.label} value={tab.value} />)}
           </Tabs>
       </Box>
 

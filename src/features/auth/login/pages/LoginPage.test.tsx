@@ -3,10 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LoginPage } from './LoginPage';
+import { isAuthenticated } from '../../services/authSession';
 
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  window.sessionStorage.clear();
 });
 
 describe('LoginPage', () => {
@@ -41,5 +43,6 @@ describe('LoginPage', () => {
       body: JSON.stringify({ passcode: '123456' }),
       method: 'POST',
     }));
+    expect(isAuthenticated()).toBe(true);
   });
 });

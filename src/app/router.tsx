@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom';
+import { RequireAuthentication } from '../features/auth/components/RequireAuthentication';
 import { LoginPage } from '../features/auth/login/pages/LoginPage';
 import { RegisterPage } from '../features/auth/register/pages/RegisterPage';
 import { AccountPage } from '../features/account/pages/AccountPage';
@@ -21,12 +22,11 @@ export const router = createBrowserRouter([
     path: 'sign-up',
   },
   {
-    element: <AccountExecutionHistoryPage />,
-    path: 'routines/:routineId/executions/:executionId',
-  },
-  {
-    element: <RoutineExecutionPage />,
-    path: 'routines/:routineId/execute',
+    element: <RequireAuthentication />,
+    children: [
+      { element: <AccountExecutionHistoryPage />, path: 'routines/:routineId/executions/:executionId' },
+      { element: <RoutineExecutionPage />, path: 'routines/:routineId/execute' },
+    ],
   },
   {
     element: <AppShell />,
@@ -36,20 +36,13 @@ export const router = createBrowserRouter([
         index: true,
       },
       {
-        element: <AccountPage />,
-        path: 'account',
-      },
-      {
-        element: <ProfileEditPage />,
-        path: 'account/edit',
-      },
-      {
-        element: <SettingsPage />,
-        path: 'account/settings',
-      },
-      {
-        element: <RoutineCreatePage />,
-        path: 'routines/new',
+        element: <RequireAuthentication />,
+        children: [
+          { element: <AccountPage />, path: 'account' },
+          { element: <ProfileEditPage />, path: 'account/edit' },
+          { element: <SettingsPage />, path: 'account/settings' },
+          { element: <RoutineCreatePage />, path: 'routines/new' },
+        ],
       },
       {
         element: <RoutineDetailPage />,
