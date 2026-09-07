@@ -91,7 +91,7 @@ function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) 
               <Avatar initial={routine.author.initial} />
               <div>
                 <p className="routine-detail-author__name">{routine.author.name}</p>
-                <p className="routine-detail-author__handle">@{routine.author.handle}</p>
+                {routine.author.handle !== '' && <p className="routine-detail-author__handle">@{routine.author.handle}</p>}
               </div>
             </div>
             <h1 className="routine-detail-summary__title">{routine.title}</h1>

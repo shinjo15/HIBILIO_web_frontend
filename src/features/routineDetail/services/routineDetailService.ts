@@ -3,6 +3,7 @@ import {
   type RoutineDetailDto,
   type RoutineDetailViewModel,
 } from '../domain/routineDetail';
+import { z } from 'zod';
 
 export type RoutineDetailAdapter = {
   get: (routineId: string) => Promise<unknown>;
@@ -230,11 +231,54 @@ export function createRoutineDetailService(adapter: RoutineDetailAdapter): Routi
   return { get };
 }
 
-function configuredDummyMode(): DummyRoutineDetailMode {
-  const mode = import.meta.env.VITE_ROUTINE_DETAIL_MOCK_MODE;
-  return mode === 'empty' || mode === 'error' ? mode : 'success';
-}
+const routineDetailsResponseSchema = z.object({
+  account_identifier: z.string().uuid(),
+  account_name: z.string().min(1),
+  customization_count: z.number().int().nonnegative(),
+  execution_count: z.number().int().nonnegative(),
+  like_count: z.number().int().nonnegative(),
+  routine_actions: z.array(z.object({
+    action_memo: z.string().nullable(),
+    action_minutes: z.number().int().positive().nullable(),
+    action_name: z.string().min(1),
+    routine_action_identifier: z.string().uuid(),
+  })),
+  routine_execution_minutes: z.number().int().positive().nullable(),
+  routine_memo: z.string().nullable(),
+  routine_name: z.string().min(1),
+});
 
-export const routineDetailService = createRoutineDetailService(
-  createDummyRoutineDetailAdapter(configuredDummyMode()),
-);
+export const apiRoutineDetailAdapter: RoutineDetailAdapter = {
+  get: async (routineId) => {
+    const response = await fetch(`/api/routines/${routineId}`);
+    if (response.status === 404) {
+      return null;
+    }
+    if (!response.ok) {
+      throw new Error('Routine details could not be loaded.');
+    }
+
+    const detail = routineDetailsResponseSchema.parse(await response.json());
+    return {
+      author: { handle: '', name: detail.account_name },
+      customizations: detail.customization_count,
+      customizationsList: [],
+      description: detail.routine_memo ?? '',
+      durationMinutes: detail.routine_execution_minutes,
+      executions: detail.execution_count,
+      executionPosts: [],
+      id: routineId,
+      liked: false,
+      likes: detail.like_count,
+      steps: detail.routine_actions.map((action) => ({
+        action: action.action_name,
+        duration: action.action_minutes === null ? undefined : `${action.action_minutes}分`,
+        memo: action.action_memo ?? undefined,
+      })),
+      tags: [],
+      title: detail.routine_name,
+    } satisfies RoutineDetailDto;
+  },
+};
+
+export const routineDetailService = createRoutineDetailService(apiRoutineDetailAdapter);
