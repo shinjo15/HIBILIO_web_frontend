@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { AuthenticationApiError, createAccount, type CreateAccountInput } from '../../services/authApi';
+import { useEffect, useState } from 'react';
+import { AuthenticationApiError, createAccount, requestRegistrationPasscode, verifyRegistrationPasscode, type CreateAccountInput } from '../../services/authApi';
 import { validateEmailAddress, validateLoginPasscode } from '../../services/authValidation';
 import messages from '../../../../shared/message/message.json';
-import { requestRegistrationPasscode, verifyRegistrationPasscode } from '../services/registrationPasscodeDummyAdapter';
+import { getPickupTags, type PickupTag } from '../services/pickupTagService';
 
 type RegistrationStep = 'email' | 'passcode' | 'profile' | 'social' | 'tags';
 type RegistrationSocialLink = CreateAccountInput['socialLinks'][number];
@@ -15,16 +15,22 @@ export function useAccountRegistration(onRegistered: () => void) {
   const [favoriteTagIdentifiers, setFavoriteTagIdentifiers] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passcode, setPasscode] = useState('');
+  const [pickupTags, setPickupTags] = useState<PickupTag[]>([]);
   const [socialLinks, setSocialLinks] = useState<RegistrationSocialLink[]>([]);
   const [step, setStep] = useState<RegistrationStep>('email');
+  const [tagLoadError, setTagLoadError] = useState(false);
   const [userHandle, setUserHandle] = useState('');
+
+  useEffect(() => {
+    void getPickupTags().then(setPickupTags).catch(() => setTagLoadError(true));
+  }, []);
 
   async function submitEmailAddress(): Promise<void> {
     const validation = validateEmailAddress(emailAddress);
     if (!validation.success) { setErrorMessage(validation.message); return; }
     setErrorMessage(null);
     setIsSubmitting(true);
-    try { await requestRegistrationPasscode(); setStep('passcode'); } finally { setIsSubmitting(false); }
+    try { await requestRegistrationPasscode(emailAddress); setStep('passcode'); } catch (error) { setErrorMessage(error instanceof AuthenticationApiError ? error.message : messages.auth.accountRegistrationFailed); } finally { setIsSubmitting(false); }
   }
 
   async function submitPasscode(): Promise<void> {
@@ -32,7 +38,7 @@ export function useAccountRegistration(onRegistered: () => void) {
     if (!validation.success) { setErrorMessage(validation.message); return; }
     setErrorMessage(null);
     setIsSubmitting(true);
-    try { await verifyRegistrationPasscode(); setStep('profile'); } finally { setIsSubmitting(false); }
+    try { await verifyRegistrationPasscode(passcode); setStep('profile'); } catch (error) { setErrorMessage(error instanceof AuthenticationApiError ? error.message : messages.auth.accountRegistrationFailed); } finally { setIsSubmitting(false); }
   }
 
   function continueToSocialLinks(): void {
@@ -51,7 +57,7 @@ export function useAccountRegistration(onRegistered: () => void) {
     setErrorMessage(null);
     setIsSubmitting(true);
     try {
-      await createAccount({ accountBio, accountName, emailAddress, favoriteTagIdentifiers, socialLinks });
+      await createAccount({ accountBio, accountName, favoriteTagIdentifiers, socialLinks });
       onRegistered();
     } catch (error) {
       setErrorMessage(error instanceof AuthenticationApiError ? error.message : messages.auth.accountRegistrationFailed);
@@ -72,5 +78,5 @@ export function useAccountRegistration(onRegistered: () => void) {
   function returnToProfile(): void { setErrorMessage(null); setStep('profile'); }
   function returnToSocialLinks(): void { setErrorMessage(null); setStep('social'); }
 
-  return { accountBio, accountName, addSocialLink, continueToSocialLinks, continueToTags, emailAddress, errorMessage, favoriteTagIdentifiers, isSubmitting, passcode, returnToEmailAddress, returnToProfile, returnToSocialLinks, setAccountBio, setAccountName, setEmailAddress, setPasscode, setUserHandle, socialLinks, step, submitEmailAddress, submitFavoriteTags, submitPasscode, toggleFavoriteTag, userHandle };
+  return { accountBio, accountName, addSocialLink, continueToSocialLinks, continueToTags, emailAddress, errorMessage, favoriteTagIdentifiers, isSubmitting, passcode, pickupTags, returnToEmailAddress, returnToProfile, returnToSocialLinks, setAccountBio, setAccountName, setEmailAddress, setPasscode, setUserHandle, socialLinks, step, submitEmailAddress, submitFavoriteTags, submitPasscode, tagLoadError, toggleFavoriteTag, userHandle };
 }

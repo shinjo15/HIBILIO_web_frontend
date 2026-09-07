@@ -14,7 +14,9 @@ afterEach(() => {
 describe('LoginPage', () => {
   it('メールアドレスからパスコードを送信し、モック準拠の6桁入力画面で照合する', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    const fetchMock = vi.fn((path: string) => Promise.resolve(path === '/api/csrf-token'
+      ? new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 })
+      : new Response(null, { status: 204 })));
     vi.stubGlobal('fetch', fetchMock);
 
     render(<MemoryRouter><LoginPage /></MemoryRouter>);

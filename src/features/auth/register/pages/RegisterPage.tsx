@@ -6,7 +6,6 @@ import { HibilioMark } from '../../../../shared/brand/HibilioMark';
 import messages from '../../../../shared/message/message.json';
 import { useAccountRegistration } from '../hooks/useAccountRegistration';
 import { registrationSocialPlatforms, type RegistrationSocialPlatform } from '../services/registrationSocialPlatforms';
-import { registrationTags } from '../services/registrationTagDummyAdapter';
 import './register.css';
 
 export function RegisterPage() {
@@ -148,17 +147,25 @@ export function RegisterPage() {
           </>}
 
           {registration.step === 'social' && <>
+            {registration.socialLinks.length > 0 && <section className="hibilio-register__social-links">
+              <h3>{messages.auth.addedSocialLinks}</h3>
+              <div>{registration.socialLinks.map((link) => {
+                const platform = registrationSocialPlatforms.find((item) => item.socialType === link.socialType);
+                return platform === undefined ? null : <div className="hibilio-register__social-link" key={link.socialType}><platform.Icon className={`hibilio-register__social-icon hibilio-register__social-icon--${link.socialType}`} /><span>{link.socialUrl.replace(platform.urlPrefix, '')}</span></div>;
+              })}</div>
+            </section>}
             {selectedSocialPlatform === null ? <div className="hibilio-register__social-platforms">
               {registrationSocialPlatforms.map((platform) => <Button key={platform.socialType} onClick={() => setSelectedSocialPlatform(platform)} startIcon={<platform.Icon className={`hibilio-register__social-icon hibilio-register__social-icon--${platform.socialType}`} />} type="button" variant="outlined">{platform.label}</Button>)}
-            </div> : <div className="hibilio-register__social-add"><input aria-label={messages.auth.socialLinkInput.replace('{platform}', selectedSocialPlatform.label)} onChange={(event) => setLinkValue(event.target.value)} placeholder={selectedSocialPlatform.placeholder} value={linkValue} /><Button onClick={addSocialLink} type="button" variant="contained">{messages.auth.add}</Button></div>}
+            </div> : <div className="hibilio-register__social-add"><div className="hibilio-register__social-input"><selectedSocialPlatform.Icon className={`hibilio-register__social-icon hibilio-register__social-icon--${selectedSocialPlatform.socialType}`} /><input aria-label={messages.auth.socialLinkInput.replace('{platform}', selectedSocialPlatform.label)} onChange={(event) => setLinkValue(event.target.value)} placeholder={selectedSocialPlatform.placeholder} value={linkValue} /></div><Button onClick={addSocialLink} type="button" variant="contained">{messages.auth.add}</Button></div>}
             <Button className="hibilio-register__submit" fullWidth size="large" type="submit" variant="contained">{messages.auth.profileNext}</Button>
             <Button className="hibilio-register__skip" onClick={registration.continueToTags} type="button" variant="text">{messages.auth.skip}</Button>
           </>}
 
           {registration.step === 'tags' && <>
             <div className="hibilio-register__tags">
-              {registrationTags.map((tag) => <Button className={registration.favoriteTagIdentifiers.includes(tag.identifier) ? 'is-selected' : ''} key={tag.identifier} onClick={() => registration.toggleFavoriteTag(tag.identifier)} type="button" variant="outlined">{registration.favoriteTagIdentifiers.includes(tag.identifier) && '✓ '}{tag.label}</Button>)}
+              {registration.pickupTags.map((tag) => <Button className={registration.favoriteTagIdentifiers.includes(tag.identifier) ? 'is-selected' : ''} key={tag.identifier} onClick={() => registration.toggleFavoriteTag(tag.identifier)} type="button" variant="outlined">{registration.favoriteTagIdentifiers.includes(tag.identifier) && '✓ '}{tag.label}</Button>)}
             </div>
+            {registration.tagLoadError && <Alert severity="error">{messages.auth.pickupTagsLoadFailed}</Alert>}
             {registration.favoriteTagIdentifiers.length > 0 && <p className="hibilio-register__tag-count">{messages.auth.favoriteTagsSelected.replace('{count}', String(registration.favoriteTagIdentifiers.length))}</p>}
             <Button className="hibilio-register__submit" disabled={registration.isSubmitting} fullWidth size="large" type="submit" variant="contained">{messages.auth.profileStart}</Button>
             <Button className="hibilio-register__skip" disabled={registration.isSubmitting} onClick={() => void registration.submitFavoriteTags()} type="button" variant="text">{messages.auth.skip}</Button>

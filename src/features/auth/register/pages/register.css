@@ -297,6 +297,26 @@
   gap: 8px;
 }
 
+.hibilio-register__social-links {
+  border-bottom: 1px solid var(--hibilio-color-border);
+  display: grid;
+  gap: 10px;
+  padding-bottom: 20px;
+}
+
+.hibilio-register__social-links h3 {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.hibilio-register__social-links > div {
+  display: grid;
+  gap: 8px;
+}
+
 .hibilio-register__social-platforms .MuiButton-root {
   background: var(--hibilio-color-card);
   border-color: var(--hibilio-color-border);
@@ -311,15 +331,59 @@
   gap: 8px;
 }
 
-.hibilio-register__social-add input {
+.hibilio-register__social-input {
+  align-items: center;
   background: var(--hibilio-color-card);
   border: 1px solid var(--hibilio-color-border);
   border-radius: 12px;
   box-sizing: border-box;
-  font: inherit;
+  display: flex;
+  gap: 12px;
   min-height: 48px;
-  padding: 12px 16px;
+  padding: 0 16px;
   width: 100%;
+}
+
+.hibilio-register__social-input:focus-within {
+  border-color: var(--hibilio-color-primary);
+  box-shadow: 0 0 0 1px var(--hibilio-color-primary);
+}
+
+.hibilio-register__social-input input {
+  background: transparent;
+  border: 0;
+  color: var(--hibilio-color-on-background);
+  font: inherit;
+  min-height: 46px;
+  outline: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.hibilio-register__social-input input::placeholder {
+  color: var(--hibilio-color-muted-text);
+}
+
+.hibilio-register__social-links {
+  display: grid;
+  gap: 8px;
+}
+
+.hibilio-register__social-link {
+  align-items: center;
+  background: var(--hibilio-color-card);
+  border: 1px solid var(--hibilio-color-primary);
+  border-radius: 999px;
+  color: var(--hibilio-color-primary);
+  display: flex;
+  font-size: 14px;
+  gap: 12px;
+  min-height: 40px;
+  padding: 0 14px;
+}
+
+.hibilio-register__social-link span {
+  overflow-wrap: anywhere;
 }
 
 .hibilio-register__social-icon--x,
