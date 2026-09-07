@@ -1,5 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
-import { createRoutineDetailService } from './routineDetailService';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { apiRoutineDetailAdapter, createRoutineDetailService } from './routineDetailService';
+
+afterEach(() => vi.unstubAllGlobals());
 
 const dto = {
   author: { handle: 'routine-owner', name: 'ルーティン作者' },
@@ -31,6 +33,52 @@ const dto = {
 };
 
 describe('routineDetailService', () => {
+  it('詳細取得APIのレスポンスを詳細画面用に変換する', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+      account_identifier: '10000000-0000-4000-8000-000000000002',
+      account_name: '春野あかり',
+      customization_count: 1,
+      execution_count: 3,
+      like_count: 2,
+      routine_actions: [{
+        action_memo: null,
+        action_minutes: 10,
+        action_name: '水を飲む',
+        routine_action_identifier: '40000000-0000-4000-8000-000000000001',
+      }],
+      routine_execution_minutes: 10,
+      routine_memo: '説明',
+      routine_name: '朝のルーティン',
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        items: [{
+          account_identifier: '10000000-0000-4000-8000-000000000004',
+          account_name: '美香',
+          customization_count: 0,
+          execution_count: 0,
+          like_count: 0,
+          routine_execution_minutes: 20,
+          routine_identifier: '30000000-0000-4000-8000-000000000004',
+          routine_memo: '朝食前の短縮版です。',
+          routine_name: '朝の集中ルーティンをカスタマイズ',
+        }],
+        total: 1,
+      }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createRoutineDetailService(apiRoutineDetailAdapter).get('30000000-0000-4000-8000-000000000001')).resolves.toMatchObject({
+      customizationsList: [{ authorName: '美香', id: '30000000-0000-4000-8000-000000000004' }],
+      duration: '10分',
+      executions: 3,
+      likes: 2,
+      steps: [{ action: '水を飲む', duration: '10分' }],
+      title: '朝のルーティン',
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/routines/30000000-0000-4000-8000-000000000001');
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines/30000000-0000-4000-8000-000000000001/customized?page=1&number_of_items_per_page=20');
+  });
+
   it('routine ID を adapter に渡し、DTO を画面用 ViewModel に変換する', async () => {
     const get = vi.fn().mockResolvedValue(dto);
     const service = createRoutineDetailService({ get });

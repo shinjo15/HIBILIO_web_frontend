@@ -5,7 +5,7 @@ export const routineDetailStepDtoSchema = z.object({
   action: z.string().min(1),
   duration: z.string().optional(),
   memo: z.string().min(1).optional(),
-  time: z.string().min(1),
+  time: z.string().min(1).optional(),
 });
 
 export const executionPostDtoSchema = z.object({
@@ -23,8 +23,8 @@ export const executionPostDtoSchema = z.object({
 });
 
 export const customizationDtoSchema = z.object({
-  authorHandle: z.string().min(1),
-  description: z.string().min(1),
+  authorName: z.string().min(1),
+  description: z.string(),
   id: z.string().min(1),
   routineId: z.string().min(1),
   title: z.string().min(1),
@@ -32,13 +32,13 @@ export const customizationDtoSchema = z.object({
 
 export const routineDetailDtoSchema = z.object({
   author: z.object({
-    handle: z.string().min(1),
+    handle: z.string(),
     name: z.string().min(1),
   }),
   customizations: z.number().int().nonnegative(),
   customizationsList: z.array(customizationDtoSchema),
   description: z.string(),
-  durationMinutes: z.number().int().positive(),
+  durationMinutes: z.number().int().positive().nullable(),
   executions: z.number().int().nonnegative(),
   executionPosts: z.array(executionPostDtoSchema),
   id: z.string().min(1),
@@ -76,7 +76,7 @@ export type RoutineDetailViewModel = {
   tags: string[];
   title: string;
   customizationsList: Array<{
-    authorHandle: string;
+    authorName: string;
     description: string;
     id: string;
     title: string;
@@ -92,14 +92,14 @@ export function toRoutineDetailViewModel(input: unknown): RoutineDetailViewModel
       initial: dto.author.handle.slice(0, 1).toUpperCase(),
     },
     customizations: dto.customizations,
-    customizationsList: dto.customizationsList.map(({ authorHandle, description, id, title }) => ({
-      authorHandle,
+    customizationsList: dto.customizationsList.map(({ authorName, description, id, title }) => ({
+      authorName,
       description,
       id,
       title,
     })),
     description: dto.description,
-    duration: formatDuration(dto.durationMinutes),
+    duration: dto.durationMinutes === null ? '-' : formatDuration(dto.durationMinutes),
     executions: dto.executions,
     executionPosts: dto.executionPosts.map((post) => ({
       achieved: post.achieved,

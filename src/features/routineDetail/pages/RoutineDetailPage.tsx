@@ -91,7 +91,7 @@ function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) 
               <Avatar initial={routine.author.initial} />
               <div>
                 <p className="routine-detail-author__name">{routine.author.name}</p>
-                <p className="routine-detail-author__handle">@{routine.author.handle}</p>
+                {routine.author.handle !== '' && <p className="routine-detail-author__handle">@{routine.author.handle}</p>}
               </div>
             </div>
             <h1 className="routine-detail-summary__title">{routine.title}</h1>
@@ -257,9 +257,9 @@ function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) 
                 {routine.customizationsList.length === 0 && <DetailEmptyState message={messages.routineDetail.customizationsEmpty} />}
                 {routine.customizationsList.map((customization) => (
                   <article className="routine-detail-customization" key={customization.id}>
-                    <p className="routine-detail-customization__author">{messages.routineDetail.customizationVersion} — @{customization.authorHandle}</p>
-                    <h2>{customization.title}</h2>
-                    <p>{customization.description}</p>
+                    <p className="routine-detail-customization__author">{messages.routineDetail.customizationVersion} — {customization.authorName}</p>
+                    <h2><Link to={`/routines/${customization.id}`}>{customization.title}</Link></h2>
+                    {customization.description !== '' && <p>{customization.description}</p>}
                   </article>
                 ))}
               </div>
