@@ -1,8 +1,16 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RegisterPage } from './RegisterPage';
+
+function csrfAwareFetch(status = 204) {
+  return vi.fn((path: string) => Promise.resolve(path === '/api/csrf-token'
+    ? new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 })
+    : new Response(null, { status })));
+}
+
+beforeEach(() => vi.stubGlobal('fetch', csrfAwareFetch()));
 
 afterEach(() => {
   cleanup();
@@ -22,7 +30,7 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText('メールアドレス'), 'new-member@example.com');
     await user.click(screen.getByRole('button', { name: 'パスコードを送信' }));
 
-    expect(screen.getByRole('heading', { name: 'パスコードを確認' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'パスコードを確認' })).toBeInTheDocument();
     expect(screen.getByText(/ステップ 2／5\s+メールを確認してください/)).toBeInTheDocument();
     expect(screen.getByText('new-member@example.com')).toBeInTheDocument();
     expect(screen.getByLabelText('パスコード 1桁目')).toBeInTheDocument();
@@ -30,7 +38,7 @@ describe('RegisterPage', () => {
 
   it('プロフィール設定の確定時にbackend契約のアカウント作成payloadだけを送信する', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 201 }));
+    const fetchMock = csrfAwareFetch(201);
     vi.stubGlobal('fetch', fetchMock);
 
     render(<MemoryRouter><RegisterPage /></MemoryRouter>);
@@ -48,11 +56,18 @@ describe('RegisterPage', () => {
     await user.click(await screen.findByRole('button', { name: '次へ' }));
     await user.click(await screen.findByRole('button', { name: 'HIBILIOをはじめる' }));
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/accounts', expect.objectContaining({
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/registration-passcodes', expect.objectContaining({
+      body: JSON.stringify({ email_address: 'new-member@example.com' }),
+      method: 'POST',
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(4, '/api/registration-passcodes/verification', expect.objectContaining({
+      body: JSON.stringify({ passcode: '123456' }),
+      method: 'POST',
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(6, '/api/accounts', expect.objectContaining({
       body: JSON.stringify({
         account_bio: '朝のルーティンを続けています。',
         account_name: '山田 由紀',
-        email_address: 'new-member@example.com',
         favorite_tag_identifiers: [],
         social_links: [],
       }),
@@ -62,7 +77,7 @@ describe('RegisterPage', () => {
 
   it('ソーシャルリンクを追加してアカウント作成payloadへ送信する', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 201 }));
+    const fetchMock = csrfAwareFetch(201);
     vi.stubGlobal('fetch', fetchMock);
 
     render(<MemoryRouter><RegisterPage /></MemoryRouter>);
@@ -86,7 +101,6 @@ describe('RegisterPage', () => {
       body: JSON.stringify({
         account_bio: null,
         account_name: '山田 由紀',
-        email_address: 'new-member@example.com',
         favorite_tag_identifiers: [],
         social_links: [{ social_type: 'x', social_url: 'https://x.com/hibilio' }],
       }),
@@ -96,7 +110,7 @@ describe('RegisterPage', () => {
 
   it('選択したダミータグのidentifierをアカウント作成payloadへ送信する', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 201 }));
+    const fetchMock = csrfAwareFetch(201);
     vi.stubGlobal('fetch', fetchMock);
 
     render(<MemoryRouter><RegisterPage /></MemoryRouter>);
