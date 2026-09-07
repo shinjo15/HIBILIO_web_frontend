@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAppTheme } from '../../../app/appThemeContext';
+import { clearAuthenticated } from '../../auth/services/authSession';
 import { SettingsContent } from '../components/SettingsContent';
 import { useSettings } from '../hooks/useSettings';
 import '../settings.css';
@@ -16,6 +17,7 @@ export function SettingsPage() {
 
   function signOut() {
     settings.signOut();
+    clearAuthenticated();
     navigate('/login');
   }
 

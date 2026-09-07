@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link as RouterLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { isAuthenticated } from '../../features/auth/services/authSession';
 import { HibilioMark } from '../brand/HibilioMark';
 import messages from '../message/message.json';
 import './appShell.css';
@@ -27,16 +28,8 @@ type NavigationItem = {
 };
 
 const navigationItems: NavigationItem[] = [
-  {
-    icon: <HomeOutlinedIcon fontSize="small" />,
-    label: messages.navigation.feed,
-    path: '/',
-  },
-  {
-    icon: <AccountCircleOutlinedIcon fontSize="small" />,
-    label: messages.navigation.account,
-    path: '/account',
-  },
+  { icon: <HomeOutlinedIcon fontSize="small" />, label: messages.navigation.feed, path: '/' },
+  { icon: <AccountCircleOutlinedIcon fontSize="small" />, label: messages.navigation.account, path: '/account' },
 ];
 
 function selectedPath(pathname: string): string {
@@ -56,6 +49,7 @@ export function AppShell() {
   const navigate = useNavigate();
   const activePath = selectedPath(location.pathname);
   const isRoutineCreate = activePath === '/routines/new';
+  const authenticated = isAuthenticated();
   const [canSubmitRoutineCreate, setCanSubmitRoutineCreate] = useState(false);
 
   useEffect(() => {
@@ -67,14 +61,15 @@ export function AppShell() {
     return () => window.removeEventListener('routine-create-submission-state', updateRoutineCreateSubmissionState);
   }, []);
 
+  function protectedPath(path: string): string {
+    return authenticated || path === '/' ? path : '/login';
+  }
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100dvh' }}>
       <Drawer
         sx={{
-          display: {
-            lg: 'block',
-            xs: 'none',
-          },
+          display: { lg: 'block', xs: 'none' },
           width: desktopNavigationWidth,
           '& .MuiDrawer-paper': {
             backgroundColor: 'background.paper',
@@ -110,34 +105,14 @@ export function AppShell() {
                 mb: 0.5,
                 px: 1.25,
                 py: 1,
-                '&.Mui-selected': {
-                  backgroundColor: 'var(--hibilio-color-muted)',
-                  color: 'primary.main',
-                },
-                '&.Mui-selected:hover': {
-                  backgroundColor: 'var(--hibilio-color-muted)',
-                },
-                '&:hover': {
-                  backgroundColor: 'var(--hibilio-color-muted)',
-                  color: 'text.primary',
-                },
+                '&.Mui-selected': { backgroundColor: 'var(--hibilio-color-muted)', color: 'primary.main' },
+                '&.Mui-selected:hover': { backgroundColor: 'var(--hibilio-color-muted)' },
+                '&:hover': { backgroundColor: 'var(--hibilio-color-muted)', color: 'text.primary' },
               }}
-              to={item.path}
+              to={protectedPath(item.path)}
             >
-              <ListItemIcon sx={{ color: 'inherit', minWidth: 28 }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.label}
-                slotProps={{
-                  primary: {
-                    sx: {
-                      fontSize: 14,
-                      fontWeight: 500,
-                    },
-                  },
-                }}
-              />
+              <ListItemIcon sx={{ color: 'inherit', minWidth: 28 }}>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontSize: 14, fontWeight: 500 } } }} />
             </ListItemButton>
           ))}
           <ListItemButton
@@ -151,107 +126,56 @@ export function AppShell() {
               mt: 2,
               px: 1.25,
               py: 1,
-              '&.Mui-selected': {
-                backgroundColor: 'primary.main',
-              },
-              '&:hover': {
-                backgroundColor: 'primary.main',
-                opacity: 0.9,
-              },
+              '&.Mui-selected': { backgroundColor: 'primary.main' },
+              '&:hover': { backgroundColor: 'primary.main', opacity: 0.9 },
             }}
-            to="/routines/new"
+            to={protectedPath('/routines/new')}
           >
-            <ListItemIcon sx={{ color: 'inherit', minWidth: 28 }}>
-              <AddIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText
-              primary={messages.navigation.createRoutine}
-              slotProps={{
-                primary: {
-                  sx: {
-                    fontSize: 14,
-                    fontWeight: 500,
-                  },
-                },
-              }}
-            />
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 28 }}><AddIcon fontSize="small" /></ListItemIcon>
+            <ListItemText primary={messages.navigation.createRoutine} slotProps={{ primary: { sx: { fontSize: 14, fontWeight: 500 } } }} />
           </ListItemButton>
         </List>
       </Drawer>
 
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          minWidth: 0,
-          pb: {
-            lg: 0,
-            xs: 8,
-          },
-        }}
-      >
+      <Box component="main" sx={{ flexGrow: 1, minWidth: 0, pb: { lg: 0, xs: 8 } }}>
         <Outlet />
       </Box>
 
-      <Box
-        aria-label={messages.navigation.ariaLabel}
-        className="hibilio-mobile-nav"
-        component="nav"
-      >
-        {navigationItems.map((item) => {
+      <Box aria-label={messages.navigation.ariaLabel} className="hibilio-mobile-nav" component="nav">
+        {navigationItems.slice(0, 1).map((item) => {
           const isSelected = activePath === item.path;
-
           return (
             <ButtonBase
               aria-current={isSelected ? 'page' : undefined}
               aria-label={item.label}
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => navigate(protectedPath(item.path))}
               sx={{
                 color: isSelected ? 'primary.main' : 'text.secondary',
-                display: 'flex',
-                flexDirection: 'column',
-                fontSize: 10,
-                fontWeight: 500,
-                gap: 0.25,
-                height: '100%',
-                justifyContent: 'center',
-                minWidth: 76,
+                display: 'flex', flexDirection: 'column', fontSize: 10, fontWeight: 500,
+                gap: 0.25, height: '100%', justifyContent: 'center', minWidth: 76,
               }}
             >
               {item.icon}
               {item.label}
             </ButtonBase>
           );
-        }).slice(0, 1)}
+        })}
         <ButtonBase
           aria-current={activePath === '/routines/new' ? 'page' : undefined}
           aria-label={isRoutineCreate ? messages.routineCreate.submit : messages.navigation.createRoutine}
           className={isRoutineCreate && !canSubmitRoutineCreate ? 'hibilio-mobile-nav__create-trigger hibilio-mobile-nav__create-trigger--disabled' : 'hibilio-mobile-nav__create-trigger'}
           disabled={isRoutineCreate && !canSubmitRoutineCreate}
           form={isRoutineCreate ? 'routine-create-form' : undefined}
-          onClick={isRoutineCreate ? undefined : () => navigate('/routines/new')}
+          onClick={isRoutineCreate ? undefined : () => navigate(protectedPath('/routines/new'))}
           type={isRoutineCreate ? 'submit' : 'button'}
-          sx={{
-            alignItems: 'center',
-            display: 'flex',
-            height: '100%',
-            justifyContent: 'center',
-            minWidth: 76,
-          }}
+          sx={{ alignItems: 'center', display: 'flex', height: '100%', justifyContent: 'center', minWidth: 76 }}
         >
           <Box
             className="hibilio-mobile-nav__create-icon"
             sx={{
-              alignItems: 'center',
-              backgroundColor: 'primary.main',
-              borderRadius: '50%',
-              color: 'primary.contrastText',
-              display: 'flex',
-              height: 48,
-              justifyContent: 'center',
-              marginTop: -2.5,
-              width: 48,
+              alignItems: 'center', backgroundColor: 'primary.main', borderRadius: '50%',
+              color: 'primary.contrastText', display: 'flex', height: 48, justifyContent: 'center', marginTop: -2.5, width: 48,
             }}
           >
             {isRoutineCreate ? <SendIcon fontSize="small" /> : <AddIcon />}
@@ -259,23 +183,16 @@ export function AppShell() {
         </ButtonBase>
         {navigationItems.slice(1).map((item) => {
           const isSelected = activePath === item.path;
-
           return (
             <ButtonBase
               aria-current={isSelected ? 'page' : undefined}
               aria-label={item.label}
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => navigate(protectedPath(item.path))}
               sx={{
                 color: isSelected ? 'primary.main' : 'text.secondary',
-                display: 'flex',
-                flexDirection: 'column',
-                fontSize: 10,
-                fontWeight: 500,
-                gap: 0.25,
-                height: '100%',
-                justifyContent: 'center',
-                minWidth: 76,
+                display: 'flex', flexDirection: 'column', fontSize: 10, fontWeight: 500,
+                gap: 0.25, height: '100%', justifyContent: 'center', minWidth: 76,
               }}
             >
               {item.icon}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AuthenticationApiError, requestLoginPasscode, verifyLoginPasscode } from '../../services/authApi';
+import { markAuthenticated } from '../../services/authSession';
 import { validateEmailAddress, validateLoginPasscode } from '../../services/authValidation';
 
 export function useLoginPasscode(onAuthenticated: () => void) {
@@ -43,6 +44,7 @@ export function useLoginPasscode(onAuthenticated: () => void) {
 
     try {
       await verifyLoginPasscode(passcode);
+      markAuthenticated();
       onAuthenticated();
     } catch (error) {
       setErrorMessage(error instanceof AuthenticationApiError ? error.message : 'ログインに失敗しました。パスコードを確認してください。');

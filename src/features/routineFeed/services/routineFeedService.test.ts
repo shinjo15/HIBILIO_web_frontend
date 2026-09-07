@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createRoutineFeedService, routineFeedService } from './routineFeedService';
+import { createRoutineFeedService, RoutineFeedUnauthorizedError, routineFeedService } from './routineFeedService';
 
 const response = {
   posts: [{
@@ -73,7 +73,7 @@ describe('routineFeedService', () => {
   it('HTTP失敗と不正なレスポンスをエラーとして扱う', async () => {
     const failedFetch = vi.fn().mockResolvedValue({ ok: false, status: 401 });
     vi.stubGlobal('fetch', failedFetch);
-    await expect(routineFeedService.list('following')).rejects.toThrow('401');
+    await expect(routineFeedService.list('following')).rejects.toBeInstanceOf(RoutineFeedUnauthorizedError);
 
     const service = createRoutineFeedService({ list: async () => ({ posts: [], total: 'invalid' }) });
     await expect(service.list()).rejects.toThrow();
