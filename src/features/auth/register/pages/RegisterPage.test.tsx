@@ -155,7 +155,7 @@ describe('RegisterPage', () => {
     await user.click(screen.getByRole('button', { name: 'HIBILIOをはじめる' }));
 
     expect(fetchMock).toHaveBeenCalledWith('/api/accounts', expect.objectContaining({
-      body: expect.stringContaining('"favorite_tag_identifiers":["f9401de1-9f2e-4d28-bc08-6d987a926501"]'),
+      body: expect.stringContaining('"favorite_tag_identifiers":["20000000-0000-4000-8000-000000000001"]'),
       method: 'POST',
     }));
   });
