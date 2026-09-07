@@ -108,6 +108,31 @@ describe('RegisterPage', () => {
     }));
   });
 
+  it('選択したサービスのアイコン付き入力欄を表示し、追加したリンクを表示する', async () => {
+    const user = userEvent.setup();
+
+    render(<MemoryRouter><RegisterPage /></MemoryRouter>);
+
+    await user.type(screen.getByLabelText('メールアドレス'), 'new-member@example.com');
+    await user.click(screen.getByRole('button', { name: 'パスコードを送信' }));
+    await user.type(screen.getByLabelText('パスコード 1桁目'), '123456');
+    await user.click(screen.getByRole('button', { name: '確認して次へ' }));
+    await user.type(screen.getByLabelText('アカウント名'), '山田 由紀');
+    await user.type(screen.getByLabelText('ユーザーID（@ハンドル）'), 'yuki_sleep');
+    await user.click(screen.getByRole('button', { name: '次へ' }));
+
+    await user.click(screen.getByRole('button', { name: 'YouTube' }));
+
+    expect(screen.getByLabelText('YouTubeのリンク')).toHaveAttribute('placeholder', 'チャンネル名');
+    expect(document.querySelector('.hibilio-register__social-input .hibilio-register__social-icon--youtube')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('YouTubeのリンク'), 'hibilio_channel');
+    await user.click(screen.getByRole('button', { name: '追加' }));
+
+    expect(screen.getByText('hibilio_channel')).toBeInTheDocument();
+    expect(document.querySelector('.hibilio-register__social-link .hibilio-register__social-icon--youtube')).toBeInTheDocument();
+  });
+
   it('選択したダミータグのidentifierをアカウント作成payloadへ送信する', async () => {
     const user = userEvent.setup();
     const fetchMock = csrfAwareFetch(201);
