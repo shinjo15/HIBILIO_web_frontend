@@ -129,6 +129,7 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText('YouTubeのリンク'), 'hibilio_channel');
     await user.click(screen.getByRole('button', { name: '追加' }));
 
+    expect(screen.getByRole('heading', { name: '追加したリンク' })).toBeInTheDocument();
     expect(screen.getByText('hibilio_channel')).toBeInTheDocument();
     expect(document.querySelector('.hibilio-register__social-link .hibilio-register__social-icon--youtube')).toBeInTheDocument();
   });

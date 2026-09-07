@@ -148,12 +148,13 @@ export function RegisterPage() {
           </>}
 
           {registration.step === 'social' && <>
-            {registration.socialLinks.length > 0 && <div className="hibilio-register__social-links">
-              {registration.socialLinks.map((link) => {
+            {registration.socialLinks.length > 0 && <section className="hibilio-register__social-links">
+              <h3>{messages.auth.addedSocialLinks}</h3>
+              <div>{registration.socialLinks.map((link) => {
                 const platform = registrationSocialPlatforms.find((item) => item.socialType === link.socialType);
                 return platform === undefined ? null : <div className="hibilio-register__social-link" key={link.socialType}><platform.Icon className={`hibilio-register__social-icon hibilio-register__social-icon--${link.socialType}`} /><span>{link.socialUrl.replace(platform.urlPrefix, '')}</span></div>;
-              })}
-            </div>}
+              })}</div>
+            </section>}
             {selectedSocialPlatform === null ? <div className="hibilio-register__social-platforms">
               {registrationSocialPlatforms.map((platform) => <Button key={platform.socialType} onClick={() => setSelectedSocialPlatform(platform)} startIcon={<platform.Icon className={`hibilio-register__social-icon hibilio-register__social-icon--${platform.socialType}`} />} type="button" variant="outlined">{platform.label}</Button>)}
             </div> : <div className="hibilio-register__social-add"><div className="hibilio-register__social-input"><selectedSocialPlatform.Icon className={`hibilio-register__social-icon hibilio-register__social-icon--${selectedSocialPlatform.socialType}`} /><input aria-label={messages.auth.socialLinkInput.replace('{platform}', selectedSocialPlatform.label)} onChange={(event) => setLinkValue(event.target.value)} placeholder={selectedSocialPlatform.placeholder} value={linkValue} /></div><Button onClick={addSocialLink} type="button" variant="contained">{messages.auth.add}</Button></div>}

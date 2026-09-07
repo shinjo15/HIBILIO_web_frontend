@@ -297,6 +297,26 @@
   gap: 8px;
 }
 
+.hibilio-register__social-links {
+  border-bottom: 1px solid var(--hibilio-color-border);
+  display: grid;
+  gap: 10px;
+  padding-bottom: 20px;
+}
+
+.hibilio-register__social-links h3 {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.hibilio-register__social-links > div {
+  display: grid;
+  gap: 8px;
+}
+
 .hibilio-register__social-platforms .MuiButton-root {
   background: var(--hibilio-color-card);
   border-color: var(--hibilio-color-border);
@@ -352,14 +372,14 @@
 .hibilio-register__social-link {
   align-items: center;
   background: var(--hibilio-color-card);
-  border: 1px solid var(--hibilio-color-border);
-  border-radius: 12px;
-  color: var(--hibilio-color-on-background);
+  border: 1px solid var(--hibilio-color-primary);
+  border-radius: 999px;
+  color: var(--hibilio-color-primary);
   display: flex;
   font-size: 14px;
   gap: 12px;
-  min-height: 48px;
-  padding: 0 16px;
+  min-height: 40px;
+  padding: 0 14px;
 }
 
 .hibilio-register__social-link span {
