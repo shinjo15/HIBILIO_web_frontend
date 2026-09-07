@@ -5,7 +5,7 @@ export const routineDetailStepDtoSchema = z.object({
   action: z.string().min(1),
   duration: z.string().optional(),
   memo: z.string().min(1).optional(),
-  time: z.string().min(1),
+  time: z.string().min(1).optional(),
 });
 
 export const executionPostDtoSchema = z.object({
@@ -32,13 +32,13 @@ export const customizationDtoSchema = z.object({
 
 export const routineDetailDtoSchema = z.object({
   author: z.object({
-    handle: z.string().min(1),
+    handle: z.string(),
     name: z.string().min(1),
   }),
   customizations: z.number().int().nonnegative(),
   customizationsList: z.array(customizationDtoSchema),
   description: z.string(),
-  durationMinutes: z.number().int().positive(),
+  durationMinutes: z.number().int().positive().nullable(),
   executions: z.number().int().nonnegative(),
   executionPosts: z.array(executionPostDtoSchema),
   id: z.string().min(1),
@@ -99,7 +99,7 @@ export function toRoutineDetailViewModel(input: unknown): RoutineDetailViewModel
       title,
     })),
     description: dto.description,
-    duration: formatDuration(dto.durationMinutes),
+    duration: dto.durationMinutes === null ? '-' : formatDuration(dto.durationMinutes),
     executions: dto.executions,
     executionPosts: dto.executionPosts.map((post) => ({
       achieved: post.achieved,
