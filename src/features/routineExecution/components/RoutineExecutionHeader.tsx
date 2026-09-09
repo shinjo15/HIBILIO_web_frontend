@@ -1,16 +1,16 @@
 import messages from '../../../shared/message/message.json';
-import type { RoutineExecutionPhase } from '../hooks/useRoutineExecution';
+
 
 type RoutineExecutionHeaderProps = {
   achieved: number;
   label?: string;
   onBack: () => void;
-  phase: RoutineExecutionPhase;
+  phase?: string;
   title: string;
   total: number;
 };
 
-export function RoutineExecutionHeader({ achieved, label = messages.routineExecution.runningLabel, onBack, phase, title, total }: RoutineExecutionHeaderProps) {
+export function RoutineExecutionHeader({ achieved, label = messages.routineExecution.runningLabel, onBack, title, total }: RoutineExecutionHeaderProps) {
   return (
     <header className="routine-execution-header">
       <button aria-label={messages.routineExecution.cancel} className="routine-execution-header__back" onClick={onBack} type="button">
@@ -20,9 +20,7 @@ export function RoutineExecutionHeader({ achieved, label = messages.routineExecu
         <p>{label}</p>
         <h1>{title}</h1>
       </div>
-      {phase === 'running' && (
-        <span className="routine-execution-header__progress">{achieved}/{total} {messages.routineExecution.completedUnit}</span>
-      )}
+      <span className="routine-execution-header__progress">{achieved}/{total} {messages.routineExecution.completedUnit}</span>
     </header>
   );
 }

@@ -85,7 +85,7 @@ describe('routineDetailService', () => {
       executionPosts: [{ achieved: 1, cheers: 2, comment: '実行メモです。', id: '70000000-0000-4000-8000-000000000001', total: 1, userName: '実行した人' }],
       executions: 3,
       likes: 2,
-      steps: [{ action: '水を飲む', duration: '10分' }],
+      steps: [{ action: '水を飲む', duration: '10分', id: '40000000-0000-4000-8000-000000000001' }],
       title: '朝のルーティン',
     });
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/routines/30000000-0000-4000-8000-000000000001');

@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { clearAuthenticated } from '../../auth/services/authSession';
 import messages from '../../../shared/message/message.json';
 import { countAchievedSteps } from '../domain/routineExecution';
 import { RoutineExecutionComment } from '../components/RoutineExecutionComment';
 import { RoutineExecutionHeader } from '../components/RoutineExecutionHeader';
-import { RoutineExecutionResult } from '../components/RoutineExecutionResult';
+
 import { RoutineExecutionStepList } from '../components/RoutineExecutionStepList';
 import { useRoutineExecution } from '../hooks/useRoutineExecution';
 import { routineExecutionService, type RoutineExecutionService } from '../services/routineExecutionService';
@@ -17,6 +19,15 @@ export function RoutineExecutionPage({ service = routineExecutionService }: Rout
   const navigate = useNavigate();
   const { routineId = '' } = useParams<{ routineId: string }>();
   const execution = useRoutineExecution(routineId, service);
+
+  useEffect(() => {
+    if (!execution.isUnauthorized) {
+      return;
+    }
+
+    clearAuthenticated();
+    navigate('/login', { replace: true });
+  }, [execution.isUnauthorized, navigate]);
 
   function goBack() {
     navigate(`/routines/${routineId}`);
@@ -34,14 +45,14 @@ export function RoutineExecutionPage({ service = routineExecutionService }: Rout
     return <ExecutionState message={messages.routineExecution.notFound} />;
   }
 
-  if (execution.phase === 'completed' && execution.result) {
+  if (execution.isCompleted) {
     return (
       <section className="routine-execution-page routine-execution-page--result">
-        <RoutineExecutionResult
-          onHome={() => navigate('/')}
-          result={execution.result}
-          title={execution.routine.title}
-        />
+        <main className="routine-execution-result">
+          <h1>{messages.routineExecution.resultTitle}</h1>
+          <p className="routine-execution-result__description">{messages.routineExecution.resultDescription}</p>
+          <button className="routine-execution-main-action" onClick={() => navigate(`/routines/${routineId}`)} type="button">{messages.routineExecution.backToRoutine}</button>
+        </main>
       </section>
     );
   }
@@ -54,24 +65,23 @@ export function RoutineExecutionPage({ service = routineExecutionService }: Rout
       <RoutineExecutionHeader
         achieved={achieved}
         onBack={goBack}
-        phase={execution.phase}
         title={execution.routine.title}
         total={total}
       />
       <main className="routine-execution-scroll">
-        {execution.phase === 'ready' && <p className="routine-execution-instruction">{messages.routineExecution.readyDescription}</p>}
+        <p className="routine-execution-instruction">{messages.routineExecution.readyDescription}</p>
         <RoutineExecutionStepList checked={execution.checked} onToggle={execution.toggleStep} steps={execution.routine.steps} />
-        {execution.phase === 'running' && <RoutineExecutionComment comment={execution.comment} onChange={execution.updateComment} />}
+        <RoutineExecutionComment memo={execution.memo} onChange={execution.updateMemo} />
         {execution.errorMessage && <p aria-live="polite" className="routine-execution-error" role="alert">{execution.errorMessage}</p>}
       </main>
       <div className="routine-execution-action-bar">
         <button
           className="routine-execution-main-action"
-          disabled={execution.isSubmitting}
-          onClick={execution.phase === 'ready' ? execution.start : () => void execution.complete()}
+          disabled={achieved === 0 || execution.isSubmitting}
+          onClick={() => void execution.create()}
           type="button"
         >
-          {execution.isSubmitting ? messages.routineExecution.completing : execution.phase === 'ready' ? messages.routineExecution.start : messages.routineExecution.finish}
+          {execution.isSubmitting ? messages.routineExecution.completing : messages.routineExecution.finish}
         </button>
       </div>
     </section>

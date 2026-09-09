@@ -24,7 +24,7 @@ const accountService: AccountService = {
 };
 
 const routineExecutionService: RoutineExecutionService = {
-  complete: async (result) => result,
+  create: async () => undefined,
   get: async () => ({
     id: 'routine-1',
     steps: [

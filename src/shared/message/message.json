@@ -123,8 +123,9 @@
     "achieved": "達成",
     "cancel": "実行をキャンセルする",
     "backToHome": "ホームに戻る",
+    "backToRoutine": "ルーティン詳細へ戻る",
     "commentLabel": "ひとこと（任意）",
-    "commentPlaceholder": "今日の実行を一言で",
+    "commentPlaceholder": "今日の実行を一言で（31文字まで）",
     "completedUnit": "完了",
     "completing": "結果を確認しています…",
     "duration": "所要時間",
@@ -141,7 +142,7 @@
     "stepCompleted": "完了",
     "stepIncomplete": "未完了",
     "validation": {
-      "commentTooLong": "コメントは300文字以内で入力してください。"
+      "memoTooLong": "ひとことは31文字以内で入力してください。"
     }
   },
   "account": {
