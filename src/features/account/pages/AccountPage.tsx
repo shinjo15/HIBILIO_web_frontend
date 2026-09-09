@@ -12,10 +12,11 @@ import { registrationSocialPlatforms } from '../../auth/register/services/regist
 import { clearAuthenticated } from '../../auth/services/authSession';
 import { AccountLikesList, AccountPostsList } from '../components/AccountRoutineLists';
 import { routineLikeService, RoutineLikeUnauthorizedError, type RoutineLikeService } from '../../routineFeed/services/routineLikeService';
+import { accountBlockService, AccountBlockError, AccountBlockUnauthorizedError, type AccountBlockService } from '../services/accountBlockService';
 import messages from '../../../shared/message/message.json';
 import '../account.css';
 
-type AccountPageProps = { isOwnAccount?: boolean; likeService?: RoutineLikeService; notFoundMessage?: string; onBack?: () => void; service?: AccountService };
+type AccountPageProps = { blockService?: AccountBlockService; isOwnAccount?: boolean; likeService?: RoutineLikeService; notFoundMessage?: string; onBack?: () => void; service?: AccountService };
 
 const tabs: Array<{ label: string; value: AccountTab }> = [
   { label: messages.account.tabs.posts, value: 'posts' },
@@ -23,7 +24,7 @@ const tabs: Array<{ label: string; value: AccountTab }> = [
   { label: messages.account.tabs.executionHistory, value: 'executionHistory' },
 ];
 
-export function AccountPage({ isOwnAccount = true, likeService = routineLikeService, notFoundMessage, onBack, service = accountService }: AccountPageProps) {
+export function AccountPage({ blockService = accountBlockService, isOwnAccount = true, likeService = routineLikeService, notFoundMessage, onBack, service = accountService }: AccountPageProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [posts, setPosts] = useState<Routine[]>([]);
@@ -33,6 +34,9 @@ export function AccountPage({ isOwnAccount = true, likeService = routineLikeServ
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [likeError, setLikeError] = useState(false);
+  const [blockError, setBlockError] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [isBlocking, setIsBlocking] = useState(false);
   const [likingPostIdentifier, setLikingPostIdentifier] = useState<string | null>(null);
   const [likeAnimation, setLikeAnimation] = useState<{ postIdentifier: string; type: 'like' | 'unlike' } | null>(null);
   const [likesStatus, setLikesStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
@@ -130,6 +134,28 @@ export function AccountPage({ isOwnAccount = true, likeService = routineLikeServ
     }
   }
 
+  async function blockAccount() {
+    if (!profile) return;
+
+    setIsBlocking(true);
+    setBlockError(false);
+    try {
+      await blockService.create(profile.accountIdentifier);
+      setIsBlocked(true);
+    } catch (error) {
+      if (error instanceof AccountBlockUnauthorizedError) {
+        clearAuthenticated();
+        navigate('/login');
+      } else if (error instanceof AccountBlockError && error.status === 409) {
+        setIsBlocked(true);
+      } else {
+        setBlockError(true);
+      }
+    } finally {
+      setIsBlocking(false);
+    }
+  }
+
   if (isLoading) {
     return <p className="account-page__state account-page__state--loading">{messages.account.loading}</p>;
   }
@@ -161,7 +187,7 @@ export function AccountPage({ isOwnAccount = true, likeService = routineLikeServ
           <div className="account-profile__body">
             <div className="account-profile__actions">
               {isOwnAccount && <button className="account-page__edit" onClick={() => navigate('/account/edit')} type="button">{messages.account.edit}</button>}
-              {!isOwnAccount && <><button className="account-page__follow" type="button"><FollowIcon />{messages.publicAccount.follow}</button><button className="account-page__block" type="button"><BlockIcon />{messages.publicAccount.block}</button></>}
+              {!isOwnAccount && <><button className="account-page__follow" type="button"><FollowIcon />{messages.publicAccount.follow}</button><button aria-label={isBlocking ? messages.publicAccount.blocking : isBlocked ? messages.publicAccount.blocked : messages.publicAccount.block} className={isBlocked ? 'account-page__block account-page__block--blocked' : 'account-page__block'} disabled={isBlocking || isBlocked} onClick={() => void blockAccount()} type="button"><BlockIcon />{isBlocking ? messages.publicAccount.blocking : isBlocked ? messages.publicAccount.blocked : messages.publicAccount.block}</button></>}
             </div>
             <div className="account-profile__details">
               <h1 className="account-profile__name">{profile.name}</h1>
@@ -177,6 +203,7 @@ export function AccountPage({ isOwnAccount = true, likeService = routineLikeServ
               </div>}
             </div>
           </div>
+          {blockError && <p className="account-page__block-error" role="alert">{messages.publicAccount.blockError}</p>}
           <div aria-label={messages.account.tabs.ariaLabel} className="account-tabs" role="tablist">
             {tabs.map((tab) => (
               <button

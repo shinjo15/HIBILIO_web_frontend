@@ -16,6 +16,7 @@ describe('createPublicAccountService', () => {
     const service = createPublicAccountService();
 
     await expect(service.get('11111111-1111-4111-8111-111111111111')).resolves.toEqual({
+      accountIdentifier: '11111111-1111-4111-8111-111111111111',
       bio: null,
       favoriteTags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '朝活' }],
       initial: '公',
