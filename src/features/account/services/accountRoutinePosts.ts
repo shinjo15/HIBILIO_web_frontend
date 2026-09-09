@@ -1,10 +1,5 @@
 import { z } from 'zod';
-import {
-  accountPostSchema,
-  likedRoutineSchema,
-  type AccountPost,
-  type LikedRoutine,
-} from '../domain/account';
+import { routineSchema, type Routine } from '../../routineFeed/domain/routine';
 
 const routinePostResponseSchema = z.object({
   account_identifier: z.string().min(1),
@@ -41,25 +36,29 @@ const accountLikedRoutinePostsResponseSchema = z.object({
   total: z.number().int().nonnegative(),
 });
 
-export function parseAccountPosts(response: unknown): AccountPost[] {
-  return accountRoutinePostsResponseSchema.parse(response).items.map((post) => accountPostSchema.parse({
+function toRoutine(post: z.infer<typeof routinePostResponseSchema>, liked: boolean): Routine {
+  return routineSchema.parse({
+    accountId: post.account_identifier,
+    authorName: post.account_name,
     createdAt: post.posted_at,
+    customizations: post.customization_count,
+    durationMinutes: post.routine_execution_minutes,
     executions: post.execution_count,
     id: post.post_identifier,
+    liked,
     likes: post.post_like_count,
     routineId: post.routine_identifier,
+    steps: post.routine_actions.map((action) => ({ action: action.action_name, durationMinutes: action.action_minutes })),
+    supports: post.post_support_count,
+    tags: post.tags.map((tag) => tag.tag_name),
     title: post.routine_name,
-  }));
+  });
 }
 
-export function parseLikedRoutines(response: unknown): LikedRoutine[] {
-  return accountLikedRoutinePostsResponseSchema.parse(response).items.map((post) => likedRoutineSchema.parse({
-    authorName: post.account_name,
-    likedAt: post.liked_at,
-    postId: post.post_identifier,
-    routineId: post.routine_identifier,
-    supports: post.post_support_count,
-    title: post.routine_name,
-    totalLikes: post.post_like_count,
-  }));
+export function parseAccountPosts(response: unknown): Routine[] {
+  return accountRoutinePostsResponseSchema.parse(response).items.map((post) => toRoutine(post, false));
+}
+
+export function parseLikedRoutines(response: unknown): Routine[] {
+  return accountLikedRoutinePostsResponseSchema.parse(response).items.map((post) => toRoutine(post, true));
 }

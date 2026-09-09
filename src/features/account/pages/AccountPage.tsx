@@ -3,11 +3,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type {
   AccountExecutionSummary,
-  AccountPost,
   AccountProfile,
   AccountTab,
-  LikedRoutine,
 } from '../domain/account';
+import type { Routine } from '../../routineFeed/domain/routine';
 import { AccountUnauthorizedError, accountService, type AccountService } from '../services/accountService';
 import { registrationSocialPlatforms } from '../../auth/register/services/registrationSocialPlatforms';
 import { clearAuthenticated } from '../../auth/services/authSession';
@@ -26,9 +25,9 @@ const tabs: Array<{ label: string; value: AccountTab }> = [
 export function AccountPage({ isOwnAccount = true, notFoundMessage, onBack, service = accountService }: AccountPageProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<AccountProfile | null>(null);
-  const [posts, setPosts] = useState<AccountPost[]>([]);
+  const [posts, setPosts] = useState<Routine[]>([]);
   const [executionHistories, setExecutionHistories] = useState<AccountExecutionSummary[]>([]);
-  const [likes, setLikes] = useState<LikedRoutine[]>([]);
+  const [likes, setLikes] = useState<Routine[]>([]);
   const [activeTab, setActiveTab] = useState<AccountTab>('posts');
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -159,8 +158,8 @@ export function AccountPage({ isOwnAccount = true, notFoundMessage, onBack, serv
           </div>
         </section>
 
-        {activeTab === 'posts' && <AccountPostsList posts={posts} onSelectRoutine={(routineId) => navigate(`/routines/${routineId}`)} />}
-        {activeTab === 'likes' && <AccountLikesList likes={likes} status={likesStatus} onSelectRoutine={(routineId) => navigate(`/routines/${routineId}`)} />}
+        {activeTab === 'posts' && <AccountPostsList posts={posts} />}
+        {activeTab === 'likes' && <AccountLikesList likes={likes} status={likesStatus} />}
         {activeTab === 'executionHistory' && <ExecutionHistoryList histories={executionHistories} />}
       </div>
     </section>

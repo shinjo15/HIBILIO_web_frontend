@@ -1,13 +1,12 @@
 import { z } from 'zod';
 import { parseAccountPosts, parseLikedRoutines } from './accountRoutinePosts';
 import { parseAccountRoutineExecutions } from './accountRoutineExecutions';
+import type { Routine } from '../../routineFeed/domain/routine';
 import {
   accountProfileSchema,
   type AccountExecutionHistory,
   type AccountExecutionSummary,
-  type AccountPost,
   type AccountProfile,
-  type LikedRoutine,
 } from '../domain/account';
 
 const getMyAccountResponseSchema = z.object({
@@ -51,8 +50,8 @@ export type AccountService = {
   getExecutionHistory: (executionId: string) => Promise<AccountExecutionHistory | null>;
   getProfile: () => Promise<AccountProfile | null>;
   listExecutionHistories: () => Promise<AccountExecutionSummary[]>;
-  listLikes: () => Promise<LikedRoutine[]>;
-  listPosts: () => Promise<AccountPost[]>;
+  listLikes: () => Promise<Routine[]>;
+  listPosts: () => Promise<Routine[]>;
 };
 
 const accountExecutionApiAdapter: AccountExecutionAdapter = {

@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { parseAccountPosts, parseLikedRoutines } from './accountRoutinePosts';
 import { parseAccountRoutineExecutions } from './accountRoutineExecutions';
-import { accountProfileSchema, type AccountExecutionSummary, type AccountPost, type AccountProfile, type LikedRoutine } from '../domain/account';
+import type { Routine } from '../../routineFeed/domain/routine';
+import { accountProfileSchema, type AccountExecutionSummary, type AccountProfile } from '../domain/account';
 
 const publicAccountResponseSchema = z.object({
   account_bio: z.string().nullable(),
@@ -24,8 +25,8 @@ type PublicAccountAdapter = {
 export type PublicAccountService = {
   get: (accountIdentifier: string) => Promise<AccountProfile | null>;
   listExecutionHistories: (accountIdentifier: string) => Promise<AccountExecutionSummary[]>;
-  listLikes: (accountIdentifier: string) => Promise<LikedRoutine[]>;
-  listPosts: (accountIdentifier: string) => Promise<AccountPost[]>;
+  listLikes: (accountIdentifier: string) => Promise<Routine[]>;
+  listPosts: (accountIdentifier: string) => Promise<Routine[]>;
 };
 
 const publicAccountApiAdapter: PublicAccountAdapter = {

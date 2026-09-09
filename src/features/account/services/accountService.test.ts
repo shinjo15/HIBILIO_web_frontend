@@ -61,11 +61,19 @@ describe('createAccountService', () => {
     const service = createAccountService();
 
     await expect(service.listPosts()).resolves.toEqual([{
+      accountId: '11111111-1111-4111-8111-111111111111',
+      authorName: '投稿者',
       createdAt: '2026-09-03T12:00:00+00:00',
+      customizations: 1,
+      durationMinutes: 30,
       executions: 3,
       id: 'post-1',
+      liked: false,
       likes: 2,
       routineId: 'routine-1',
+      steps: [],
+      supports: 4,
+      tags: [],
       title: '朝の集中ルーティン',
     }]);
     expect(fetchMock).toHaveBeenCalledWith('/api/my/posts?page=1&number_of_items_per_page=20', { credentials: 'include', method: 'GET' });
@@ -95,13 +103,20 @@ describe('createAccountService', () => {
     const service = createAccountService();
 
     await expect(service.listLikes()).resolves.toEqual([{
+      accountId: '11111111-1111-4111-8111-111111111111',
       authorName: '投稿者',
-      likedAt: '2026-09-04T12:00:00+00:00',
-      postId: 'post-1',
+      createdAt: '2026-09-03T12:00:00+00:00',
+      customizations: 1,
+      durationMinutes: 30,
+      executions: 3,
+      id: 'post-1',
+      liked: true,
+      likes: 2,
       routineId: 'routine-1',
+      steps: [],
       supports: 4,
+      tags: [],
       title: '朝の集中ルーティン',
-      totalLikes: 2,
     }]);
     expect(fetchMock).toHaveBeenCalledWith('/api/my/likes?page=1&number_of_items_per_page=20', { credentials: 'include', method: 'GET' });
   });
