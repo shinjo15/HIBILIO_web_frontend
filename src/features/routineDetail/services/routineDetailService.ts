@@ -18,7 +18,7 @@ export type DummyRoutineDetailMode = 'success' | 'empty' | 'error';
 
 const detailRoutines: RoutineDetailDto[] = [
   {
-    author: { handle: 'tanaka_morning', name: '田中 陽介' },
+    author: { accountId: '10000000-0000-4000-8000-000000000001', handle: 'tanaka_morning', name: '田中 陽介' },
     customizations: 24,
     customizationsList: [
       {
@@ -86,7 +86,7 @@ const detailRoutines: RoutineDetailDto[] = [
     title: '朝の集中ルーティン｜平日版',
   },
   {
-    author: { handle: 'yuki_sleep', name: '山田 由紀' },
+    author: { accountId: '10000000-0000-4000-8000-000000000002', handle: 'yuki_sleep', name: '山田 由紀' },
     customizations: 41,
     customizationsList: [
       {
@@ -142,7 +142,7 @@ const detailRoutines: RoutineDetailDto[] = [
     title: '夜のリラックスルーティン',
   },
   {
-    author: { handle: 'fitness_masa', name: '佐藤 雅人' },
+    author: { accountId: '10000000-0000-4000-8000-000000000003', handle: 'fitness_masa', name: '佐藤 雅人' },
     customizations: 18,
     customizationsList: [],
     description: '自重トレーニングのみ。器具不要で毎日続けられる30分の筋トレです。',
@@ -163,7 +163,7 @@ const detailRoutines: RoutineDetailDto[] = [
     title: '初心者向け筋トレルーティン',
   },
   {
-    author: { handle: 'bookworm_hana', name: '鈴木 花音' },
+    author: { accountId: '10000000-0000-4000-8000-000000000004', handle: 'bookworm_hana', name: '鈴木 花音' },
     customizations: 9,
     customizationsList: [],
     description: '通勤時間を読書に変えるルーティン。月に5冊読めるようになりました。',
@@ -183,7 +183,7 @@ const detailRoutines: RoutineDetailDto[] = [
     title: '読書習慣ルーティン｜通勤活用版',
   },
   {
-    author: { handle: 'takumi_wfh', name: '中村 拓海' },
+    author: { accountId: '10000000-0000-4000-8000-000000000005', handle: 'takumi_wfh', name: '中村 拓海' },
     customizations: 33,
     customizationsList: [],
     description: '家で仕事をすると集中できない問題を解決。時間ブロックとポモドーロを組み合わせました。',
@@ -297,7 +297,7 @@ export const apiRoutineDetailAdapter: RoutineDetailAdapter = {
       executionPostsResponse.json().then((body) => routineExecutionPostsResponseSchema.parse(body)),
     ]);
     return {
-      author: { handle: '', name: detail.account_name },
+      author: { accountId: detail.account_identifier, handle: '', name: detail.account_name },
       customizations: detail.customization_count,
       customizationsList: customizations.items.map((customization) => ({
         authorName: customization.account_name,

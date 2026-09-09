@@ -19,6 +19,28 @@
   margin: 0;
 }
 
+.account-page__back {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--hibilio-color-on-background);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 600;
+  gap: 4px;
+  padding: 0;
+}
+
+.account-page__back svg {
+  height: 20px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 20px;
+}
+
 .account-page__settings,
 .account-page__edit,
 .account-page__card {
@@ -87,6 +109,10 @@
   padding: 8px 20px 16px;
 }
 
+.account-profile__body--without-actions {
+  padding-top: 44px;
+}
+
 .account-profile__actions {
   display: flex;
   justify-content: flex-end;
@@ -100,6 +126,39 @@
   cursor: pointer;
   font-size: 12px;
   padding: 6px 12px;
+}
+
+.account-page__follow,
+.account-page__block {
+  align-items: center;
+  background: transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  gap: 6px;
+  padding: 6px 12px;
+}
+
+.account-page__follow svg,
+.account-page__block svg {
+  fill: none;
+  height: 13px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
+  width: 13px;
+}
+
+.account-page__follow {
+  border: 1px solid var(--hibilio-color-primary);
+  color: var(--hibilio-color-primary);
+}
+
+.account-page__block {
+  border: 1px solid var(--hibilio-color-border);
+  color: var(--hibilio-color-muted-text);
+  margin-left: 8px;
 }
 
 .account-profile__details {
@@ -169,6 +228,10 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   margin-top: 16px;
+}
+
+.account-tabs--two {
+  grid-template-columns: repeat(2, 1fr);
 }
 
 .account-tabs__tab {

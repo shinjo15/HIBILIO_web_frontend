@@ -103,6 +103,10 @@
   margin: 0;
 }
 
+.routine-detail-author__link {
+  color: inherit;
+}
+
 .routine-detail-author__handle,
 .routine-detail-post__author span {
   color: var(--hibilio-color-muted-text);

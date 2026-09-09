@@ -147,7 +147,7 @@
   },
   "account": {
     "achievementRate": "達成率",
-    "achieved": "達成",
+    "achieved": "達成項目数",
     "complete": "完璧",
     "countLoading": "-",
     "duration": "所要時間",
@@ -172,6 +172,14 @@
       "posts": "投稿"
     },
     "title": "アカウント"
+  },
+  "publicAccount": {
+    "back": "戻る",
+    "block": "ブロック",
+    "error": "アカウント情報を読み込めませんでした。時間をおいて再試行してください。",
+    "follow": "フォロー",
+    "loading": "アカウント情報を読み込んでいます…",
+    "notFound": "アカウントが見つかりませんでした。"
   },
   "profileEdit": {
     "apiUnavailable": "更新APIは未提供のため、この画面では変更内容を画面内で確認できます。",

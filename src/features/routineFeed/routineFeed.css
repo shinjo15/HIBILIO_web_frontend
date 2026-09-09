@@ -243,6 +243,10 @@
   line-height: 16px;
 }
 
+.routine-card__author-link {
+  color: inherit;
+}
+
 .routine-feed-page .routine-card__metadata {
   align-items: flex-end;
   display: flex;
