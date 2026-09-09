@@ -342,6 +342,36 @@
   margin-top: 12px;
 }
 
+.routine-create-loading {
+  align-items: center;
+  background: var(--hibilio-color-background);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  justify-content: center;
+  min-height: 100dvh;
+}
+
+.routine-create-loading__mark {
+  animation: routine-create-loading-spin 2.4s linear infinite;
+  display: inline-flex;
+}
+
+.routine-create-loading p {
+  animation: routine-create-loading-pulse 1.5s ease-in-out infinite;
+  color: var(--hibilio-color-muted-text);
+  font-size: 14px;
+  margin: 0;
+}
+
+@keyframes routine-create-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes routine-create-loading-pulse {
+  50% { opacity: 0.45; }
+}
+
 .routine-create-icon {
   display: block;
 }

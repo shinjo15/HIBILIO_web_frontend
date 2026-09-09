@@ -49,6 +49,10 @@ export function RoutineCreatePage({
     return <RoutineCreateSuccess copy={copy} returnPath={returnPath} />;
   }
 
+  if (routineCreate.status === 'loading') {
+    return <RoutineCreateLoading />;
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void routineCreate.submit();
@@ -115,6 +119,15 @@ function RoutineCreateSuccess({
         <p>{copy.successDescription}</p>
         <Link className="routine-create-state__link" to={returnPath}>{messages.routineCreate.backToFeed}</Link>
       </main>
+    </section>
+  );
+}
+
+function RoutineCreateLoading() {
+  return (
+    <section className="routine-create-loading">
+      <span className="routine-create-loading__mark"><HibilioMark size={56} /></span>
+      <p>{messages.routineCreate.submitting}</p>
     </section>
   );
 }
