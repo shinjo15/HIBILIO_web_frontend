@@ -13,47 +13,44 @@ import { CustomizedRoutineCreatePage } from '../features/routineCreate/pages/Cus
 import { RoutineDetailPage } from '../features/routineDetail/pages/RoutineDetailPage';
 import { RoutineExecutionPage } from '../features/routineExecution/pages/RoutineExecutionPage';
 import { AppShell } from '../shared/navigation/AppShell';
+import { ScrollManager } from './ScrollManager';
 
 export const router = createBrowserRouter([
   {
-    element: <LoginPage />,
-    path: 'login',
-  },
-  {
-    element: <RegisterPage />,
-    path: 'sign-up',
-  },
-  {
-    element: <RequireAuthentication />,
-    children: [
-      { element: <AccountExecutionHistoryPage />, path: 'routines/:routineId/executions/:executionId' },
-      { element: <RoutineExecutionPage />, path: 'routines/:routineId/execute' },
-    ],
-  },
-  {
-    element: <AppShell />,
+    element: <ScrollManager />,
     children: [
       {
-        element: <RoutineFeedPage />,
-        index: true,
+        element: <LoginPage />,
+        path: 'login',
+      },
+      {
+        element: <RegisterPage />,
+        path: 'sign-up',
       },
       {
         element: <RequireAuthentication />,
         children: [
-          { element: <AccountPage />, path: 'account' },
-          { element: <ProfileEditPage />, path: 'account/edit' },
-          { element: <SettingsPage />, path: 'account/settings' },
-          { element: <RoutineCreatePage />, path: 'routines/new' },
-          { element: <CustomizedRoutineCreatePage />, path: 'routines/:routineId/customize' },
+          { element: <AccountExecutionHistoryPage />, path: 'routines/:routineId/executions/:executionId' },
+          { element: <RoutineExecutionPage />, path: 'routines/:routineId/execute' },
         ],
       },
       {
-        element: <RoutineDetailPage />,
-        path: 'routines/:routineId',
-      },
-      {
-        element: <PublicAccountPage />,
-        path: 'accounts/:accountId',
+        element: <AppShell />,
+        children: [
+          { element: <RoutineFeedPage />, index: true },
+          {
+            element: <RequireAuthentication />,
+            children: [
+              { element: <AccountPage />, path: 'account' },
+              { element: <ProfileEditPage />, path: 'account/edit' },
+              { element: <SettingsPage />, path: 'account/settings' },
+              { element: <RoutineCreatePage />, path: 'routines/new' },
+              { element: <CustomizedRoutineCreatePage />, path: 'routines/:routineId/customize' },
+            ],
+          },
+          { element: <RoutineDetailPage />, path: 'routines/:routineId' },
+          { element: <PublicAccountPage />, path: 'accounts/:accountId' },
+        ],
       },
     ],
   },
