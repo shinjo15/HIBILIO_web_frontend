@@ -59,6 +59,7 @@ describe('RoutineDetailPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'テストルーティン' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'ルーティン作者' })).toHaveAttribute('href', '/accounts/10000000-0000-4000-8000-000000000002');
+    expect(screen.getByRole('link', { name: 'ルーティン作者' })).toHaveClass('routine-detail-author__link');
     expect(screen.queryByText('ルーティンの詳しい説明です。')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '概要' }));
     expect(screen.getByText('ルーティンの詳しい説明です。')).toBeInTheDocument();

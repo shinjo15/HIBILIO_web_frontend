@@ -53,6 +53,7 @@ describe('RoutineFeedPage', () => {
     resolveList?.([routine]);
     expect(await screen.findByRole('heading', { name: '朝の集中ルーティン' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '田中 陽介' })).toHaveAttribute('href', '/accounts/10000000-0000-4000-8000-000000000001');
+    expect(screen.getByRole('link', { name: '田中 陽介' })).toHaveClass('routine-card__author-link');
     expect(screen.getByRole('link', { name: '朝の集中ルーティン' })).toHaveAttribute('href', '/routines/routine-1');
     expect(screen.queryByRole('button', { name: 'いいねする' })).not.toBeInTheDocument();
   });
