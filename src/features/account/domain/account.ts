@@ -1,9 +1,8 @@
 import { z } from 'zod';
 
 export const accountProfileSchema = z.object({
-  bio: z.string(),
-  favoriteTags: z.array(z.string().min(1)),
-  handle: z.string().min(1),
+  bio: z.string().nullable(),
+  favoriteTags: z.array(z.object({ id: z.string().min(1), name: z.string().min(1) })),
   initial: z.string().min(1).max(1),
   name: z.string().min(1),
   socialLinks: z.array(z.object({ socialType: z.string().min(1), socialUrl: z.string().url() })),

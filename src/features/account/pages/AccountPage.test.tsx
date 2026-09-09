@@ -3,13 +3,14 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AccountPage } from './AccountPage';
-import type { AccountService } from '../services/accountService';
+import { AccountUnauthorizedError, type AccountService } from '../services/accountService';
+import { isAuthenticated, markAuthenticated } from '../../auth/services/authSession';
 
 const service: AccountService = {
   getExecutionHistory: async (executionId) => executionId === 'execution-1'
     ? { achievedActions: 2, completedActionIndexes: [0, 1], completed: true, executedAtLabel: '今日', id: 'execution-1', minutes: 30, routineId: 'routine-1', routineTitle: '朝の集中ルーティン', totalActions: 2 }
     : null,
-  getProfile: async () => ({ bio: '毎日続けることが目標。', favoriteTags: ['睡眠'], handle: 'yuki_sleep', initial: 'Y', name: '山田 由紀', socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/yuki_sleep' }] }),
+  getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: '毎日続けることが目標。', favoriteTags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '睡眠' }], initial: '山', name: '山田 由紀', socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/yuki_sleep' }] }),
   listExecutionHistories: async () => [{ achievedActions: 2, completedActionIndexes: [0, 1], completed: true, executedAtLabel: '今日', id: 'execution-1', minutes: 30, routineId: 'routine-1', routineTitle: '朝の集中ルーティン', totalActions: 2 }],
   listLikes: async () => [{ likedAt: '2026-09-03T12:00:00.000Z', postCategory: 'routine', postId: 'post-1', routineId: 'routine-2', supports: 4, totalLikes: 2 }],
   listPosts: async () => [{ createdAtLabel: '今日', executions: 3, id: 'post-1', likes: 2, routineId: 'routine-1', title: '朝の集中ルーティン' }],
@@ -23,7 +24,10 @@ function renderPage(accountService: AccountService = service) {
   return render(<MemoryRouter><AccountPage service={accountService} /><Location /></MemoryRouter>);
 }
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  window.sessionStorage.clear();
+});
 
 describe('AccountPage', () => {
   it('プロフィールと投稿を表示し、投稿からルーティン詳細へ遷移する', async () => {
@@ -33,6 +37,7 @@ describe('AccountPage', () => {
     expect(screen.getByText('アカウント情報を読み込んでいます…')).toBeInTheDocument();
     expect(await screen.findByText('山田 由紀')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '編集' })).toBeInTheDocument();
+    expect(screen.queryByText('11111111-1111-4111-8111-111111111111')).not.toBeInTheDocument();
     expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['1投稿', '-いいね', '1実行履歴']);
 
     await user.click(screen.getByRole('button', { name: /朝の集中ルーティン/ }));
@@ -76,6 +81,14 @@ describe('AccountPage', () => {
     renderPage({ ...service, getProfile: vi.fn().mockRejectedValue(new Error('failed')) });
 
     await waitFor(() => expect(screen.getByText('アカウント情報を読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument());
+  });
+
+  it('プロフィール API が401ならログイン通過状態を削除してログインへ遷移する', async () => {
+    markAuthenticated();
+    renderPage({ ...service, getProfile: vi.fn().mockRejectedValue(new AccountUnauthorizedError()) });
+
+    await waitFor(() => expect(screen.getByText('/login')).toBeInTheDocument());
+    expect(isAuthenticated()).toBe(false);
   });
 
   it('設定ボタンからアカウント設定画面へ遷移する', async () => {

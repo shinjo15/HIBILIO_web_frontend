@@ -8,8 +8,9 @@ import type {
   AccountTab,
   LikedRoutine,
 } from '../domain/account';
-import { accountService, type AccountService } from '../services/accountService';
+import { AccountUnauthorizedError, accountService, type AccountService } from '../services/accountService';
 import { registrationSocialPlatforms } from '../../auth/register/services/registrationSocialPlatforms';
+import { clearAuthenticated } from '../../auth/services/authSession';
 import messages from '../../../shared/message/message.json';
 import '../account.css';
 
@@ -44,8 +45,14 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
           setHasError(false);
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!cancelled) {
+          if (error instanceof AccountUnauthorizedError) {
+            clearAuthenticated();
+            navigate('/login');
+            return;
+          }
+
           setHasError(true);
         }
       })
@@ -56,7 +63,7 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
       });
 
     return () => { cancelled = true; };
-  }, [service]);
+  }, [navigate, service]);
 
   function selectTab(tab: AccountTab) {
     setActiveTab(tab);
@@ -108,8 +115,7 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
             </div>
             <div className="account-profile__details">
               <p className="account-profile__name">{profile.name}</p>
-              <p className="account-profile__handle">@{profile.handle}</p>
-              <p className="account-profile__bio">{profile.bio}</p>
+              {profile.bio !== null && <p className="account-profile__bio">{profile.bio}</p>}
               {profile.socialLinks.length > 0 && <div className="account-profile__social-links">
                 {profile.socialLinks.map((link) => {
                   const platform = registrationSocialPlatforms.find((item) => item.socialType === link.socialType);
@@ -117,7 +123,7 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
                 })}
               </div>}
               {profile.favoriteTags.length > 0 && <div className="account-profile__favorite-tags">
-                {profile.favoriteTags.map((tag) => <span className="account-profile__favorite-tag" key={tag}>{tag}</span>)}
+                {profile.favoriteTags.map((tag) => <span className="account-profile__favorite-tag" key={tag.id}>{tag.name}</span>)}
               </div>}
             </div>
           </div>
