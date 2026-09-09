@@ -8,7 +8,7 @@
   background: var(--hibilio-color-card);
   border-bottom: 1px solid var(--hibilio-color-border);
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) 40px;
+  grid-template-columns: 20px minmax(0, 1fr) 64px;
   min-height: 48px;
   padding: 0 16px;
   position: sticky;
@@ -30,23 +30,34 @@
 }
 
 .routine-create-header__back:hover,
-.routine-create-header__back:focus-visible,
-.routine-create-header__submit:not(:disabled):hover,
-.routine-create-header__submit:not(:disabled):focus-visible {
+.routine-create-header__back:focus-visible {
   color: var(--hibilio-color-primary);
 }
 
+.routine-create-header__submit:not(:disabled):hover,
+.routine-create-header__submit:not(:disabled):focus-visible {
+  opacity: 0.88;
+}
+
 .routine-create-header__submit {
-  color: var(--hibilio-color-primary);
+  background: var(--hibilio-color-primary);
+  border: 1px solid var(--hibilio-color-primary);
+  border-radius: 8px;
+  color: var(--hibilio-color-on-primary);
   cursor: pointer;
   font: inherit;
   font-size: 14px;
   font-weight: 600;
+  justify-self: end;
+  min-height: 32px;
+  padding: 6px 12px;
 }
 
 .routine-create-header__submit:disabled {
+  background: var(--hibilio-color-muted);
+  border-color: var(--hibilio-color-border);
   color: var(--hibilio-color-muted-text);
-  cursor: wait;
+  cursor: not-allowed;
 }
 
 .routine-create-header__title {
