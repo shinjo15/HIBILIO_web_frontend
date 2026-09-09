@@ -67,6 +67,7 @@ export function RoutineCreatePage({
           form="routine-create-form"
           type="submit"
         >
+          <SendIcon />
           {routineCreate.status === 'submitting' ? messages.routineCreate.submitting : messages.routineCreate.submit}
         </button>
       </header>
@@ -118,4 +119,8 @@ function RoutineCreateSuccess({
 
 function BackIcon() {
   return <svg aria-hidden="true" className="routine-create-icon" fill="none" height="20" viewBox="0 0 24 24" width="20"><polyline points="15 18 9 12 15 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
+}
+
+function SendIcon() {
+  return <svg aria-hidden="true" className="routine-create-icon" fill="currentColor" height="15" viewBox="0 0 24 24" width="15"><path d="M3.4 2.7 21.3 11a1 1 0 0 1 0 1.8L3.4 21.3a.75.75 0 0 1-1-.9l2.3-6.7a.75.75 0 0 1 .7-.5H14a.75.75 0 0 0 0-1.5H5.4a.75.75 0 0 1-.7-.5L2.4 3.6a.75.75 0 0 1 1-.9Z" /></svg>;
 }
