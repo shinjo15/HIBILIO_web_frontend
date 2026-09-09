@@ -29,6 +29,7 @@ describe('PublicAccountPage', () => {
     renderPage(service);
 
     expect(await screen.findByRole('heading', { name: '公開アカウント' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '公開アカウント' }).closest('.account-profile__body')).toHaveClass('account-profile__body--without-actions');
     expect(screen.getByText('朝の習慣を続けています。')).toBeInTheDocument();
     expect(screen.getByText('朝活')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /example/ })).toHaveAttribute('href', 'https://x.com/example');

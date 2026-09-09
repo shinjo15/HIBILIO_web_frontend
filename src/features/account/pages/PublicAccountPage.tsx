@@ -53,7 +53,7 @@ export function PublicAccountPage({ service = publicAccountService }: PublicAcco
           <div className="account-profile__banner">
             <span aria-hidden="true" className="account-profile__avatar">{profile.initial}</span>
           </div>
-          <div className="account-profile__body">
+          <div className="account-profile__body account-profile__body--without-actions">
             <div className="account-profile__details">
               <h1 className="account-profile__name">{profile.name}</h1>
               {profile.bio !== null && <p className="account-profile__bio">{profile.bio}</p>}
