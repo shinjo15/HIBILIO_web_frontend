@@ -11,10 +11,11 @@ import { AccountUnauthorizedError, accountService, type AccountService } from '.
 import { registrationSocialPlatforms } from '../../auth/register/services/registrationSocialPlatforms';
 import { clearAuthenticated } from '../../auth/services/authSession';
 import { AccountLikesList, AccountPostsList } from '../components/AccountRoutineLists';
+import { routineLikeService, RoutineLikeUnauthorizedError, type RoutineLikeService } from '../../routineFeed/services/routineLikeService';
 import messages from '../../../shared/message/message.json';
 import '../account.css';
 
-type AccountPageProps = { isOwnAccount?: boolean; notFoundMessage?: string; onBack?: () => void; service?: AccountService };
+type AccountPageProps = { isOwnAccount?: boolean; likeService?: RoutineLikeService; notFoundMessage?: string; onBack?: () => void; service?: AccountService };
 
 const tabs: Array<{ label: string; value: AccountTab }> = [
   { label: messages.account.tabs.posts, value: 'posts' },
@@ -22,7 +23,7 @@ const tabs: Array<{ label: string; value: AccountTab }> = [
   { label: messages.account.tabs.executionHistory, value: 'executionHistory' },
 ];
 
-export function AccountPage({ isOwnAccount = true, notFoundMessage, onBack, service = accountService }: AccountPageProps) {
+export function AccountPage({ isOwnAccount = true, likeService = routineLikeService, notFoundMessage, onBack, service = accountService }: AccountPageProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [posts, setPosts] = useState<Routine[]>([]);
@@ -31,6 +32,9 @@ export function AccountPage({ isOwnAccount = true, notFoundMessage, onBack, serv
   const [activeTab, setActiveTab] = useState<AccountTab>('posts');
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [likeError, setLikeError] = useState(false);
+  const [likingPostIdentifier, setLikingPostIdentifier] = useState<string | null>(null);
+  const [likeAnimation, setLikeAnimation] = useState<{ postIdentifier: string; type: 'like' | 'unlike' } | null>(null);
   const [likesStatus, setLikesStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
 
   useEffect(() => {
@@ -92,6 +96,38 @@ export function AccountPage({ isOwnAccount = true, notFoundMessage, onBack, serv
 
         setLikesStatus('error');
       });
+  }
+
+  async function toggleLike(postIdentifier: string) {
+    const routine = [...posts, ...likes].find((item) => item.id === postIdentifier);
+    if (routine === undefined) return;
+    const type = routine.liked ? 'unlike' : 'like';
+    const updateLike = (item: Routine) => item.id === postIdentifier ? { ...item, liked: !routine.liked, likes: item.likes + (routine.liked ? -1 : 1) } : item;
+    setLikingPostIdentifier(postIdentifier);
+    setLikeAnimation({ postIdentifier, type });
+    setLikeError(false);
+    setPosts((current) => current.map(updateLike));
+    setLikes((current) => current.map(updateLike));
+    try {
+      if (routine.liked) {
+        await likeService.remove(postIdentifier);
+      } else {
+        await likeService.create(postIdentifier);
+      }
+    } catch (error) {
+      const rollback = (item: Routine) => item.id === postIdentifier ? routine : item;
+      setPosts((current) => current.map(rollback));
+      setLikes((current) => current.map(rollback));
+      if (error instanceof RoutineLikeUnauthorizedError) {
+        clearAuthenticated();
+        navigate('/login');
+      } else {
+        setLikeError(true);
+      }
+    } finally {
+      setLikingPostIdentifier(null);
+      setLikeAnimation(null);
+    }
   }
 
   if (isLoading) {
@@ -158,8 +194,8 @@ export function AccountPage({ isOwnAccount = true, notFoundMessage, onBack, serv
           </div>
         </section>
 
-        {activeTab === 'posts' && <AccountPostsList posts={posts} />}
-        {activeTab === 'likes' && <AccountLikesList likes={likes} status={likesStatus} />}
+        {activeTab === 'posts' && <AccountPostsList likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} onLike={toggleLike} posts={posts} />}
+        {activeTab === 'likes' && <AccountLikesList likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} likes={likes} onLike={toggleLike} status={likesStatus} />}
         {activeTab === 'executionHistory' && <ExecutionHistoryList histories={executionHistories} />}
       </div>
     </section>

@@ -7,13 +7,14 @@ import { useNavigate } from 'react-router-dom';
 import { RoutineCard } from '../components/RoutineCard';
 import type { Routine, RoutineFeedTab } from '../domain/routine';
 import { routineFeedService, RoutineFeedUnauthorizedError, type RoutineFeedService } from '../services/routineFeedService';
+import { routineLikeService, RoutineLikeUnauthorizedError, type RoutineLikeService } from '../services/routineLikeService';
 import { clearAuthenticated, isAuthenticated as hasAuthenticatedSession } from '../../auth/services/authSession';
 import { HibilioMark } from '../../../shared/brand/HibilioMark';
 import messages from '../../../shared/message/message.json';
 import '../routineFeed.css';
 import '../routineFeedTypography.css';
 
-type RoutineFeedPageProps = { isAuthenticated?: boolean; service?: RoutineFeedService };
+type RoutineFeedPageProps = { isAuthenticated?: boolean; likeService?: RoutineLikeService; service?: RoutineFeedService };
 
 const tabs: Array<{ label: string; value: RoutineFeedTab }> = [
   { label: messages.routineFeed.tabs.following, value: 'following' },
@@ -21,7 +22,7 @@ const tabs: Array<{ label: string; value: RoutineFeedTab }> = [
   { label: messages.routineFeed.tabs.popular, value: 'popular' },
 ];
 
-export function RoutineFeedPage({ isAuthenticated, service = routineFeedService }: RoutineFeedPageProps) {
+export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeService, service = routineFeedService }: RoutineFeedPageProps) {
   const navigate = useNavigate();
   const authenticated = isAuthenticated ?? hasAuthenticatedSession();
   const availableTabs = authenticated ? tabs : tabs.filter((tab) => tab.value === 'popular');
@@ -29,6 +30,9 @@ export function RoutineFeedPage({ isAuthenticated, service = routineFeedService 
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [likingPostIdentifier, setLikingPostIdentifier] = useState<string | null>(null);
+  const [likeAnimation, setLikeAnimation] = useState<{ postIdentifier: string; type: 'like' | 'unlike' } | null>(null);
+  const [likeError, setLikeError] = useState(false);
 
   const loadRoutines = useCallback(async () => {
     setIsLoading(true);
@@ -79,6 +83,35 @@ export function RoutineFeedPage({ isAuthenticated, service = routineFeedService 
     setIsLoading(true);
     setHasError(false);
     setActiveTab(tab);
+  }
+
+  async function toggleLike(postIdentifier: string) {
+    const routine = routines.find((item) => item.id === postIdentifier);
+    if (routine === undefined) return;
+    const type = routine.liked ? 'unlike' : 'like';
+    setLikingPostIdentifier(postIdentifier);
+    setLikeError(false);
+    setLikeAnimation({ postIdentifier, type });
+    const updateRoutine = (item: Routine) => item.id === postIdentifier ? { ...item, liked: !routine.liked, likes: item.likes + (routine.liked ? -1 : 1) } : item;
+    setRoutines((current) => current.map(updateRoutine));
+    try {
+      if (routine?.liked) {
+        await likeService.remove(postIdentifier);
+      } else {
+        await likeService.create(postIdentifier);
+      }
+    } catch (error) {
+      setRoutines((current) => current.map((item) => item.id === postIdentifier ? routine : item));
+      if (error instanceof RoutineLikeUnauthorizedError) {
+        clearAuthenticated();
+        navigate('/login');
+      } else {
+        setLikeError(true);
+      }
+    } finally {
+      setLikingPostIdentifier(null);
+      setLikeAnimation(null);
+    }
   }
 
 
@@ -138,7 +171,8 @@ export function RoutineFeedPage({ isAuthenticated, service = routineFeedService 
 
         {!isLoading && !hasError && routines.length > 0 && (
           <Stack className="routine-feed-list">
-            {routines.map((routine) => <RoutineCard key={routine.id} routine={routine} />)}
+            {likeError && <Alert severity="error">{messages.routineFeed.likeError}</Alert>}
+            {routines.map((routine) => <RoutineCard isLiking={likingPostIdentifier === routine.id} key={routine.id} likeAnimation={likeAnimation?.postIdentifier === routine.id ? likeAnimation.type : null} onLike={toggleLike} routine={routine} />)}
             <Box className="routine-feed-list__spacer" />
           </Stack>
         )}

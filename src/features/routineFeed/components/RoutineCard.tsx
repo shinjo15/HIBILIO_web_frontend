@@ -5,10 +5,13 @@ import messages from '../../../shared/message/message.json';
 import { formatDuration, formatPostedAt, type Routine } from '../domain/routine';
 
 type RoutineCardProps = {
+  likeAnimation?: 'like' | 'unlike' | null;
+  isLiking?: boolean;
+  onLike?: (postIdentifier: string) => void;
   routine: Routine;
 };
 
-export function RoutineCard({ routine }: RoutineCardProps) {
+export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, routine }: RoutineCardProps) {
   const avatarClasses: Record<string, string> = {
     H: 'routine-card__avatar--h',
     N: 'routine-card__avatar--n',
@@ -18,7 +21,12 @@ export function RoutineCard({ routine }: RoutineCardProps) {
   };
   const avatarInitial = routine.authorName.slice(0, 1).toUpperCase();
   const avatarClass = avatarClasses[avatarInitial] ?? 'routine-card__avatar--default';
-  const likeClass = routine.liked ? 'routine-card__like routine-card__like--liked' : 'routine-card__like';
+  const likeClass = [
+    'routine-card__like',
+    routine.liked && 'routine-card__like--liked',
+    likeAnimation === 'like' && 'routine-card__like--like-animation',
+    likeAnimation === 'unlike' && 'routine-card__like--unlike-animation',
+  ].filter(Boolean).join(' ');
 
   return (
     <Paper
@@ -60,10 +68,10 @@ export function RoutineCard({ routine }: RoutineCardProps) {
           </Stack>
 
           <Stack className="routine-card__actions">
-            <Box aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass}>
+            <button aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass} disabled={isLiking || onLike === undefined} onClick={(event) => { event.stopPropagation(); onLike?.(routine.id); }} type="button">
               <HeartIcon filled={routine.liked} />
               <Typography component="span" className="routine-card__action-value">{routine.likes}</Typography>
-            </Box>
+            </button>
             <ActionItem icon={<RunIcon />} value={routine.executions} />
             <ActionItem icon={<ShuffleIcon />} value={routine.customizations} />
           </Stack>

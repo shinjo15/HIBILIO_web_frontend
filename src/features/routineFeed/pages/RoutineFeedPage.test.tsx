@@ -7,6 +7,7 @@ import { RoutineFeedPage } from './RoutineFeedPage';
 import { RoutineFeedUnauthorizedError } from '../services/routineFeedService';
 import type { Routine } from '../domain/routine';
 import type { RoutineFeedService } from '../services/routineFeedService';
+import type { RoutineLikeService } from '../services/routineLikeService';
 
 const routine: Routine = {
   accountId: '10000000-0000-4000-8000-000000000001',
@@ -29,8 +30,8 @@ afterEach(() => {
   window.sessionStorage.clear();
 });
 
-function renderPage(service: RoutineFeedService) {
-  return render(<MemoryRouter><RoutineFeedPage isAuthenticated service={service} /></MemoryRouter>);
+function renderPage(service: RoutineFeedService, likeService?: RoutineLikeService) {
+  return render(<MemoryRouter><RoutineFeedPage isAuthenticated likeService={likeService} service={service} /></MemoryRouter>);
 }
 
 function LocationProbe() {
@@ -55,13 +56,49 @@ describe('RoutineFeedPage', () => {
     expect(screen.getByRole('link', { name: '田中 陽介' })).toHaveAttribute('href', '/accounts/10000000-0000-4000-8000-000000000001');
     expect(screen.getByRole('link', { name: '田中 陽介' })).toHaveClass('routine-card__author-link');
     expect(screen.getByRole('link', { name: '朝の集中ルーティン' })).toHaveAttribute('href', '/routines/routine-1');
-    expect(screen.queryByRole('button', { name: 'いいねする' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'いいねする' })).toBeEnabled();
   });
 
   it('empty状態を表示する', async () => {
     renderPage({ list: async () => [] });
 
     expect(await screen.findByRole('heading', { name: 'ルーティンが見つかりません' })).toBeInTheDocument();
+  });
+
+  it('いいね成功時にカードの状態と件数を更新する', async () => {
+    const user = userEvent.setup();
+    const likeService: RoutineLikeService = { create: vi.fn().mockResolvedValue(undefined), remove: vi.fn().mockResolvedValue(undefined) };
+    renderPage({ list: async () => [routine] }, likeService);
+    await screen.findByRole('heading', { name: '朝の集中ルーティン' });
+
+    await user.click(screen.getByRole('button', { name: 'いいねする' }));
+
+    expect(likeService.create).toHaveBeenCalledWith('post-1');
+    expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toHaveTextContent('15');
+
+    await user.click(screen.getByRole('button', { name: 'いいねを取り消す' }));
+
+    expect(likeService.remove).toHaveBeenCalledWith('post-1');
+    expect(screen.getByRole('button', { name: 'いいねする' })).toHaveTextContent('14');
+  });
+
+  it('タップ直後にいいね状態とバーストアニメーションを表示して対象ボタンを無効化する', async () => {
+    let resolveCreate: (() => void) | undefined;
+    const user = userEvent.setup();
+    const likeService: RoutineLikeService = {
+      create: () => new Promise((resolve) => { resolveCreate = resolve; }),
+      remove: vi.fn().mockResolvedValue(undefined),
+    };
+    renderPage({ list: async () => [routine] }, likeService);
+    await screen.findByRole('heading', { name: '朝の集中ルーティン' });
+
+    await user.click(screen.getByRole('button', { name: 'いいねする' }));
+
+    expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toHaveClass('routine-card__like--like-animation');
+    expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toHaveTextContent('15');
+    resolveCreate?.();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toBeEnabled());
   });
 
   it('未認証時は人気タブだけを表示して人気一覧を取得する', async () => {
