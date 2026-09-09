@@ -6,6 +6,7 @@ import type {
 } from '../domain/routineCreate';
 
 type RoutineCreateFormProps = {
+  canSubmit: boolean;
   errorMessage: string | null;
   form: RoutineCreateViewModel;
   isSubmitting: boolean;
@@ -18,6 +19,7 @@ type RoutineCreateFormProps = {
 };
 
 export function RoutineCreateForm({
+  canSubmit,
   errorMessage,
   form,
   isSubmitting,
@@ -103,6 +105,10 @@ export function RoutineCreateForm({
           {messages.routineCreate.addAction}
         </button>
       </fieldset>
+
+      <button className="routine-create-form__submit" disabled={!canSubmit || isSubmitting} type="submit">
+        {messages.routineCreate.submit}
+      </button>
     </form>
   );
 }

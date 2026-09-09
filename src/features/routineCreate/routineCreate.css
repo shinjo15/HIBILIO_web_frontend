@@ -16,8 +16,7 @@
   z-index: 1;
 }
 
-.routine-create-header__back,
-.routine-create-header__submit {
+.routine-create-header__back {
   align-items: center;
   background: transparent;
   border: 0;
@@ -40,33 +39,29 @@
   color: var(--hibilio-color-primary);
 }
 
-.routine-create-header__submit:not(:disabled):hover,
-.routine-create-header__submit:not(:disabled):focus-visible {
-  opacity: 0.88;
-}
-
-.routine-create-header__submit {
+.routine-create-form__submit {
   background: var(--hibilio-color-primary);
   border: 1px solid var(--hibilio-color-primary);
   border-radius: 8px;
   color: var(--hibilio-color-on-primary);
   cursor: pointer;
-  flex-direction: row;
   font: inherit;
   font-size: 14px;
   font-weight: 600;
-  gap: 4px;
-  justify-self: end;
-  min-height: 32px;
-  padding: 6px 12px;
-  white-space: nowrap;
+  min-height: 48px;
+  width: 100%;
 }
 
-.routine-create-header__submit:disabled {
+.routine-create-form__submit:disabled {
   background: var(--hibilio-color-muted);
   border-color: var(--hibilio-color-border);
   color: var(--hibilio-color-muted-text);
   cursor: not-allowed;
+}
+
+.routine-create-form__submit:not(:disabled):hover,
+.routine-create-form__submit:not(:disabled):focus-visible {
+  opacity: 0.88;
 }
 
 .routine-create-header__title {
