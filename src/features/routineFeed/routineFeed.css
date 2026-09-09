@@ -175,7 +175,7 @@
   border-color: var(--hibilio-color-primary);
 }
 
-.routine-feed-page .MuiPaper-root.routine-card:active {
+.routine-feed-page .MuiPaper-root.routine-card:active:not(:has(.routine-card__like:active)) {
   transform: scale(0.99);
 }
 
