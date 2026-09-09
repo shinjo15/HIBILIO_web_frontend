@@ -82,6 +82,24 @@ describe('RoutineFeedPage', () => {
     expect(screen.getByRole('button', { name: 'いいねする' })).toHaveTextContent('14');
   });
 
+  it('いいね操作中はアニメーションを表示して対象ボタンを無効化する', async () => {
+    let resolveCreate: (() => void) | undefined;
+    const user = userEvent.setup();
+    const likeService: RoutineLikeService = {
+      create: () => new Promise((resolve) => { resolveCreate = resolve; }),
+      remove: vi.fn().mockResolvedValue(undefined),
+    };
+    renderPage({ list: async () => [routine] }, likeService);
+    await screen.findByRole('heading', { name: '朝の集中ルーティン' });
+
+    await user.click(screen.getByRole('button', { name: 'いいねする' }));
+
+    expect(screen.getByRole('button', { name: 'いいねする' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'いいねする' })).toHaveClass('routine-card__like--processing');
+    resolveCreate?.();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toBeEnabled());
+  });
+
   it('未認証時は人気タブだけを表示して人気一覧を取得する', async () => {
     const list = vi.fn().mockResolvedValue([routine]);
     render(<MemoryRouter><RoutineFeedPage isAuthenticated={false} service={{ list }} /></MemoryRouter>);

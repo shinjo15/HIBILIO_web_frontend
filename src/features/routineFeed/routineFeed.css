@@ -355,8 +355,28 @@
   cursor: default;
 }
 
+.routine-card__like--processing {
+  animation: routine-card-like-pulse 500ms ease-in-out infinite alternate;
+}
+
 .routine-card__like--liked {
   color: var(--routine-feed-accent);
+}
+
+@keyframes routine-card-like-pulse {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(1.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .routine-card__like--processing {
+    animation: none;
+  }
 }
 
 .routine-card__action-value {

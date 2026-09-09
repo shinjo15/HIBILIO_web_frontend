@@ -33,6 +33,7 @@ export function AccountPage({ isOwnAccount = true, likeService = routineLikeServ
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [likeError, setLikeError] = useState(false);
+  const [likingPostIdentifier, setLikingPostIdentifier] = useState<string | null>(null);
   const [likesStatus, setLikesStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
 
   useEffect(() => {
@@ -97,6 +98,7 @@ export function AccountPage({ isOwnAccount = true, likeService = routineLikeServ
   }
 
   async function toggleLike(postIdentifier: string) {
+    setLikingPostIdentifier(postIdentifier);
     setLikeError(false);
     try {
       const routine = [...posts, ...likes].find((item) => item.id === postIdentifier);
@@ -115,6 +117,8 @@ export function AccountPage({ isOwnAccount = true, likeService = routineLikeServ
       } else {
         setLikeError(true);
       }
+    } finally {
+      setLikingPostIdentifier(null);
     }
   }
 
@@ -182,8 +186,8 @@ export function AccountPage({ isOwnAccount = true, likeService = routineLikeServ
           </div>
         </section>
 
-        {activeTab === 'posts' && <AccountPostsList likeError={likeError} onLike={toggleLike} posts={posts} />}
-        {activeTab === 'likes' && <AccountLikesList likeError={likeError} likes={likes} onLike={toggleLike} status={likesStatus} />}
+        {activeTab === 'posts' && <AccountPostsList likeError={likeError} likingPostIdentifier={likingPostIdentifier} onLike={toggleLike} posts={posts} />}
+        {activeTab === 'likes' && <AccountLikesList likeError={likeError} likingPostIdentifier={likingPostIdentifier} likes={likes} onLike={toggleLike} status={likesStatus} />}
         {activeTab === 'executionHistory' && <ExecutionHistoryList histories={executionHistories} />}
       </div>
     </section>

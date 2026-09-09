@@ -20,7 +20,11 @@ export function RoutineCard({ isLiking = false, onLike, routine }: RoutineCardPr
   };
   const avatarInitial = routine.authorName.slice(0, 1).toUpperCase();
   const avatarClass = avatarClasses[avatarInitial] ?? 'routine-card__avatar--default';
-  const likeClass = routine.liked ? 'routine-card__like routine-card__like--liked' : 'routine-card__like';
+  const likeClass = [
+    'routine-card__like',
+    routine.liked && 'routine-card__like--liked',
+    isLiking && 'routine-card__like--processing',
+  ].filter(Boolean).join(' ');
 
   return (
     <Paper
