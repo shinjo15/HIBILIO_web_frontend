@@ -8,7 +8,7 @@
   background: var(--hibilio-color-card);
   border-bottom: 1px solid var(--hibilio-color-border);
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) 84px;
+  grid-template-columns: 84px minmax(0, 1fr) 84px;
   min-height: 48px;
   padding: 0 16px;
   position: sticky;
@@ -27,6 +27,12 @@
   min-height: 40px;
   padding: 8px;
   text-decoration: none;
+}
+
+.routine-create-header__back {
+  gap: 4px;
+  justify-self: start;
+  white-space: nowrap;
 }
 
 .routine-create-header__back:hover,

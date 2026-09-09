@@ -59,6 +59,7 @@ export function RoutineCreatePage({
       <header className="routine-create-header">
         <Link aria-label={messages.routineCreate.backToFeed} className="routine-create-header__back" to={returnPath}>
           <BackIcon />
+          <span>{messages.routineCreate.back}</span>
         </Link>
         <h1 className="routine-create-header__title">{copy.title}</h1>
         <button
@@ -103,6 +104,7 @@ function RoutineCreateSuccess({
       <header className="routine-create-header">
         <Link aria-label={messages.routineCreate.backToFeed} className="routine-create-header__back" to={returnPath}>
           <BackIcon />
+          <span>{messages.routineCreate.back}</span>
         </Link>
         <h1 className="routine-create-header__title">{copy.title}</h1>
         <span aria-hidden="true" className="routine-create-header__spacer" />

@@ -213,6 +213,7 @@
   },
   "routineCreate": {
     "title": "ルーティンを投稿",
+    "back": "戻る",
     "backToFeed": "一覧へ戻る",
     "submit": "投稿",
     "submitting": "投稿しています…",
