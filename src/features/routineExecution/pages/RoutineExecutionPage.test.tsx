@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RoutineExecutionPage } from './RoutineExecutionPage';
-import type { RoutineExecutionService } from '../services/routineExecutionService';
+import { RoutineExecutionError, type RoutineExecutionService } from '../services/routineExecutionService';
+import { isAuthenticated, markAuthenticated } from '../../auth/services/authSession';
 
 const routine = {
   id: '30000000-0000-4000-8000-000000000001',
@@ -14,7 +15,10 @@ const routine = {
   title: 'テストルーティン',
 };
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  window.sessionStorage.clear();
+});
 
 function renderPage(service: RoutineExecutionService, initialPath = '/routines/routine-1/execute') {
   return render(
@@ -23,6 +27,7 @@ function renderPage(service: RoutineExecutionService, initialPath = '/routines/r
         <Route element={<RoutineExecutionPage service={service} />} path="/routines/:routineId/execute" />
         <Route element={<DetailStub />} path="/routines/:routineId" />
         <Route element={<p>ホーム</p>} path="/" />
+        <Route element={<p>ログイン</p>} path="/login" />
       </Routes>
     </MemoryRouter>,
   );
@@ -81,6 +86,18 @@ describe('RoutineExecutionPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('実行画面を表示できませんでした。時間をおいて再試行してください。');
     await user.click(screen.getByRole('button', { name: '実行結果を投稿する' }));
     expect(await screen.findByText('お疲れ様でした！')).toBeInTheDocument();
+  });
+
+  it('401のときは認証状態を破棄してログイン画面へ遷移する', async () => {
+    const user = userEvent.setup();
+    markAuthenticated();
+    const create = vi.fn().mockRejectedValue(new RoutineExecutionError('unauthorized', 401));
+    renderPage({ create, get: vi.fn().mockResolvedValue(routine) });
+
+    await user.click(await screen.findByRole('button', { name: '実行結果を投稿する' }));
+
+    expect(await screen.findByText('ログイン')).toBeInTheDocument();
+    expect(isAuthenticated()).toBe(false);
   });
 
   it('存在しないルーティンの状態を表示する', async () => {

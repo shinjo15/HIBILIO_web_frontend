@@ -57,4 +57,17 @@ describe('routineExecutionService', () => {
       method: 'POST',
     }));
   });
+
+  it('APIが401を返すと認証切れとして扱えるエラーを送出する', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response('', { status: 401 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(apiRoutineExecutionAdapter.create({
+      executed_routine_action_identifiers: form.executedRoutineActionIdentifiers,
+      routine_execution_memo: form.memo,
+      routine_identifier: form.routineIdentifier,
+    })).rejects.toMatchObject({ status: 401 });
+  });
 });

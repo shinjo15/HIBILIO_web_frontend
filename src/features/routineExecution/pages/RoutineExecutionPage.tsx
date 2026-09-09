@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { clearAuthenticated } from '../../auth/services/authSession';
 import messages from '../../../shared/message/message.json';
 import { countAchievedSteps } from '../domain/routineExecution';
 import { RoutineExecutionComment } from '../components/RoutineExecutionComment';
@@ -17,6 +19,15 @@ export function RoutineExecutionPage({ service = routineExecutionService }: Rout
   const navigate = useNavigate();
   const { routineId = '' } = useParams<{ routineId: string }>();
   const execution = useRoutineExecution(routineId, service);
+
+  useEffect(() => {
+    if (!execution.isUnauthorized) {
+      return;
+    }
+
+    clearAuthenticated();
+    navigate('/login', { replace: true });
+  }, [execution.isUnauthorized, navigate]);
 
   function goBack() {
     navigate(`/routines/${routineId}`);

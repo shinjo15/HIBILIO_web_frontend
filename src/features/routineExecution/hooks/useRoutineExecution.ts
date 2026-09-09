@@ -21,6 +21,7 @@ export function useRoutineExecution(
   const [isCompleted, setIsCompleted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,6 +44,7 @@ export function useRoutineExecution(
       setIsCompleted(false);
       setErrorMessage(null);
       setIsSubmitting(false);
+      setIsUnauthorized(false);
       setLoadStatus('ready');
     }).catch(() => {
       if (!cancelled) {
@@ -101,6 +103,10 @@ export function useRoutineExecution(
       await service.create(form.data);
       setIsCompleted(true);
     } catch (error) {
+      if (error instanceof RoutineExecutionError && error.status === 401) {
+        setIsUnauthorized(true);
+        return;
+      }
       setErrorMessage(error instanceof RoutineExecutionError
         ? error.message
         : messages.routineExecution.error);
@@ -115,6 +121,7 @@ export function useRoutineExecution(
     errorMessage,
     isLoading: loadedRoutineId !== routineId || loadStatus === 'loading',
     isSubmitting,
+    isUnauthorized,
     loadStatus,
     isCompleted,
     memo,

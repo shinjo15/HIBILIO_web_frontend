@@ -21,7 +21,7 @@ export type RoutineExecutionService = {
 };
 
 export class RoutineExecutionError extends Error {
-  constructor(message: string) {
+  constructor(message: string, readonly status?: number) {
     super(message);
     this.name = 'RoutineExecutionError';
   }
@@ -54,6 +54,9 @@ export function createRoutineExecutionService(adapter: RoutineExecutionAdapter):
         if (error instanceof z.ZodError) {
           throw error;
         }
+        if (error instanceof RoutineExecutionError) {
+          throw error;
+        }
         throw new RoutineExecutionError(messages.routineExecution.error);
       }
     },
@@ -78,7 +81,7 @@ async function createRoutineExecution(request: RoutineExecutionRequest): Promise
     method: 'POST',
   });
   if (!response.ok) {
-    throw new RoutineExecutionError(messages.routineExecution.error);
+    throw new RoutineExecutionError(messages.routineExecution.error, response.status);
   }
 }
 
