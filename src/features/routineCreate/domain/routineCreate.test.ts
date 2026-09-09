@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  createCustomizedRoutineViewModel,
   reorderRoutineCreateActions,
   toRoutineCreateRequest,
   validateRoutineCreateForm,
@@ -49,15 +50,18 @@ describe('routineCreate domain', () => {
     });
   });
 
-  it('カスタマイズ元と親Actionの対応を作成リクエストへ含める', () => {
-    expect(toRoutineCreateRequest({
-      ...form,
-      actions: [{ ...form.actions[0], parentRoutineActionIndex: 0 }],
-      parentRoutineIdentifier: '30000000-0000-4000-8000-000000000001',
-    })).toMatchObject({
+  it('カスタマイズ元のルーティンだけを作成リクエストへ含める', () => {
+    const request = toRoutineCreateRequest(createCustomizedRoutineViewModel({
+      description: '',
+      id: '30000000-0000-4000-8000-000000000001',
+      steps: [{ action: '水を飲む' }],
+      title: '朝のルーティン',
+    }));
+
+    expect(request).toMatchObject({
       parent_routine_identifier: '30000000-0000-4000-8000-000000000001',
-      routine_actions: [{ parent_routine_action_index: 0 }],
     });
+    expect(request.routine_actions[0]).not.toHaveProperty('parent_routine_action_index');
   });
 
   it('必須項目、文字数、数値、ステップ数を検証する', () => {

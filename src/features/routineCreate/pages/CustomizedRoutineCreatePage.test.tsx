@@ -40,7 +40,7 @@ function renderPage(service: RoutineCreateService) {
 }
 
 describe('CustomizedRoutineCreatePage', () => {
-  it('親ルーティンを初期値として表示し、親識別子とAction対応を送信する', async () => {
+  it('親ルーティンを初期値として表示し、親ルーティン識別子を送信する', async () => {
     const create = vi.fn().mockResolvedValue(undefined);
     renderPage({ create });
 
@@ -53,8 +53,8 @@ describe('CustomizedRoutineCreatePage', () => {
 
     await waitFor(() => expect(create).toHaveBeenCalledWith(expect.objectContaining({
       actions: [
-        expect.objectContaining({ actionName: '水を飲む', parentRoutineActionIndex: 0 }),
-        expect.objectContaining({ actionName: '散歩する', parentRoutineActionIndex: 1 }),
+        { actionMemo: '常温で飲む', actionMinutes: '5', actionName: '水を飲む' },
+        { actionMemo: '', actionMinutes: '25', actionName: '散歩する' },
       ],
       parentRoutineIdentifier: '30000000-0000-4000-8000-000000000001',
       routineExecutionMinutes: '30',

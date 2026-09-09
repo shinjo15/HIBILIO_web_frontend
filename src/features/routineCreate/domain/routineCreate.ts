@@ -157,11 +157,10 @@ export function createCustomizedRoutineViewModel(parent: {
   title: string;
 }): RoutineCreateViewModel {
   return {
-    actions: parent.steps.map((step, index) => ({
+    actions: parent.steps.map((step) => ({
       actionMemo: step.memo ?? '',
       actionMinutes: step.minutes?.toString() ?? '',
       actionName: step.action,
-      parentRoutineActionIndex: index,
     })),
     parentRoutineIdentifier: parent.id,
     routineExecutionMinutes: parent.durationMinutes?.toString() ?? '',
