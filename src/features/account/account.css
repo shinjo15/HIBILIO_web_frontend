@@ -20,9 +20,25 @@
 }
 
 .account-page__back {
+  align-items: center;
+  background: transparent;
+  border: 0;
   color: var(--hibilio-color-on-background);
+  cursor: pointer;
+  display: inline-flex;
   font-size: 14px;
   font-weight: 600;
+  gap: 4px;
+  padding: 0;
+}
+
+.account-page__back svg {
+  height: 20px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 20px;
 }
 
 .account-page__settings,

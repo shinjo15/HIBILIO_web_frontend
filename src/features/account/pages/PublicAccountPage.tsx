@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import type { AccountProfile } from '../domain/account';
 import { registrationSocialPlatforms } from '../../auth/register/services/registrationSocialPlatforms';
 import { publicAccountService, type PublicAccountService } from '../services/publicAccountService';
@@ -9,6 +9,7 @@ import '../account.css';
 type PublicAccountPageProps = { service?: PublicAccountService };
 
 export function PublicAccountPage({ service = publicAccountService }: PublicAccountPageProps) {
+  const navigate = useNavigate();
   const { accountId = '' } = useParams<{ accountId: string }>();
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [loadedAccountId, setLoadedAccountId] = useState<string | null>(null);
@@ -37,7 +38,10 @@ export function PublicAccountPage({ service = publicAccountService }: PublicAcco
   return (
     <section className="account-page">
       <header className="account-page__header">
-        <Link className="account-page__back" to="/">{messages.publicAccount.backToFeed}</Link>
+        <button aria-label={messages.publicAccount.back} className="account-page__back" onClick={() => navigate(-1)} type="button">
+          <BackIcon />
+          <span>{messages.publicAccount.back}</span>
+        </button>
       </header>
       {loadedAccountId !== accountId && <p className="account-page__state account-page__state--loading">{messages.publicAccount.loading}</p>}
       {loadedAccountId === accountId && hasError && <p className="account-page__state account-page__state--error">{messages.publicAccount.error}</p>}
@@ -68,4 +72,8 @@ export function PublicAccountPage({ service = publicAccountService }: PublicAcco
       )}
     </section>
   );
+}
+
+function BackIcon() {
+  return <svg aria-hidden="true" fill="none" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>;
 }
