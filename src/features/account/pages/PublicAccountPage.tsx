@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import type { AccountPost, AccountProfile, LikedRoutine } from '../domain/account';
 import { registrationSocialPlatforms } from '../../auth/register/services/registrationSocialPlatforms';
 import { publicAccountService, type PublicAccountService } from '../services/publicAccountService';
+import { AccountLikesList, AccountPostsList } from '../components/AccountRoutineLists';
 import messages from '../../../shared/message/message.json';
 import '../account.css';
 
@@ -14,6 +15,7 @@ export function PublicAccountPage({ service = publicAccountService }: PublicAcco
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [posts, setPosts] = useState<AccountPost[]>([]);
   const [likes, setLikes] = useState<LikedRoutine[]>([]);
+  const [activeTab, setActiveTab] = useState<'posts' | 'likes'>('posts');
   const [loadedAccountId, setLoadedAccountId] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
 
@@ -72,14 +74,11 @@ export function PublicAccountPage({ service = publicAccountService }: PublicAcco
               </div>
             </div>
           </section>
-          <section className="account-page__list" aria-label={messages.account.tabs.posts}>
-            <h2>{messages.account.tabs.posts}</h2>
-            {posts.map((post) => <button className="account-page__card" key={post.id} onClick={() => navigate(`/routines/${post.routineId}`)} type="button"><div className="account-page__card-body"><h3 className="account-page__card-title">{post.title}</h3></div></button>)}
-          </section>
-          <section className="account-page__list" aria-label={messages.account.tabs.likes}>
-            <h2>{messages.account.tabs.likes}</h2>
-            {likes.map((like) => <button className="account-page__card" key={like.postId} onClick={() => navigate(`/routines/${like.routineId}`)} type="button"><div className="account-page__card-body"><h3 className="account-page__card-title">{like.title}</h3><p className="account-profile__handle">{like.authorName}</p></div></button>)}
-          </section>
+          <div className="account-tabs account-tabs--two" role="tablist">
+            {(['posts', 'likes'] as const).map((tab) => <button aria-selected={activeTab === tab} className={activeTab === tab ? 'account-tabs__tab account-tabs__tab--selected' : 'account-tabs__tab'} key={tab} onClick={() => setActiveTab(tab)} role="tab" type="button"><span className="account-tabs__count">{tab === 'posts' ? posts.length : likes.length}</span><span className="account-tabs__label">{messages.account.tabs[tab]}</span></button>)}
+          </div>
+          {activeTab === 'posts' && <AccountPostsList posts={posts} onSelectRoutine={(id) => navigate(`/routines/${id}`)} />}
+          {activeTab === 'likes' && <AccountLikesList likes={likes} onSelectRoutine={(id) => navigate(`/routines/${id}`)} status="loaded" />}
         </div>
       )}
     </section>

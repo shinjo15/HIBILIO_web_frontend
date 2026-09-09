@@ -197,6 +197,10 @@
   margin-top: 16px;
 }
 
+.account-tabs--two {
+  grid-template-columns: repeat(2, 1fr);
+}
+
 .account-tabs__tab {
   background: transparent;
   border: 0;

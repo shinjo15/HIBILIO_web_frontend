@@ -11,6 +11,7 @@ import type {
 import { AccountUnauthorizedError, accountService, type AccountService } from '../services/accountService';
 import { registrationSocialPlatforms } from '../../auth/register/services/registrationSocialPlatforms';
 import { clearAuthenticated } from '../../auth/services/authSession';
+import { AccountLikesList, AccountPostsList } from '../components/AccountRoutineLists';
 import messages from '../../../shared/message/message.json';
 import '../account.css';
 
@@ -152,64 +153,15 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
           </div>
         </section>
 
-        {activeTab === 'posts' && <PostsList posts={posts} onSelectRoutine={(routineId) => navigate(`/routines/${routineId}`)} />}
-        {activeTab === 'likes' && <LikesList likes={likes} status={likesStatus} onSelectRoutine={(routineId) => navigate(`/routines/${routineId}`)} />}
+        {activeTab === 'posts' && <AccountPostsList posts={posts} onSelectRoutine={(routineId) => navigate(`/routines/${routineId}`)} />}
+        {activeTab === 'likes' && <AccountLikesList likes={likes} status={likesStatus} onSelectRoutine={(routineId) => navigate(`/routines/${routineId}`)} />}
         {activeTab === 'executionHistory' && <ExecutionHistoryList histories={executionHistories} onSelectHistory={(history) => navigate(`/routines/${history.routineId}/executions/${history.id}`)} />}
       </div>
     </section>
   );
 }
 
-function PostsList({ posts, onSelectRoutine }: { posts: AccountPost[]; onSelectRoutine: (routineId: string) => void }) {
-  if (posts.length === 0) {
-    return <p className="account-page__state">{messages.account.postsEmpty}</p>;
-  }
 
-  return <div className="account-page__list" role="tabpanel">{posts.map((post) => (
-    <button className="account-page__card" key={post.id} onClick={() => onSelectRoutine(post.routineId)} type="button">
-      <div className="account-page__card-body">
-        <div className="account-page__card-header">
-          <h2 className="account-page__card-title">{post.title}</h2>
-          <span className="account-page__card-date">{new Date(post.createdAt).toLocaleDateString('ja-JP')}</span>
-        </div>
-      </div>
-      <div className="account-page__card-metrics">
-        <span className="account-page__metric account-page__metric--accent">♥ {post.likes}</span>
-        <span className="account-page__metric">▷ {post.executions}</span>
-      </div>
-    </button>
-  ))}</div>;
-}
-
-function LikesList({ likes, status, onSelectRoutine }: { likes: LikedRoutine[]; status: 'idle' | 'loading' | 'loaded' | 'error'; onSelectRoutine: (routineId: string) => void }) {
-  if (status === 'loading' || status === 'idle') {
-    return <p className="account-page__state account-page__state--loading">{messages.account.likesLoading}</p>;
-  }
-
-  if (status === 'error') {
-    return <p className="account-page__state account-page__state--error">{messages.account.likesError}</p>;
-  }
-
-  if (likes.length === 0) {
-    return <p className="account-page__state">{messages.account.likesEmpty}</p>;
-  }
-
-  return <div className="account-page__list" role="tabpanel">{likes.map((like) => (
-    <button className="account-page__card" key={like.postId} onClick={() => onSelectRoutine(like.routineId)} type="button">
-      <div className="account-page__card-body">
-        <div className="account-page__card-header">
-          <h2 className="account-page__card-title">{like.title}</h2>
-          <span className="account-page__card-date">{new Date(like.likedAt).toLocaleDateString('ja-JP')}</span>
-        </div>
-        <p className="account-profile__handle">{like.authorName}</p>
-      </div>
-      <div className="account-page__card-metrics">
-        <span className="account-page__metric account-page__metric--accent">♥ {like.totalLikes}</span>
-        <span className="account-page__metric">{messages.account.support} {like.supports}</span>
-      </div>
-    </button>
-  ))}</div>;
-}
 
 function ExecutionHistoryList({ histories, onSelectHistory }: { histories: AccountExecutionHistory[]; onSelectHistory: (history: AccountExecutionHistory) => void }) {
   if (histories.length === 0) {

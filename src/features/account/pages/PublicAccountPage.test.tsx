@@ -35,7 +35,7 @@ describe('PublicAccountPage', () => {
     expect(screen.getByText('朝の習慣を続けています。')).toBeInTheDocument();
     expect(screen.getByText('朝活')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /example/ })).toHaveAttribute('href', 'https://x.com/example');
-    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['0投稿', '0いいね']);
   });
 
   it('非表示または存在しない公開アカウントの状態を表示する', async () => {
