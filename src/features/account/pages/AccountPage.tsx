@@ -2,7 +2,7 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type {
-  AccountExecutionHistory,
+  AccountExecutionSummary,
   AccountPost,
   AccountProfile,
   AccountTab,
@@ -15,7 +15,7 @@ import { AccountLikesList, AccountPostsList } from '../components/AccountRoutine
 import messages from '../../../shared/message/message.json';
 import '../account.css';
 
-type AccountPageProps = { service?: AccountService };
+type AccountPageProps = { isOwnAccount?: boolean; notFoundMessage?: string; onBack?: () => void; service?: AccountService };
 
 const tabs: Array<{ label: string; value: AccountTab }> = [
   { label: messages.account.tabs.posts, value: 'posts' },
@@ -23,11 +23,11 @@ const tabs: Array<{ label: string; value: AccountTab }> = [
   { label: messages.account.tabs.executionHistory, value: 'executionHistory' },
 ];
 
-export function AccountPage({ service = accountService }: AccountPageProps) {
+export function AccountPage({ isOwnAccount = true, notFoundMessage, onBack, service = accountService }: AccountPageProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [posts, setPosts] = useState<AccountPost[]>([]);
-  const [executionHistories, setExecutionHistories] = useState<AccountExecutionHistory[]>([]);
+  const [executionHistories, setExecutionHistories] = useState<AccountExecutionSummary[]>([]);
   const [likes, setLikes] = useState<LikedRoutine[]>([]);
   const [activeTab, setActiveTab] = useState<AccountTab>('posts');
   const [isLoading, setIsLoading] = useState(true);
@@ -37,12 +37,10 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([service.getProfile(), service.listPosts(), service.listExecutionHistories()])
-      .then(([loadedProfile, loadedPosts, loadedExecutionHistories]) => {
+    service.getProfile()
+      .then((loadedProfile) => {
         if (!cancelled) {
           setProfile(loadedProfile);
-          setPosts(loadedPosts);
-          setExecutionHistories(loadedExecutionHistories);
           setHasError(false);
         }
       })
@@ -62,6 +60,13 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
           setIsLoading(false);
         }
       });
+
+    service.listPosts().then((loadedPosts) => {
+      if (!cancelled) setPosts(loadedPosts);
+    }).catch(() => {});
+    service.listExecutionHistories().then((loadedExecutionHistories) => {
+      if (!cancelled) setExecutionHistories(loadedExecutionHistories);
+    }).catch(() => {});
 
     return () => { cancelled = true; };
   }, [navigate, service]);
@@ -94,9 +99,11 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
     return <p className="account-page__state account-page__state--loading">{messages.account.loading}</p>;
   }
 
-  if (hasError || !profile) {
-    return <p className="account-page__state account-page__state--error">{messages.account.error}</p>;
+  if (hasError) {
+    return <section className="account-page"><header className="account-page__header">{!isOwnAccount && <button aria-label={messages.publicAccount.back} className="account-page__back" onClick={onBack} type="button">← {messages.publicAccount.back}</button>}</header><p className="account-page__state account-page__state--error">{messages.account.error}</p></section>;
   }
+
+  if (!profile) return <section className="account-page"><header className="account-page__header">{!isOwnAccount && <button aria-label={messages.publicAccount.back} className="account-page__back" onClick={onBack} type="button">← {messages.publicAccount.back}</button>}</header><p className="account-page__state">{notFoundMessage ?? messages.account.error}</p></section>;
 
   const tabCounts: Record<AccountTab, number | null> = {
     executionHistory: executionHistories.length,
@@ -107,10 +114,8 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
   return (
     <section className="account-page">
       <header className="account-page__header">
-        <h1 className="account-page__header-title">{messages.account.title}</h1>
-        <button aria-label={messages.account.settings} className="account-page__settings" onClick={() => navigate('/account/settings')} type="button">
-          <SettingsOutlinedIcon fontSize="small" />
-        </button>
+        {!isOwnAccount && <button aria-label={messages.publicAccount.back} className="account-page__back" onClick={onBack} type="button">← {messages.publicAccount.back}</button>}
+        {isOwnAccount && <><h1 className="account-page__header-title">{messages.account.title}</h1><button aria-label={messages.account.settings} className="account-page__settings" onClick={() => navigate('/account/settings')} type="button"><SettingsOutlinedIcon fontSize="small" /></button></>}
       </header>
 
       <div className="account-page__content">
@@ -120,10 +125,11 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
           </div>
           <div className="account-profile__body">
             <div className="account-profile__actions">
-              <button className="account-page__edit" onClick={() => navigate('/account/edit')} type="button">{messages.account.edit}</button>
+              {isOwnAccount && <button className="account-page__edit" onClick={() => navigate('/account/edit')} type="button">{messages.account.edit}</button>}
+              {!isOwnAccount && <><button className="account-page__follow" type="button"><FollowIcon />{messages.publicAccount.follow}</button><button className="account-page__block" type="button"><BlockIcon />{messages.publicAccount.block}</button></>}
             </div>
             <div className="account-profile__details">
-              <p className="account-profile__name">{profile.name}</p>
+              <h1 className="account-profile__name">{profile.name}</h1>
               {profile.bio !== null && <p className="account-profile__bio">{profile.bio}</p>}
               {profile.socialLinks.length > 0 && <div className="account-profile__social-links">
                 {profile.socialLinks.map((link) => {
@@ -155,36 +161,40 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
 
         {activeTab === 'posts' && <AccountPostsList posts={posts} onSelectRoutine={(routineId) => navigate(`/routines/${routineId}`)} />}
         {activeTab === 'likes' && <AccountLikesList likes={likes} status={likesStatus} onSelectRoutine={(routineId) => navigate(`/routines/${routineId}`)} />}
-        {activeTab === 'executionHistory' && <ExecutionHistoryList histories={executionHistories} onSelectHistory={(history) => navigate(`/routines/${history.routineId}/executions/${history.id}`)} />}
+        {activeTab === 'executionHistory' && <ExecutionHistoryList histories={executionHistories} />}
       </div>
     </section>
   );
 }
 
+function FollowIcon() {
+  return <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M16 11h6" /></svg>;
+}
 
+function BlockIcon() {
+  return <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="m4.93 4.93 14.14 14.14" /></svg>;
+}
 
-function ExecutionHistoryList({ histories, onSelectHistory }: { histories: AccountExecutionHistory[]; onSelectHistory: (history: AccountExecutionHistory) => void }) {
+function ExecutionHistoryList({ histories }: { histories: AccountExecutionSummary[] }) {
   if (histories.length === 0) {
     return <p className="account-page__state">{messages.account.executionHistoryEmpty}</p>;
   }
 
   return <div className="account-page__list" role="tabpanel">{histories.map((history) => {
-    const achievementRate = Math.round((history.achievedActions / history.totalActions) * 100);
     return (
-      <button className="account-page__card" key={history.id} onClick={() => onSelectHistory(history)} type="button">
+      <article className="account-page__card" key={history.id}>
         <div className="account-page__card-body">
           <div className="account-page__card-header">
             <h2 className="account-page__card-title">{history.routineTitle}</h2>
-            <span className="account-page__card-date">{history.executedAtLabel}</span>
+            <span className="account-page__card-date">{new Date(history.postedAt).toLocaleDateString('ja-JP')}</span>
           </div>
-          <progress aria-label={messages.account.achievementRate} className="account-page__progress" max="100" value={achievementRate} />
+          {history.memo !== null && <p className="account-profile__handle">{history.memo}</p>}
         </div>
         <div className="account-page__card-metrics">
-          <span>{messages.account.achieved} <strong>{history.achievedActions}/{history.totalActions}</strong></span>
-          <span>{messages.account.duration} <strong>{history.minutes}{messages.account.minuteUnit}</strong></span>
-          <span className={history.completed ? 'account-page__completion account-page__completion--complete' : 'account-page__completion'}>{history.completed ? messages.account.complete : `${achievementRate}%`}</span>
+          <span>{messages.account.achieved} <strong>{history.executedActionCount}</strong></span>
+          <span>{messages.account.support} <strong>{history.supportCount}</strong></span>
         </div>
-      </button>
+      </article>
     );
   })}</div>;
 }

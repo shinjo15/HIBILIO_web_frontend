@@ -128,6 +128,39 @@
   padding: 6px 12px;
 }
 
+.account-page__follow,
+.account-page__block {
+  align-items: center;
+  background: transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  gap: 6px;
+  padding: 6px 12px;
+}
+
+.account-page__follow svg,
+.account-page__block svg {
+  fill: none;
+  height: 13px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
+  width: 13px;
+}
+
+.account-page__follow {
+  border: 1px solid var(--hibilio-color-primary);
+  color: var(--hibilio-color-primary);
+}
+
+.account-page__block {
+  border: 1px solid var(--hibilio-color-border);
+  color: var(--hibilio-color-muted-text);
+  margin-left: 8px;
+}
+
 .account-profile__details {
   margin-top: 16px;
 }

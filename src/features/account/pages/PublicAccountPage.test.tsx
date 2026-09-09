@@ -31,11 +31,12 @@ describe('PublicAccountPage', () => {
 
     expect(await screen.findByRole('heading', { name: '公開アカウント' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '戻る' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '公開アカウント' }).closest('.account-profile__body')).toHaveClass('account-profile__body--without-actions');
+    expect(screen.getByRole('button', { name: 'フォロー' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ブロック' })).toBeInTheDocument();
     expect(screen.getByText('朝の習慣を続けています。')).toBeInTheDocument();
     expect(screen.getByText('朝活')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /example/ })).toHaveAttribute('href', 'https://x.com/example');
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['0投稿', '0いいね']);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['0投稿', '-いいね', '0実行履歴']);
   });
 
   it('非表示または存在しない公開アカウントの状態を表示する', async () => {

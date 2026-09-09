@@ -39,8 +39,19 @@ export const likedRoutineSchema = z.object({
   totalLikes: z.number().int().nonnegative(),
 });
 
+export const accountExecutionSummarySchema = z.object({
+  executedActionCount: z.number().int().nonnegative(),
+  id: z.string().min(1),
+  memo: z.string().nullable(),
+  postedAt: z.string().datetime({ offset: true }),
+  routineId: z.string().min(1),
+  routineTitle: z.string().min(1),
+  supportCount: z.number().int().nonnegative(),
+});
+
 export type AccountProfile = z.infer<typeof accountProfileSchema>;
 export type AccountPost = z.infer<typeof accountPostSchema>;
 export type AccountExecutionHistory = z.infer<typeof accountExecutionHistorySchema>;
+export type AccountExecutionSummary = z.infer<typeof accountExecutionSummarySchema>;
 export type LikedRoutine = z.infer<typeof likedRoutineSchema>;
 export type AccountTab = 'posts' | 'likes' | 'executionHistory';

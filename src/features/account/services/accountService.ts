@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { parseAccountPosts, parseLikedRoutines } from './accountRoutinePosts';
+import { parseAccountRoutineExecutions } from './accountRoutineExecutions';
 import {
-  accountExecutionHistorySchema,
   accountProfileSchema,
   type AccountExecutionHistory,
+  type AccountExecutionSummary,
   type AccountPost,
   type AccountProfile,
   type LikedRoutine,
@@ -23,7 +24,7 @@ const getMyAccountResponseSchema = z.object({
   })),
 });
 
-type AccountDummyAdapter = {
+type AccountExecutionAdapter = {
   listExecutionHistories: () => Promise<unknown>;
 };
 
@@ -48,18 +49,19 @@ export class AccountUnauthorizedError extends Error {
 
 export type AccountService = {
   getExecutionHistory: (executionId: string) => Promise<AccountExecutionHistory | null>;
-  getProfile: () => Promise<AccountProfile>;
-  listExecutionHistories: () => Promise<AccountExecutionHistory[]>;
+  getProfile: () => Promise<AccountProfile | null>;
+  listExecutionHistories: () => Promise<AccountExecutionSummary[]>;
   listLikes: () => Promise<LikedRoutine[]>;
   listPosts: () => Promise<AccountPost[]>;
 };
 
-const accountDummyAdapter: AccountDummyAdapter = {
-  listExecutionHistories: async () => [
-    { achievedActions: 5, completedActionIndexes: [0, 1, 2, 3, 4], completed: false, executedAtLabel: '今日', id: 'execution-1', minutes: 75, routineId: 'routine-2', routineTitle: '夜のリラックスルーティン', totalActions: 6 },
-    { achievedActions: 4, completedActionIndexes: [0, 1, 3, 4], completed: false, executedAtLabel: '昨日', id: 'execution-2', minutes: 58, routineId: 'routine-1', routineTitle: '朝の集中ルーティン｜平日版', totalActions: 5 },
-    { achievedActions: 6, completedActionIndexes: [0, 1, 2, 3, 4, 5], completed: true, executedAtLabel: '2日前', id: 'execution-3', minutes: 80, routineId: 'routine-2', routineTitle: '夜のリラックスルーティン', totalActions: 6 },
-  ],
+const accountExecutionApiAdapter: AccountExecutionAdapter = {
+  listExecutionHistories: async () => {
+    const response = await fetch('/api/my/routine-executions?page=1&number_of_items_per_page=20', { credentials: 'include', method: 'GET' });
+    if (response.status === 401) throw new AccountUnauthorizedError('Routine executions require authentication');
+    if (!response.ok) throw new Error(`Failed to fetch routine executions: ${response.status}`);
+    return response.json();
+  },
 };
 
 const accountProfileApiAdapter: AccountProfileAdapter = {
@@ -120,16 +122,13 @@ const accountPostsApiAdapter: AccountPostsAdapter = {
 };
 
 export function createAccountService(
-  dummyAdapter: AccountDummyAdapter = accountDummyAdapter,
+  executionAdapter: AccountExecutionAdapter = accountExecutionApiAdapter,
   likesAdapter: AccountLikesAdapter = accountLikesApiAdapter,
   profileAdapter: AccountProfileAdapter = accountProfileApiAdapter,
   postsAdapter: AccountPostsAdapter = accountPostsApiAdapter,
 ): AccountService {
   return {
-    getExecutionHistory: async (executionId) => {
-      const histories = z.array(accountExecutionHistorySchema).parse(await dummyAdapter.listExecutionHistories());
-      return histories.find((history) => history.id === executionId) ?? null;
-    },
+    getExecutionHistory: async () => null,
     getProfile: async () => {
       const profile = getMyAccountResponseSchema.parse(await profileAdapter.getProfile());
       return accountProfileSchema.parse({
@@ -140,7 +139,7 @@ export function createAccountService(
         socialLinks: profile.social_links.map((link) => ({ socialType: link.social_type, socialUrl: link.social_url })),
       });
     },
-    listExecutionHistories: async () => z.array(accountExecutionHistorySchema).parse(await dummyAdapter.listExecutionHistories()),
+    listExecutionHistories: async () => parseAccountRoutineExecutions(await executionAdapter.listExecutionHistories()),
     listLikes: async () => parseLikedRoutines(await likesAdapter.listLikes()),
     listPosts: async () => parseAccountPosts(await postsAdapter.listPosts()),
   };
