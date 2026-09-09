@@ -31,7 +31,7 @@ export function RoutineCard({ routine }: RoutineCardProps) {
               <Box aria-hidden="true" className={`routine-card__avatar ${avatarClass}`}>
                 {avatarInitial}
               </Box>
-              <Typography className="routine-card__handle">{routine.authorName}</Typography>
+              <Typography className="routine-card__handle"><Link to={`/accounts/${routine.accountId}`}>{routine.authorName}</Link></Typography>
             </Stack>
             <Stack className="routine-card__metadata">
               <Typography className="routine-card__metadata-text">{formatPostedAt(routine.createdAt)}</Typography>

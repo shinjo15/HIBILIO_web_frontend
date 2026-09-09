@@ -6,7 +6,7 @@ import { createRoutineDetailService } from '../../routineDetail/services/routine
 import type { RoutineCreateService } from '../services/routineCreateService';
 
 const parentRoutine = {
-  author: { handle: '', name: '作成者' },
+  author: { accountId: '10000000-0000-4000-8000-000000000001', handle: '', name: '作成者' },
   customizations: 0,
   customizationsList: [],
   description: '元の説明',

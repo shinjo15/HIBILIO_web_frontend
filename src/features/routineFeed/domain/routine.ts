@@ -6,6 +6,7 @@ export const routineStepSchema = z.object({
 });
 
 export const routineSchema = z.object({
+  accountId: z.string().uuid(),
   authorName: z.string().min(1),
   createdAt: z.string().datetime({ offset: true }),
   customizations: z.number().int().nonnegative(),

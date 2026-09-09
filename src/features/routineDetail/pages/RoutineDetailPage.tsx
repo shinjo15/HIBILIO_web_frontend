@@ -90,7 +90,7 @@ function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) 
             <div className="routine-detail-author">
               <Avatar initial={routine.author.initial} />
               <div>
-                <p className="routine-detail-author__name">{routine.author.name}</p>
+                <p className="routine-detail-author__name"><Link to={`/accounts/${routine.author.accountId}`}>{routine.author.name}</Link></p>
                 {routine.author.handle !== '' && <p className="routine-detail-author__handle">@{routine.author.handle}</p>}
               </div>
             </div>

@@ -4,7 +4,7 @@ import { apiRoutineDetailAdapter, createRoutineDetailService } from './routineDe
 afterEach(() => vi.unstubAllGlobals());
 
 const dto = {
-  author: { handle: 'routine-owner', name: 'ルーティン作者' },
+  author: { accountId: '10000000-0000-4000-8000-000000000002', handle: 'routine-owner', name: 'ルーティン作者' },
   customizations: 2,
   customizationsList: [],
   description: '説明',
@@ -80,6 +80,7 @@ describe('routineDetailService', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(createRoutineDetailService(apiRoutineDetailAdapter).get('30000000-0000-4000-8000-000000000001')).resolves.toMatchObject({
+      author: { accountId: '10000000-0000-4000-8000-000000000002', name: '春野あかり' },
       customizationsList: [{ authorName: '美香', id: '30000000-0000-4000-8000-000000000004' }],
       duration: '10分',
       executionPosts: [{ achieved: 1, cheers: 2, comment: '実行メモです。', id: '70000000-0000-4000-8000-000000000001', total: 1, userName: '実行した人' }],

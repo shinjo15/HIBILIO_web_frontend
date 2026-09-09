@@ -3,6 +3,7 @@ import { createRoutineFeedService, RoutineFeedUnauthorizedError, routineFeedServ
 
 const response = {
   posts: [{
+    account_identifier: '10000000-0000-4000-8000-000000000001',
     account_name: '田中 陽介',
     customization_count: 3,
     execution_count: 12,
@@ -32,6 +33,7 @@ describe('routineFeedService', () => {
     const service = createRoutineFeedService({ list: async () => response });
 
     await expect(service.list('recommended')).resolves.toEqual([{
+      accountId: '10000000-0000-4000-8000-000000000001',
       authorName: '田中 陽介',
       createdAt: '2026-09-04T00:00:00+00:00',
       customizations: 3,

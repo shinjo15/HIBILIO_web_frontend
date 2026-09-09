@@ -6,6 +6,7 @@ const numberOfItemsPerPage = 20;
 
 const routineFeedResponseSchema = z.object({
   posts: z.array(z.object({
+    account_identifier: z.string().uuid(),
     account_name: z.string().min(1),
     customization_count: z.number().int().nonnegative(),
     execution_count: z.number().int().nonnegative(),
@@ -74,6 +75,7 @@ const routineFeedApiAdapter: RoutineFeedAdapter = {
 
 function toRoutine(post: RoutineFeedResponse['posts'][number]): Routine {
   return routineSchema.parse({
+    accountId: post.account_identifier,
     authorName: post.account_name,
     createdAt: post.posted_at,
     customizations: post.customization_count,

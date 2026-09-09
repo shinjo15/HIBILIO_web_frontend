@@ -34,6 +34,7 @@ export const customizationDtoSchema = z.object({
 
 export const routineDetailDtoSchema = z.object({
   author: z.object({
+    accountId: z.string().uuid(),
     handle: z.string(),
     name: z.string().min(1),
   }),
