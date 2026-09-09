@@ -1,5 +1,4 @@
 .routine-create-page {
-  --routine-create-step-border: color-mix(in srgb, var(--hibilio-color-primary) 55%, var(--hibilio-color-card));
   background: var(--hibilio-color-background);
   min-height: 100dvh;
 }
@@ -102,6 +101,22 @@
   gap: 8px;
 }
 
+.routine-create-duration-input {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  max-width: 160px;
+}
+
+.routine-create-duration-input .routine-create-input {
+  padding-right: 12px;
+}
+
+.routine-create-duration-input span {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+}
+
 .routine-create-action__duration-input .routine-create-input {
   flex: 1;
 }
@@ -185,7 +200,7 @@
 
 .routine-create-action {
   background: var(--hibilio-color-card);
-  border: 1px solid var(--routine-create-step-border);
+  border: 1px solid var(--hibilio-color-border);
   border-radius: 12px;
   display: grid;
   gap: 10px;
@@ -200,12 +215,9 @@
 
 .routine-create-action__number {
   align-items: center;
-  background: var(--hibilio-color-primary);
-  border: 1px solid var(--hibilio-color-primary);
-  border-radius: 50%;
-  color: var(--hibilio-color-on-primary);
+  color: var(--hibilio-color-muted-text);
   display: inline-flex;
-  flex: 0 0 24px;
+  flex: 0 0 16px;
   font-size: 12px;
   font-family: monospace;
   height: 24px;

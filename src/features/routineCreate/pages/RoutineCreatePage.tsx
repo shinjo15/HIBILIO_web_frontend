@@ -58,10 +58,17 @@ export function RoutineCreatePage({
     <section className="routine-create-page">
       <header className="routine-create-header">
         <Link aria-label={messages.routineCreate.backToFeed} className="routine-create-header__back" to={returnPath}>
-          <CloseIcon />
+          <BackIcon />
         </Link>
         <h1 className="routine-create-header__title">{copy.title}</h1>
-        <span aria-hidden="true" className="routine-create-header__spacer" />
+        <button
+          className="routine-create-header__submit"
+          disabled={!canSubmit || routineCreate.status === 'submitting'}
+          form="routine-create-form"
+          type="submit"
+        >
+          {routineCreate.status === 'submitting' ? messages.routineCreate.submitting : messages.routineCreate.submit}
+        </button>
       </header>
 
       <main className="routine-create-scroll">
@@ -94,7 +101,7 @@ function RoutineCreateSuccess({
     <section className="routine-create-page routine-create-page--success">
       <header className="routine-create-header">
         <Link aria-label={messages.routineCreate.backToFeed} className="routine-create-header__back" to={returnPath}>
-          <CloseIcon />
+          <BackIcon />
         </Link>
         <h1 className="routine-create-header__title">{copy.title}</h1>
         <span aria-hidden="true" className="routine-create-header__spacer" />
@@ -109,6 +116,6 @@ function RoutineCreateSuccess({
   );
 }
 
-function CloseIcon() {
-  return <svg aria-hidden="true" className="routine-create-icon" fill="none" height="20" viewBox="0 0 24 24" width="20"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeLinecap="round" strokeWidth="2" /></svg>;
+function BackIcon() {
+  return <svg aria-hidden="true" className="routine-create-icon" fill="none" height="20" viewBox="0 0 24 24" width="20"><polyline points="15 18 9 12 15 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
 }

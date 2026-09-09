@@ -61,6 +61,23 @@ export function RoutineCreateForm({
         />
       </div>
 
+      <div className="routine-create-field routine-create-field--duration">
+        <label className="routine-create-field__label" htmlFor="routine-execution-minutes">{messages.routineCreate.routineExecutionMinutes}</label>
+        <div className="routine-create-duration-input">
+          <input
+            className="routine-create-input routine-create-input--number"
+            id="routine-execution-minutes"
+            inputMode="numeric"
+            min={1}
+            onChange={(event) => onUpdateField('routineExecutionMinutes', event.target.value)}
+            placeholder={messages.routineCreate.routineExecutionMinutesPlaceholder}
+            type="text"
+            value={form.routineExecutionMinutes}
+          />
+          <span aria-hidden="true">{messages.routineCreate.minuteUnit}</span>
+        </div>
+      </div>
+
       <fieldset className="routine-create-actions">
         <legend className="routine-create-field__label">
           {messages.routineCreate.actions} <span aria-hidden="true" className="routine-create-required">*</span>

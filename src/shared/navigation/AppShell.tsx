@@ -48,7 +48,8 @@ export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const activePath = selectedPath(location.pathname);
-  const isRoutineCreate = activePath === '/routines/new';
+  const isRoutineCreate = location.pathname === '/routines/new'
+    || /^\/routines\/[^/]+\/customize$/.test(location.pathname);
   const authenticated = isAuthenticated();
   const [canSubmitRoutineCreate, setCanSubmitRoutineCreate] = useState(false);
 
