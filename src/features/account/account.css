@@ -19,6 +19,12 @@
   margin: 0;
 }
 
+.account-page__back {
+  color: var(--hibilio-color-on-background);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .account-page__settings,
 .account-page__edit,
 .account-page__card {

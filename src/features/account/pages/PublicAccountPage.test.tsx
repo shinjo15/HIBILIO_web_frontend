@@ -29,6 +29,7 @@ describe('PublicAccountPage', () => {
     renderPage(service);
 
     expect(await screen.findByRole('heading', { name: '公開アカウント' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '一覧へ戻る' })).toHaveAttribute('href', '/');
     expect(screen.getByRole('heading', { name: '公開アカウント' }).closest('.account-profile__body')).toHaveClass('account-profile__body--without-actions');
     expect(screen.getByText('朝の習慣を続けています。')).toBeInTheDocument();
     expect(screen.getByText('朝活')).toBeInTheDocument();
@@ -40,5 +41,6 @@ describe('PublicAccountPage', () => {
     renderPage(createPublicAccountService({ get: async () => null }));
 
     expect(await screen.findByText('アカウントが見つかりませんでした。')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '一覧へ戻る' })).toHaveAttribute('href', '/');
   });
 });
