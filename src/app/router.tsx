@@ -8,6 +8,7 @@ import { AccountExecutionHistoryPage } from '../features/account/pages/AccountEx
 import { SettingsPage } from '../features/settings/pages/SettingsPage';
 import { RoutineFeedPage } from '../features/routineFeed/pages/RoutineFeedPage';
 import { RoutineCreatePage } from '../features/routineCreate/pages/RoutineCreatePage';
+import { CustomizedRoutineCreatePage } from '../features/routineCreate/pages/CustomizedRoutineCreatePage';
 import { RoutineDetailPage } from '../features/routineDetail/pages/RoutineDetailPage';
 import { RoutineExecutionPage } from '../features/routineExecution/pages/RoutineExecutionPage';
 import { AppShell } from '../shared/navigation/AppShell';
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
           { element: <ProfileEditPage />, path: 'account/edit' },
           { element: <SettingsPage />, path: 'account/settings' },
           { element: <RoutineCreatePage />, path: 'routines/new' },
+          { element: <CustomizedRoutineCreatePage />, path: 'routines/:routineId/customize' },
         ],
       },
       {

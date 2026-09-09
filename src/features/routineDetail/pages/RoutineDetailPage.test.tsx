@@ -141,4 +141,21 @@ describe('RoutineDetailPage', () => {
     await user.click(screen.getByRole('button', { name: '実行する' }));
     expect(screen.getByText('実行画面')).toBeInTheDocument();
   });
+
+  it('カスタマイズ操作からカスタマイズ作成画面の URL へ遷移する', async () => {
+    const user = userEvent.setup();
+    const service = createRoutineDetailService({ get: async () => detail });
+    render(
+      <MemoryRouter initialEntries={['/routines/routine-1']}>
+        <Routes>
+          <Route element={<RoutineDetailPage service={service} />} path="/routines/:routineId" />
+          <Route element={<p>カスタマイズ画面</p>} path="/routines/:routineId/customize" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('heading', { name: 'テストルーティン' });
+    await user.click(screen.getByRole('button', { name: 'カスタマイズ' }));
+    expect(screen.getByText('カスタマイズ画面')).toBeInTheDocument();
+  });
 });

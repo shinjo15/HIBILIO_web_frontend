@@ -16,8 +16,8 @@ import {
 
 export type RoutineCreateStatus = 'idle' | 'submitting' | 'success' | 'error';
 
-export function useRoutineCreate(service: RoutineCreateService = routineCreateService) {
-  const [form, setForm] = useState<RoutineCreateViewModel>(createInitialRoutineCreateViewModel);
+export function useRoutineCreate(service: RoutineCreateService = routineCreateService, initialForm?: RoutineCreateViewModel) {
+  const [form, setForm] = useState<RoutineCreateViewModel>(() => initialForm ?? createInitialRoutineCreateViewModel());
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [status, setStatus] = useState<RoutineCreateStatus>('idle');
 

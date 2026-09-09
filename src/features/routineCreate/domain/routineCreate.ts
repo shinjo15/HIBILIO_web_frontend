@@ -33,6 +33,7 @@ export const routineCreateActionSchema = z.object({
   actionMemo: actionMemoSchema,
   actionMinutes: actionMinutesSchema,
   actionName: actionNameSchema,
+  parentRoutineActionIndex: z.number().int().nonnegative().optional(),
 });
 
 export const routineCreateFormSchema = z.object({
@@ -40,12 +41,14 @@ export const routineCreateFormSchema = z.object({
   routineExecutionMinutes: routineExecutionMinutesSchema,
   routineMemo: routineMemoSchema,
   routineName: routineNameSchema,
+  parentRoutineIdentifier: z.string().uuid().optional(),
 });
 
 export const routineCreateActionRequestSchema = z.object({
   routine_action_minutes: z.number().int().min(1).optional(),
   routine_action_memo: z.string().min(1).max(300).optional(),
   routine_action_name: z.string().min(1).max(50),
+  parent_routine_action_index: z.number().int().nonnegative().optional(),
 });
 
 export const routineCreateRequestSchema = z.object({
@@ -53,6 +56,7 @@ export const routineCreateRequestSchema = z.object({
   routine_execution_minutes: z.number().int().min(1).optional(),
   routine_memo: z.string().min(1).max(300).optional(),
   routine_name: z.string().min(1).max(50),
+  parent_routine_identifier: z.string().uuid().optional(),
 });
 
 export type RoutineCreateActionViewModel = z.infer<typeof routineCreateActionSchema>;
@@ -121,6 +125,10 @@ export function toRoutineCreateRequest(input: unknown): RoutineCreateRequest {
         requestAction.routine_action_minutes = Number(action.actionMinutes);
       }
 
+      if (action.parentRoutineActionIndex !== undefined) {
+        requestAction.parent_routine_action_index = action.parentRoutineActionIndex;
+      }
+
       return requestAction;
     }),
     routine_name: form.routineName,
@@ -134,5 +142,30 @@ export function toRoutineCreateRequest(input: unknown): RoutineCreateRequest {
     request.routine_execution_minutes = Number(form.routineExecutionMinutes);
   }
 
+  if (form.parentRoutineIdentifier !== undefined) {
+    request.parent_routine_identifier = form.parentRoutineIdentifier;
+  }
+
   return request;
+}
+
+export function createCustomizedRoutineViewModel(parent: {
+  description: string;
+  durationMinutes?: number;
+  id: string;
+  steps: Array<{ action: string; memo?: string; minutes?: number }>;
+  title: string;
+}): RoutineCreateViewModel {
+  return {
+    actions: parent.steps.map((step, index) => ({
+      actionMemo: step.memo ?? '',
+      actionMinutes: step.minutes?.toString() ?? '',
+      actionName: step.action,
+      parentRoutineActionIndex: index,
+    })),
+    parentRoutineIdentifier: parent.id,
+    routineExecutionMinutes: parent.durationMinutes?.toString() ?? '',
+    routineMemo: parent.description,
+    routineName: parent.title,
+  };
 }

@@ -49,6 +49,17 @@ describe('routineCreate domain', () => {
     });
   });
 
+  it('カスタマイズ元と親Actionの対応を作成リクエストへ含める', () => {
+    expect(toRoutineCreateRequest({
+      ...form,
+      actions: [{ ...form.actions[0], parentRoutineActionIndex: 0 }],
+      parentRoutineIdentifier: '30000000-0000-4000-8000-000000000001',
+    })).toMatchObject({
+      parent_routine_identifier: '30000000-0000-4000-8000-000000000001',
+      routine_actions: [{ parent_routine_action_index: 0 }],
+    });
+  });
+
   it('必須項目、文字数、数値、ステップ数を検証する', () => {
     expect(validateRoutineCreateForm({ ...form, routineName: '   ' }).success).toBe(false);
     expect(validateRoutineCreateForm({ ...form, routineName: 'a'.repeat(51) }).success).toBe(false);
