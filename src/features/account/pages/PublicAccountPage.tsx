@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { AccountProfile } from '../domain/account';
+import type { AccountPost, AccountProfile, LikedRoutine } from '../domain/account';
 import { registrationSocialPlatforms } from '../../auth/register/services/registrationSocialPlatforms';
 import { publicAccountService, type PublicAccountService } from '../services/publicAccountService';
 import messages from '../../../shared/message/message.json';
@@ -12,6 +12,8 @@ export function PublicAccountPage({ service = publicAccountService }: PublicAcco
   const navigate = useNavigate();
   const { accountId = '' } = useParams<{ accountId: string }>();
   const [profile, setProfile] = useState<AccountProfile | null>(null);
+  const [posts, setPosts] = useState<AccountPost[]>([]);
+  const [likes, setLikes] = useState<LikedRoutine[]>([]);
   const [loadedAccountId, setLoadedAccountId] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
 
@@ -31,6 +33,8 @@ export function PublicAccountPage({ service = publicAccountService }: PublicAcco
         setLoadedAccountId(accountId);
       }
     });
+    service.listPosts(accountId).then((result) => { if (!cancelled) setPosts(result); }).catch(() => {});
+    service.listLikes(accountId).then((result) => { if (!cancelled) setLikes(result); }).catch(() => {});
 
     return () => { cancelled = true; };
   }, [accountId, service]);
@@ -67,6 +71,14 @@ export function PublicAccountPage({ service = publicAccountService }: PublicAcco
                 </div>}
               </div>
             </div>
+          </section>
+          <section className="account-page__list" aria-label={messages.account.tabs.posts}>
+            <h2>{messages.account.tabs.posts}</h2>
+            {posts.map((post) => <button className="account-page__card" key={post.id} onClick={() => navigate(`/routines/${post.routineId}`)} type="button"><div className="account-page__card-body"><h3 className="account-page__card-title">{post.title}</h3></div></button>)}
+          </section>
+          <section className="account-page__list" aria-label={messages.account.tabs.likes}>
+            <h2>{messages.account.tabs.likes}</h2>
+            {likes.map((like) => <button className="account-page__card" key={like.postId} onClick={() => navigate(`/routines/${like.routineId}`)} type="button"><div className="account-page__card-body"><h3 className="account-page__card-title">{like.title}</h3><p className="account-profile__handle">{like.authorName}</p></div></button>)}
           </section>
         </div>
       )}

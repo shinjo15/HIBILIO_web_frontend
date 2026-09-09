@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { accountProfileSchema, type AccountProfile } from '../domain/account';
+import { parseAccountPosts, parseLikedRoutines } from './accountRoutinePosts';
+import { accountProfileSchema, type AccountPost, type AccountProfile, type LikedRoutine } from '../domain/account';
 
 const publicAccountResponseSchema = z.object({
   account_bio: z.string().nullable(),
@@ -21,6 +22,8 @@ type PublicAccountAdapter = {
 
 export type PublicAccountService = {
   get: (accountIdentifier: string) => Promise<AccountProfile | null>;
+  listLikes: (accountIdentifier: string) => Promise<LikedRoutine[]>;
+  listPosts: (accountIdentifier: string) => Promise<AccountPost[]>;
 };
 
 const publicAccountApiAdapter: PublicAccountAdapter = {
@@ -57,6 +60,16 @@ export function createPublicAccountService(adapter: PublicAccountAdapter = publi
         socialLinks: profile.social_links.map((link) => ({ socialType: link.social_type, socialUrl: link.social_url })),
       });
     },
+    listLikes: async (accountIdentifier) => fetch(`/api/accounts/${accountIdentifier}/likes?page=1&number_of_items_per_page=20`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Failed to fetch public liked routines: ${response.status}`);
+        return parseLikedRoutines(await response.json());
+      }),
+    listPosts: async (accountIdentifier) => fetch(`/api/accounts/${accountIdentifier}/posts?page=1&number_of_items_per_page=20`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Failed to fetch public routine posts: ${response.status}`);
+        return parseAccountPosts(await response.json());
+      }),
   };
 }
 
