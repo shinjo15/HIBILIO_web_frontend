@@ -5,7 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RoutineCreatePage } from './RoutineCreatePage';
 import type { RoutineCreateService } from '../services/routineCreateService';
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 function renderPage(service: RoutineCreateService) {
   return render(<MemoryRouter><RoutineCreatePage service={service} /></MemoryRouter>);
@@ -69,6 +72,25 @@ describe('RoutineCreatePage', () => {
 
     resolveCreate?.();
     expect(await screen.findByText('ルーティンを投稿しました。')).toBeInTheDocument();
+  });
+
+  it('API送信から0.5秒後にローディングを表示し、表示後も0.5秒維持する', async () => {
+    let resolveCreate: (() => void) | undefined;
+    const create = vi.fn().mockImplementation(() => new Promise<void>((resolve) => { resolveCreate = resolve; }));
+    renderPage({ create });
+
+    fireEvent.change(screen.getByLabelText(/ルーティン名/), { target: { value: '朝の習慣' } });
+    fireEvent.change(screen.getByPlaceholderText('行動の内容'), { target: { value: '水を飲む' } });
+    submitForm();
+
+    await new Promise<void>((resolve) => { window.setTimeout(resolve, 550); });
+    expect(screen.getByText('投稿しています…')).toBeInTheDocument();
+
+    resolveCreate?.();
+    await new Promise<void>((resolve) => { window.setTimeout(resolve, 450); });
+    expect(screen.getByText('投稿しています…')).toBeInTheDocument();
+    await new Promise<void>((resolve) => { window.setTimeout(resolve, 100); });
+    expect(screen.getByText('ルーティンを投稿しました。')).toBeInTheDocument();
   });
 
   it('送信失敗時に API error を表示する', async () => {

@@ -188,7 +188,11 @@ function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) 
                 <RunIcon />
                 {messages.routineDetail.execute}
               </button>
-              <button className="routine-detail-action routine-detail-action--secondary" type="button">
+              <button
+                className="routine-detail-action routine-detail-action--secondary"
+                onClick={() => navigate(`/routines/${routine.id}/customize`)}
+                type="button"
+              >
                 <CustomizeIcon />
                 {messages.routineDetail.customize}
               </button>

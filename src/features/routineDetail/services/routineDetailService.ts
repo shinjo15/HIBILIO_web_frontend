@@ -327,6 +327,7 @@ export const apiRoutineDetailAdapter: RoutineDetailAdapter = {
       steps: detail.routine_actions.map((action) => ({
         action: action.action_name,
         duration: action.action_minutes === null ? undefined : `${action.action_minutes}分`,
+        minutes: action.action_minutes ?? undefined,
         memo: action.action_memo ?? undefined,
       })),
       tags: [],

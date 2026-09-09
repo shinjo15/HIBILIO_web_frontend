@@ -11,6 +11,10 @@ const apiErrorSchema = z.object({
   message: z.string().optional(),
 });
 
+const csrfTokenResponseSchema = z.object({
+  csrf_token: z.string().min(1),
+});
+
 export class RoutineCreateApiError extends Error {
   constructor(message: string) {
     super(message);
@@ -27,11 +31,22 @@ export type RoutineCreateService = {
 };
 
 async function createRoutine(request: RoutineCreateRequest): Promise<void> {
+  const csrfResponse = await fetch('/api/csrf-token', {
+    credentials: 'include',
+    method: 'GET',
+  });
+
+  if (!csrfResponse.ok) {
+    throw new RoutineCreateApiError(messages.routineCreate.error);
+  }
+
+  const csrfToken = csrfTokenResponseSchema.parse(await csrfResponse.json()).csrf_token;
   const response = await fetch('/api/routines', {
     body: JSON.stringify(request),
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': csrfToken,
     },
     method: 'POST',
   });

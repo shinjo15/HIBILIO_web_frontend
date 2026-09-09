@@ -5,6 +5,7 @@ export const routineDetailStepDtoSchema = z.object({
   action: z.string().min(1),
   duration: z.string().optional(),
   memo: z.string().min(1).optional(),
+  minutes: z.number().int().positive().optional(),
   time: z.string().min(1).optional(),
 });
 
@@ -56,6 +57,7 @@ export type RoutineDetailViewModel = {
   customizations: number;
   description: string;
   duration: string;
+  durationMinutes: number | null;
   executions: number;
   executionPosts: Array<{
     achieved: number;
@@ -100,6 +102,7 @@ export function toRoutineDetailViewModel(input: unknown): RoutineDetailViewModel
     })),
     description: dto.description,
     duration: dto.durationMinutes === null ? '-' : formatDuration(dto.durationMinutes),
+    durationMinutes: dto.durationMinutes,
     executions: dto.executions,
     executionPosts: dto.executionPosts.map((post) => ({
       achieved: post.achieved,

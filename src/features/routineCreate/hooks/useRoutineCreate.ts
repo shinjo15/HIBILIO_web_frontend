@@ -14,10 +14,16 @@ import {
   type RoutineCreateService,
 } from '../services/routineCreateService';
 
-export type RoutineCreateStatus = 'idle' | 'submitting' | 'success' | 'error';
+export type RoutineCreateStatus = 'idle' | 'submitting' | 'loading' | 'success' | 'error';
 
-export function useRoutineCreate(service: RoutineCreateService = routineCreateService) {
-  const [form, setForm] = useState<RoutineCreateViewModel>(createInitialRoutineCreateViewModel);
+const loadingDelayMilliseconds = 500;
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => { window.setTimeout(resolve, milliseconds); });
+}
+
+export function useRoutineCreate(service: RoutineCreateService = routineCreateService, initialForm?: RoutineCreateViewModel) {
+  const [form, setForm] = useState<RoutineCreateViewModel>(() => initialForm ?? createInitialRoutineCreateViewModel());
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [status, setStatus] = useState<RoutineCreateStatus>('idle');
 
@@ -70,7 +76,29 @@ export function useRoutineCreate(service: RoutineCreateService = routineCreateSe
     setStatus('submitting');
 
     try {
-      await service.create(validation.data);
+      let loadingShown = false;
+      const loadingTimer = window.setTimeout(() => {
+        loadingShown = true;
+        setStatus('loading');
+      }, loadingDelayMilliseconds);
+      let requestError: unknown;
+
+      try {
+        await service.create(validation.data);
+      } catch (error) {
+        requestError = error;
+      }
+
+      if (!loadingShown) {
+        window.clearTimeout(loadingTimer);
+      } else {
+        await wait(loadingDelayMilliseconds);
+      }
+
+      if (requestError !== undefined) {
+        throw requestError;
+      }
+
       setStatus('success');
     } catch (error) {
       setErrorMessage(error instanceof RoutineCreateApiError ? error.message : messages.routineCreate.error);

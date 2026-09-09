@@ -4,17 +4,27 @@ import { Link, useNavigate } from 'react-router-dom';
 import { HibilioMark } from '../../../shared/brand/HibilioMark';
 import messages from '../../../shared/message/message.json';
 import { RoutineCreateForm } from '../components/RoutineCreateForm';
+import type { RoutineCreateViewModel } from '../domain/routineCreate';
 import { useRoutineCreate } from '../hooks/useRoutineCreate';
 import { routineCreateService, type RoutineCreateService } from '../services/routineCreateService';
 import '../routineCreate.css';
 
 type RoutineCreatePageProps = {
+  initialForm?: RoutineCreateViewModel;
+  mode?: 'create' | 'customize';
+  returnPath?: string;
   service?: RoutineCreateService;
 };
 
-export function RoutineCreatePage({ service = routineCreateService }: RoutineCreatePageProps) {
+export function RoutineCreatePage({
+  initialForm,
+  mode = 'create',
+  returnPath = '/',
+  service = routineCreateService,
+}: RoutineCreatePageProps) {
   const navigate = useNavigate();
-  const routineCreate = useRoutineCreate(service);
+  const routineCreate = useRoutineCreate(service, initialForm);
+  const copy = mode === 'customize' ? messages.routineCustomize : messages.routineCreate;
   const canSubmit = routineCreate.form.routineName.trim() !== ''
     && routineCreate.form.actions.every((action) => action.actionName.trim() !== '');
 
@@ -31,12 +41,16 @@ export function RoutineCreatePage({ service = routineCreateService }: RoutineCre
       return;
     }
 
-    const timeoutId = window.setTimeout(() => navigate('/'), 1200);
+    const timeoutId = window.setTimeout(() => navigate(returnPath), 1200);
     return () => window.clearTimeout(timeoutId);
-  }, [navigate, routineCreate.status]);
+  }, [navigate, returnPath, routineCreate.status]);
 
   if (routineCreate.status === 'success') {
-    return <RoutineCreateSuccess />;
+    return <RoutineCreateSuccess copy={copy} returnPath={returnPath} />;
+  }
+
+  if (routineCreate.status === 'loading') {
+    return <RoutineCreateLoading />;
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -47,10 +61,11 @@ export function RoutineCreatePage({ service = routineCreateService }: RoutineCre
   return (
     <section className="routine-create-page">
       <header className="routine-create-header">
-        <Link aria-label={messages.routineCreate.backToFeed} className="routine-create-header__back" to="/">
-          <CloseIcon />
+        <Link aria-label={messages.routineCreate.backToFeed} className="routine-create-header__back" to={returnPath}>
+          <BackIcon />
+          <span>{messages.routineCreate.back}</span>
         </Link>
-        <h1 className="routine-create-header__title">{messages.routineCreate.title}</h1>
+        <h1 className="routine-create-header__title">{copy.title}</h1>
         <span aria-hidden="true" className="routine-create-header__spacer" />
       </header>
 
@@ -73,26 +88,42 @@ export function RoutineCreatePage({ service = routineCreateService }: RoutineCre
   );
 }
 
-function RoutineCreateSuccess() {
+function RoutineCreateSuccess({
+  copy,
+  returnPath,
+}: {
+  copy: typeof messages.routineCreate | typeof messages.routineCustomize;
+  returnPath: string;
+}) {
   return (
     <section className="routine-create-page routine-create-page--success">
       <header className="routine-create-header">
-        <Link aria-label={messages.routineCreate.backToFeed} className="routine-create-header__back" to="/">
-          <CloseIcon />
+        <Link aria-label={messages.routineCreate.backToFeed} className="routine-create-header__back" to={returnPath}>
+          <BackIcon />
+          <span>{messages.routineCreate.back}</span>
         </Link>
-        <h1 className="routine-create-header__title">{messages.routineCreate.title}</h1>
+        <h1 className="routine-create-header__title">{copy.title}</h1>
         <span aria-hidden="true" className="routine-create-header__spacer" />
       </header>
       <main className="routine-create-state">
         <HibilioMark size={48} />
-        <h2>{messages.routineCreate.success}</h2>
-        <p>{messages.routineCreate.successDescription}</p>
-        <Link className="routine-create-state__link" to="/">{messages.routineCreate.backToFeed}</Link>
+        <h2>{copy.success}</h2>
+        <p>{copy.successDescription}</p>
+        <Link className="routine-create-state__link" to={returnPath}>{messages.routineCreate.backToFeed}</Link>
       </main>
     </section>
   );
 }
 
-function CloseIcon() {
-  return <svg aria-hidden="true" className="routine-create-icon" fill="none" height="20" viewBox="0 0 24 24" width="20"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeLinecap="round" strokeWidth="2" /></svg>;
+function RoutineCreateLoading() {
+  return (
+    <section className="routine-create-loading">
+      <span className="routine-create-loading__mark"><HibilioMark size={56} /></span>
+      <p>{messages.routineCreate.submitting}</p>
+    </section>
+  );
+}
+
+function BackIcon() {
+  return <svg aria-hidden="true" className="routine-create-icon" fill="none" height="20" viewBox="0 0 24 24" width="20"><polyline points="15 18 9 12 15 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
 }

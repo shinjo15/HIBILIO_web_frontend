@@ -24,7 +24,12 @@ describe('routineCreateService', () => {
   });
 
   it('API の空の 201 成功を正常終了として扱う', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 201 });
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        json: async () => ({ csrf_token: 'csrf-token' }),
+        ok: true,
+      })
+      .mockResolvedValueOnce({ ok: true, status: 201 });
     vi.stubGlobal('fetch', fetchMock);
 
     await routineCreateApiAdapter.create({
@@ -32,8 +37,13 @@ describe('routineCreateService', () => {
       routine_name: 'テストルーティン',
     });
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/routines', expect.objectContaining({
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/csrf-token', {
       credentials: 'include',
+      method: 'GET',
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines', expect.objectContaining({
+      credentials: 'include',
+      headers: expect.objectContaining({ 'X-CSRF-TOKEN': 'csrf-token' }),
       method: 'POST',
     }));
   });
