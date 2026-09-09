@@ -8,7 +8,7 @@
   background: var(--hibilio-color-card);
   border-bottom: 1px solid var(--hibilio-color-border);
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) 64px;
+  grid-template-columns: 20px minmax(0, 1fr) 84px;
   min-height: 48px;
   padding: 0 16px;
   position: sticky;
@@ -45,6 +45,7 @@
   border-radius: 8px;
   color: var(--hibilio-color-on-primary);
   cursor: pointer;
+  flex-direction: row;
   font: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -52,6 +53,7 @@
   justify-self: end;
   min-height: 32px;
   padding: 6px 12px;
+  white-space: nowrap;
 }
 
 .routine-create-header__submit:disabled {
