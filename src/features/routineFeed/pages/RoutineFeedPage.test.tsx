@@ -82,7 +82,7 @@ describe('RoutineFeedPage', () => {
     expect(screen.getByRole('button', { name: 'いいねする' })).toHaveTextContent('14');
   });
 
-  it('いいね操作中はアニメーションを表示して対象ボタンを無効化する', async () => {
+  it('タップ直後にいいね状態とバーストアニメーションを表示して対象ボタンを無効化する', async () => {
     let resolveCreate: (() => void) | undefined;
     const user = userEvent.setup();
     const likeService: RoutineLikeService = {
@@ -94,8 +94,9 @@ describe('RoutineFeedPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'いいねする' }));
 
-    expect(screen.getByRole('button', { name: 'いいねする' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'いいねする' })).toHaveClass('routine-card__like--processing');
+    expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toHaveClass('routine-card__like--like-animation');
+    expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toHaveTextContent('15');
     resolveCreate?.();
     await waitFor(() => expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toBeEnabled());
   });

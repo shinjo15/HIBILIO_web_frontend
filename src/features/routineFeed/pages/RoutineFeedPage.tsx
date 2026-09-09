@@ -31,6 +31,7 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [likingPostIdentifier, setLikingPostIdentifier] = useState<string | null>(null);
+  const [likeAnimation, setLikeAnimation] = useState<{ postIdentifier: string; type: 'like' | 'unlike' } | null>(null);
   const [likeError, setLikeError] = useState(false);
 
   const loadRoutines = useCallback(async () => {
@@ -85,17 +86,22 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
   }
 
   async function toggleLike(postIdentifier: string) {
+    const routine = routines.find((item) => item.id === postIdentifier);
+    if (routine === undefined) return;
+    const type = routine.liked ? 'unlike' : 'like';
     setLikingPostIdentifier(postIdentifier);
     setLikeError(false);
+    setLikeAnimation({ postIdentifier, type });
+    const updateRoutine = (item: Routine) => item.id === postIdentifier ? { ...item, liked: !routine.liked, likes: item.likes + (routine.liked ? -1 : 1) } : item;
+    setRoutines((current) => current.map(updateRoutine));
     try {
-      const routine = routines.find((item) => item.id === postIdentifier);
       if (routine?.liked) {
         await likeService.remove(postIdentifier);
       } else {
         await likeService.create(postIdentifier);
       }
-      setRoutines((current) => current.map((item) => item.id === postIdentifier ? { ...item, liked: !item.liked, likes: item.likes + (item.liked ? -1 : 1) } : item));
     } catch (error) {
+      setRoutines((current) => current.map((item) => item.id === postIdentifier ? routine : item));
       if (error instanceof RoutineLikeUnauthorizedError) {
         clearAuthenticated();
         navigate('/login');
@@ -104,6 +110,7 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
       }
     } finally {
       setLikingPostIdentifier(null);
+      setLikeAnimation(null);
     }
   }
 
@@ -165,7 +172,7 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
         {!isLoading && !hasError && routines.length > 0 && (
           <Stack className="routine-feed-list">
             {likeError && <Alert severity="error">{messages.routineFeed.likeError}</Alert>}
-            {routines.map((routine) => <RoutineCard isLiking={likingPostIdentifier === routine.id} key={routine.id} onLike={toggleLike} routine={routine} />)}
+            {routines.map((routine) => <RoutineCard isLiking={likingPostIdentifier === routine.id} key={routine.id} likeAnimation={likeAnimation?.postIdentifier === routine.id ? likeAnimation.type : null} onLike={toggleLike} routine={routine} />)}
             <Box className="routine-feed-list__spacer" />
           </Stack>
         )}

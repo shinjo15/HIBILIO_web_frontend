@@ -5,12 +5,13 @@ import messages from '../../../shared/message/message.json';
 import { formatDuration, formatPostedAt, type Routine } from '../domain/routine';
 
 type RoutineCardProps = {
+  likeAnimation?: 'like' | 'unlike' | null;
   isLiking?: boolean;
   onLike?: (postIdentifier: string) => void;
   routine: Routine;
 };
 
-export function RoutineCard({ isLiking = false, onLike, routine }: RoutineCardProps) {
+export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, routine }: RoutineCardProps) {
   const avatarClasses: Record<string, string> = {
     H: 'routine-card__avatar--h',
     N: 'routine-card__avatar--n',
@@ -23,7 +24,8 @@ export function RoutineCard({ isLiking = false, onLike, routine }: RoutineCardPr
   const likeClass = [
     'routine-card__like',
     routine.liked && 'routine-card__like--liked',
-    isLiking && 'routine-card__like--processing',
+    likeAnimation === 'like' && 'routine-card__like--like-animation',
+    likeAnimation === 'unlike' && 'routine-card__like--unlike-animation',
   ].filter(Boolean).join(' ');
 
   return (

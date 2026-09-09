@@ -34,6 +34,7 @@ export function AccountPage({ isOwnAccount = true, likeService = routineLikeServ
   const [hasError, setHasError] = useState(false);
   const [likeError, setLikeError] = useState(false);
   const [likingPostIdentifier, setLikingPostIdentifier] = useState<string | null>(null);
+  const [likeAnimation, setLikeAnimation] = useState<{ postIdentifier: string; type: 'like' | 'unlike' } | null>(null);
   const [likesStatus, setLikesStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
 
   useEffect(() => {
@@ -98,19 +99,25 @@ export function AccountPage({ isOwnAccount = true, likeService = routineLikeServ
   }
 
   async function toggleLike(postIdentifier: string) {
+    const routine = [...posts, ...likes].find((item) => item.id === postIdentifier);
+    if (routine === undefined) return;
+    const type = routine.liked ? 'unlike' : 'like';
+    const updateLike = (item: Routine) => item.id === postIdentifier ? { ...item, liked: !routine.liked, likes: item.likes + (routine.liked ? -1 : 1) } : item;
     setLikingPostIdentifier(postIdentifier);
+    setLikeAnimation({ postIdentifier, type });
     setLikeError(false);
+    setPosts((current) => current.map(updateLike));
+    setLikes((current) => current.map(updateLike));
     try {
-      const routine = [...posts, ...likes].find((item) => item.id === postIdentifier);
-      if (routine?.liked) {
+      if (routine.liked) {
         await likeService.remove(postIdentifier);
       } else {
         await likeService.create(postIdentifier);
       }
-      const updateLike = (item: Routine) => item.id === postIdentifier ? { ...item, liked: !item.liked, likes: item.likes + (item.liked ? -1 : 1) } : item;
-      setPosts((current) => current.map(updateLike));
-      setLikes((current) => current.map(updateLike));
     } catch (error) {
+      const rollback = (item: Routine) => item.id === postIdentifier ? routine : item;
+      setPosts((current) => current.map(rollback));
+      setLikes((current) => current.map(rollback));
       if (error instanceof RoutineLikeUnauthorizedError) {
         clearAuthenticated();
         navigate('/login');
@@ -119,6 +126,7 @@ export function AccountPage({ isOwnAccount = true, likeService = routineLikeServ
       }
     } finally {
       setLikingPostIdentifier(null);
+      setLikeAnimation(null);
     }
   }
 
@@ -186,8 +194,8 @@ export function AccountPage({ isOwnAccount = true, likeService = routineLikeServ
           </div>
         </section>
 
-        {activeTab === 'posts' && <AccountPostsList likeError={likeError} likingPostIdentifier={likingPostIdentifier} onLike={toggleLike} posts={posts} />}
-        {activeTab === 'likes' && <AccountLikesList likeError={likeError} likingPostIdentifier={likingPostIdentifier} likes={likes} onLike={toggleLike} status={likesStatus} />}
+        {activeTab === 'posts' && <AccountPostsList likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} onLike={toggleLike} posts={posts} />}
+        {activeTab === 'likes' && <AccountLikesList likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} likes={likes} onLike={toggleLike} status={likesStatus} />}
         {activeTab === 'executionHistory' && <ExecutionHistoryList histories={executionHistories} />}
       </div>
     </section>
