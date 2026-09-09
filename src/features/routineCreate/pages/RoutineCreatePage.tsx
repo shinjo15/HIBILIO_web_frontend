@@ -69,7 +69,7 @@ export function RoutineCreatePage({
           type="submit"
         >
           <SendIcon />
-          {routineCreate.status === 'submitting' ? messages.routineCreate.submitting : messages.routineCreate.submit}
+          {messages.routineCreate.submit}
         </button>
       </header>
 
