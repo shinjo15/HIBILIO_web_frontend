@@ -38,15 +38,56 @@ describe('createAccountService', () => {
     await expect(service.getProfile()).rejects.toMatchObject({ name: 'AccountUnauthorizedError' });
   });
 
-  it('GET /api/my/likes の契約をいいね表示モデルへ変換する', async () => {
+  it('GET /api/my/posts の契約を投稿表示モデルへ変換する', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      likes: [{
-        liked_at: '2026-09-03T12:00:00+00:00',
-        post_category: 'routine',
+      items: [{
+        account_identifier: '11111111-1111-4111-8111-111111111111',
+        account_name: '投稿者',
+        customization_count: 1,
+        execution_count: 3,
         post_identifier: 'post-1',
         post_like_count: 2,
         post_support_count: 4,
+        posted_at: '2026-09-03T12:00:00+00:00',
+        routine_actions: [],
+        routine_execution_minutes: 30,
         routine_identifier: 'routine-1',
+        routine_name: '朝の集中ルーティン',
+        tags: [],
+      }],
+      total: 1,
+    })));
+    vi.stubGlobal('fetch', fetchMock);
+    const service = createAccountService();
+
+    await expect(service.listPosts()).resolves.toEqual([{
+      createdAt: '2026-09-03T12:00:00+00:00',
+      executions: 3,
+      id: 'post-1',
+      likes: 2,
+      routineId: 'routine-1',
+      title: '朝の集中ルーティン',
+    }]);
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/posts?page=1&number_of_items_per_page=20', { credentials: 'include', method: 'GET' });
+  });
+
+  it('GET /api/my/likes の契約をいいね表示モデルへ変換する', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      items: [{
+        account_identifier: '11111111-1111-4111-8111-111111111111',
+        account_name: '投稿者',
+        customization_count: 1,
+        execution_count: 3,
+        liked_at: '2026-09-04T12:00:00+00:00',
+        post_identifier: 'post-1',
+        post_like_count: 2,
+        post_support_count: 4,
+        posted_at: '2026-09-03T12:00:00+00:00',
+        routine_actions: [],
+        routine_execution_minutes: 30,
+        routine_identifier: 'routine-1',
+        routine_name: '朝の集中ルーティン',
+        tags: [],
       }],
       total: 1,
     })));
@@ -54,20 +95,14 @@ describe('createAccountService', () => {
     const service = createAccountService();
 
     await expect(service.listLikes()).resolves.toEqual([{
-      likedAt: '2026-09-03T12:00:00+00:00',
-      postCategory: 'routine',
+      authorName: '投稿者',
+      likedAt: '2026-09-04T12:00:00+00:00',
       postId: 'post-1',
       routineId: 'routine-1',
       supports: 4,
+      title: '朝の集中ルーティン',
       totalLikes: 2,
     }]);
-    expect(fetchMock).toHaveBeenCalledWith('/api/my/likes', { credentials: 'include', method: 'GET' });
-  });
-
-  it('不正ないいね API レスポンスを拒否する', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ likes: [], total: 'one' }))));
-    const service = createAccountService();
-
-    await expect(service.listLikes()).rejects.toThrow();
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/likes?page=1&number_of_items_per_page=20', { credentials: 'include', method: 'GET' });
   });
 });

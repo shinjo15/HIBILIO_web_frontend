@@ -9,7 +9,7 @@ export const accountProfileSchema = z.object({
 });
 
 export const accountPostSchema = z.object({
-  createdAtLabel: z.string().min(1),
+  createdAt: z.string().datetime({ offset: true }),
   executions: z.number().int().nonnegative(),
   id: z.string().min(1),
   likes: z.number().int().nonnegative(),
@@ -30,11 +30,12 @@ export const accountExecutionHistorySchema = z.object({
 });
 
 export const likedRoutineSchema = z.object({
+  authorName: z.string().min(1),
   likedAt: z.string().datetime({ offset: true }),
-  postCategory: z.string().min(1),
   postId: z.string().min(1),
   routineId: z.string().min(1),
   supports: z.number().int().nonnegative(),
+  title: z.string().min(1),
   totalLikes: z.number().int().nonnegative(),
 });
 

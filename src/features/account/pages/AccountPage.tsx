@@ -78,7 +78,15 @@ export function AccountPage({ service = accountService }: AccountPageProps) {
         setLikes(loadedLikes);
         setLikesStatus('loaded');
       })
-      .catch(() => setLikesStatus('error'));
+      .catch((error: unknown) => {
+        if (error instanceof AccountUnauthorizedError) {
+          clearAuthenticated();
+          navigate('/login');
+          return;
+        }
+
+        setLikesStatus('error');
+      });
   }
 
   if (isLoading) {
@@ -162,7 +170,7 @@ function PostsList({ posts, onSelectRoutine }: { posts: AccountPost[]; onSelectR
       <div className="account-page__card-body">
         <div className="account-page__card-header">
           <h2 className="account-page__card-title">{post.title}</h2>
-          <span className="account-page__card-date">{post.createdAtLabel}</span>
+          <span className="account-page__card-date">{new Date(post.createdAt).toLocaleDateString('ja-JP')}</span>
         </div>
       </div>
       <div className="account-page__card-metrics">
@@ -190,10 +198,10 @@ function LikesList({ likes, status, onSelectRoutine }: { likes: LikedRoutine[]; 
     <button className="account-page__card" key={like.postId} onClick={() => onSelectRoutine(like.routineId)} type="button">
       <div className="account-page__card-body">
         <div className="account-page__card-header">
-          <h2 className="account-page__card-title">{messages.account.likedRoutine}</h2>
+          <h2 className="account-page__card-title">{like.title}</h2>
           <span className="account-page__card-date">{new Date(like.likedAt).toLocaleDateString('ja-JP')}</span>
         </div>
-        <p className="account-profile__handle">{like.routineId}</p>
+        <p className="account-profile__handle">{like.authorName}</p>
       </div>
       <div className="account-page__card-metrics">
         <span className="account-page__metric account-page__metric--accent">♥ {like.totalLikes}</span>
