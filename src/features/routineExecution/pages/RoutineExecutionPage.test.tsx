@@ -6,10 +6,10 @@ import { RoutineExecutionPage } from './RoutineExecutionPage';
 import type { RoutineExecutionService } from '../services/routineExecutionService';
 
 const routine = {
-  id: 'routine-1',
+  id: '30000000-0000-4000-8000-000000000001',
   steps: [
-    { action: '水を飲む', time: '07:00' },
-    { action: 'ストレッチ', duration: '10分', time: '07:05' },
+    { action: '水を飲む', id: '40000000-0000-4000-8000-000000000001' },
+    { action: 'ストレッチ', duration: '10分', id: '40000000-0000-4000-8000-000000000002' },
   ],
   title: 'テストルーティン',
 };
@@ -33,16 +33,15 @@ function DetailStub() {
 }
 
 describe('RoutineExecutionPage', () => {
-  it('開始、ステップ切り替え、進捗、コメント、完了結果を操作できる', async () => {
+  it('実施済みActionと任意メモを送信し、成功表示へ切り替える', async () => {
     const user = userEvent.setup();
-    const complete = vi.fn().mockImplementation(async (input) => input);
-    renderPage({ complete, get: vi.fn().mockResolvedValue(routine) });
+    const create = vi.fn().mockResolvedValue(undefined);
+    renderPage({ create, get: vi.fn().mockResolvedValue(routine) });
 
-    expect(await screen.findByRole('button', { name: '実行を開始する' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: '実行結果を投稿する' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '実行をキャンセルする' }).querySelector('svg')).toHaveAttribute('stroke', 'currentColor');
 
     await user.click(screen.getByRole('button', { name: /水を飲む/ }));
-    expect(screen.getByRole('button', { name: '実行結果を投稿する' })).toBeInTheDocument();
     expect(screen.getByText('1/2 完了')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /水を飲む/ })).toHaveClass('routine-execution-step--checked');
     expect(screen.getByRole('button', { name: /水を飲む/ }).querySelector('polyline')).toHaveAttribute('stroke', 'currentColor');
@@ -52,34 +51,40 @@ describe('RoutineExecutionPage', () => {
 
     expect(await screen.findByText('お疲れ様でした！')).toBeInTheDocument();
     expect(screen.getByText('実行結果を投稿しました。')).toBeInTheDocument();
-    expect(complete).toHaveBeenCalledWith(expect.objectContaining({
-      achieved: 1,
-      comment: '今日も完了',
-      routineId: 'routine-1',
-      total: 2,
-    }));
-    expect(screen.getByText('達成').parentElement).toHaveTextContent('1 / 2');
-    expect(screen.getByText('今日も完了', { exact: false })).toBeInTheDocument();
+    expect(create).toHaveBeenCalledWith({
+      executedRoutineActionIdentifiers: ['40000000-0000-4000-8000-000000000001'],
+      memo: '今日も完了',
+      routineIdentifier: routine.id,
+    });
   });
 
-  it('戻ると未送信状態を破棄し、再入場時に ready に戻る', async () => {
+  it('入力値エラーを表示し、修正時に消去する', async () => {
     const user = userEvent.setup();
-    const complete = vi.fn().mockResolvedValue(undefined);
-    renderPage({ complete, get: vi.fn().mockResolvedValue(routine) });
+    const create = vi.fn();
+    renderPage({ create, get: vi.fn().mockResolvedValue(routine) });
 
-    await user.click(await screen.findByRole('button', { name: /水を飲む/ }));
-    await user.click(screen.getByRole('button', { name: '実行をキャンセルする' }));
-    expect(screen.getByRole('link', { name: '詳細' })).toBeInTheDocument();
-    expect(screen.queryByText('戻ると未送信の進捗は破棄されます。')).not.toBeInTheDocument();
+    await user.type(await screen.findByLabelText('ひとこと（任意）'), 'あ'.repeat(32));
+    await user.click(screen.getByRole('button', { name: '実行結果を投稿する' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('ひとことは31文字以内で入力してください。');
+    expect(create).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole('link', { name: '詳細' }));
-    expect(await screen.findByRole('button', { name: '実行を開始する' })).toBeInTheDocument();
-    expect(screen.queryByLabelText('ひとこと（任意）')).not.toBeInTheDocument();
-    expect(complete).not.toHaveBeenCalled();
+    await user.clear(screen.getByLabelText('ひとこと（任意）'));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('通信エラーを表示し、再送信できる', async () => {
+    const user = userEvent.setup();
+    const create = vi.fn().mockRejectedValueOnce(new Error('network error')).mockResolvedValueOnce(undefined);
+    renderPage({ create, get: vi.fn().mockResolvedValue(routine) });
+
+    await user.click(await screen.findByRole('button', { name: '実行結果を投稿する' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('実行画面を表示できませんでした。時間をおいて再試行してください。');
+    await user.click(screen.getByRole('button', { name: '実行結果を投稿する' }));
+    expect(await screen.findByText('お疲れ様でした！')).toBeInTheDocument();
   });
 
   it('存在しないルーティンの状態を表示する', async () => {
-    renderPage({ complete: vi.fn(), get: vi.fn().mockResolvedValue(null) }, '/routines/missing/execute');
+    renderPage({ create: vi.fn(), get: vi.fn().mockResolvedValue(null) }, '/routines/missing/execute');
 
     expect(await screen.findByText('実行するルーティンが見つかりませんでした。')).toBeInTheDocument();
   });

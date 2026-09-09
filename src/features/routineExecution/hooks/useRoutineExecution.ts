@@ -1,19 +1,12 @@
 import { useEffect, useState } from 'react';
 import messages from '../../../shared/message/message.json';
-import {
-  calculateElapsedMinutes,
-  countAchievedSteps,
-  type RoutineExecutionResult,
-  type RoutineExecutionResultViewModel,
-  type RoutineExecutionViewModel,
-} from '../domain/routineExecution';
+import { routineExecutionFormSchema, type RoutineExecutionViewModel } from '../domain/routineExecution';
 import {
   routineExecutionService,
   RoutineExecutionError,
   type RoutineExecutionService,
 } from '../services/routineExecutionService';
 
-export type RoutineExecutionPhase = 'ready' | 'running' | 'completed';
 export type RoutineExecutionLoadStatus = 'loading' | 'ready' | 'notFound' | 'error';
 
 export function useRoutineExecution(
@@ -23,11 +16,9 @@ export function useRoutineExecution(
   const [routine, setRoutine] = useState<RoutineExecutionViewModel | null>(null);
   const [loadedRoutineId, setLoadedRoutineId] = useState<string | null>(null);
   const [loadStatus, setLoadStatus] = useState<RoutineExecutionLoadStatus>('loading');
-  const [phase, setPhase] = useState<RoutineExecutionPhase>('ready');
   const [checked, setChecked] = useState<boolean[]>([]);
-  const [comment, setComment] = useState('');
-  const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [result, setResult] = useState<RoutineExecutionResultViewModel | null>(null);
+  const [memo, setMemo] = useState('');
+  const [isCompleted, setIsCompleted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,11 +38,9 @@ export function useRoutineExecution(
       }
 
       setRoutine(loadedRoutine);
-      setPhase('ready');
       setChecked(new Array(loadedRoutine.steps.length).fill(false));
-      setComment('');
-      setStartedAt(null);
-      setResult(null);
+      setMemo('');
+      setIsCompleted(false);
       setErrorMessage(null);
       setIsSubmitting(false);
       setLoadStatus('ready');
@@ -70,22 +59,8 @@ export function useRoutineExecution(
     };
   }, [routineId, service]);
 
-  function start() {
-    if (phase !== 'ready') {
-      return;
-    }
-
-    setStartedAt(Date.now());
-    setPhase('running');
-    setErrorMessage(null);
-  }
-
   function toggleStep(index: number) {
-    if (phase === 'ready') {
-      start();
-    }
-
-    if (phase === 'completed' || isSubmitting) {
+    if (isCompleted || isSubmitting) {
       return;
     }
 
@@ -95,31 +70,36 @@ export function useRoutineExecution(
     setErrorMessage(null);
   }
 
-  function updateComment(value: string) {
-    setComment(value);
+  function updateMemo(value: string) {
+    setMemo(value);
     setErrorMessage(null);
   }
 
-  async function complete(): Promise<void> {
-    if (phase !== 'running' || !routine || startedAt === null || isSubmitting) {
+  async function create(): Promise<void> {
+    if (!routine || isSubmitting) {
       return;
     }
 
-    const result: RoutineExecutionResult = {
-      achieved: countAchievedSteps(checked),
-      comment: comment.trim(),
-      elapsedMinutes: calculateElapsedMinutes(startedAt, Date.now()),
-      routineId: routine.id,
-      total: routine.steps.length,
-    };
+    const executedRoutineActionIdentifiers = routine.steps
+      .filter((_, index) => checked[index])
+      .flatMap((step) => step.id === undefined ? [] : [step.id]);
+    const form = routineExecutionFormSchema.safeParse({
+      executedRoutineActionIdentifiers,
+      memo,
+      routineIdentifier: routine.id,
+    });
+
+    if (!form.success) {
+      setErrorMessage(form.error.issues[0]?.message ?? messages.routineExecution.error);
+      return;
+    }
 
     setIsSubmitting(true);
     setErrorMessage(null);
 
     try {
-      const completed = await service.complete(result);
-      setResult(completed);
-      setPhase('completed');
+      await service.create(form.data);
+      setIsCompleted(true);
     } catch (error) {
       setErrorMessage(error instanceof RoutineExecutionError
         ? error.message
@@ -131,17 +111,15 @@ export function useRoutineExecution(
 
   return {
     checked,
-    comment,
-    complete,
+    create,
     errorMessage,
     isLoading: loadedRoutineId !== routineId || loadStatus === 'loading',
     isSubmitting,
     loadStatus,
-    phase,
-    result,
+    isCompleted,
+    memo,
     routine,
-    start,
     toggleStep,
-    updateComment,
+    updateMemo,
   };
 }

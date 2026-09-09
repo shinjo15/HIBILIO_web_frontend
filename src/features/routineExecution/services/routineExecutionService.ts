@@ -1,22 +1,22 @@
 import { z } from 'zod';
 import messages from '../../../shared/message/message.json';
 import {
-  routineExecutionResultSchema,
-  toRoutineExecutionResultViewModel,
+  routineExecutionRequestSchema,
+  toRoutineExecutionRequest,
   toRoutineExecutionViewModel,
-  type RoutineExecutionResult,
-  type RoutineExecutionResultViewModel,
+  type RoutineExecutionForm,
+  type RoutineExecutionRequest,
   type RoutineExecutionViewModel,
 } from '../domain/routineExecution';
 import { routineDetailService } from '../../routineDetail/services/routineDetailService';
 
 export type RoutineExecutionAdapter = {
-  complete: (result: RoutineExecutionResult) => Promise<unknown>;
+  create: (request: RoutineExecutionRequest) => Promise<void>;
   get: (routineId: string) => Promise<unknown>;
 };
 
 export type RoutineExecutionService = {
-  complete: (result: RoutineExecutionResult) => Promise<RoutineExecutionResultViewModel>;
+  create: (input: RoutineExecutionForm) => Promise<void>;
   get: (routineId: string) => Promise<RoutineExecutionViewModel | null>;
 };
 
@@ -27,16 +27,8 @@ export class RoutineExecutionError extends Error {
   }
 }
 
-/**
- * This frontend has no local RoutineExecution API implementation. The dummy
- * adapter neither calls an HTTP route nor models a backend request payload.
- * It returns the screen's transient result so the full interaction can be
- * exercised without persistence.
- */
 const dummyAdapter: RoutineExecutionAdapter = {
-  async complete(result) {
-    return result;
-  },
+  async create() {},
   async get(routineId) {
     const routine = await routineDetailService.get(routineId);
 
@@ -54,11 +46,10 @@ const dummyAdapter: RoutineExecutionAdapter = {
 
 export function createRoutineExecutionService(adapter: RoutineExecutionAdapter): RoutineExecutionService {
   return {
-    complete: async (result) => {
-      const validatedResult = routineExecutionResultSchema.parse(result);
+    create: async (input) => {
+      const request = routineExecutionRequestSchema.parse(toRoutineExecutionRequest(input));
       try {
-        const response = await adapter.complete(validatedResult);
-        return toRoutineExecutionResultViewModel(response);
+        await adapter.create(request);
       } catch (error) {
         if (error instanceof z.ZodError) {
           throw error;
@@ -73,4 +64,27 @@ export function createRoutineExecutionService(adapter: RoutineExecutionAdapter):
   };
 }
 
-export const routineExecutionService = createRoutineExecutionService(dummyAdapter);
+async function createRoutineExecution(request: RoutineExecutionRequest): Promise<void> {
+  const csrfResponse = await fetch('/api/csrf-token', { credentials: 'include' });
+  if (!csrfResponse.ok) {
+    throw new RoutineExecutionError(messages.routineExecution.error);
+  }
+
+  const csrfToken = z.object({ csrf_token: z.string().min(1) }).parse(await csrfResponse.json()).csrf_token;
+  const response = await fetch('/api/routine-executions', {
+    body: JSON.stringify(request),
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+    method: 'POST',
+  });
+  if (!response.ok) {
+    throw new RoutineExecutionError(messages.routineExecution.error);
+  }
+}
+
+export const apiRoutineExecutionAdapter: RoutineExecutionAdapter = {
+  create: createRoutineExecution,
+  get: dummyAdapter.get,
+};
+
+export const routineExecutionService = createRoutineExecutionService(apiRoutineExecutionAdapter);
