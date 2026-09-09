@@ -38,6 +38,17 @@ function DetailStub() {
 }
 
 describe('RoutineExecutionPage', () => {
+  it('実施済みActionが0件の間は投稿できず、1件選択すると投稿できる', async () => {
+    const user = userEvent.setup();
+    renderPage({ create: vi.fn(), get: vi.fn().mockResolvedValue(routine) });
+
+    const submitButton = await screen.findByRole('button', { name: '実行結果を投稿する' });
+    expect(submitButton).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: /水を飲む/ }));
+    expect(submitButton).toBeEnabled();
+  });
+
   it('実施済みActionと任意メモを送信し、成功表示へ切り替える', async () => {
     const user = userEvent.setup();
     const create = vi.fn().mockResolvedValue(undefined);
@@ -69,6 +80,7 @@ describe('RoutineExecutionPage', () => {
     renderPage({ create, get: vi.fn().mockResolvedValue(routine) });
 
     await user.type(await screen.findByLabelText('ひとこと（任意）'), 'あ'.repeat(32));
+    await user.click(screen.getByRole('button', { name: /水を飲む/ }));
     await user.click(screen.getByRole('button', { name: '実行結果を投稿する' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('ひとことは31文字以内で入力してください。');
     expect(create).not.toHaveBeenCalled();
@@ -82,6 +94,7 @@ describe('RoutineExecutionPage', () => {
     const create = vi.fn().mockRejectedValueOnce(new Error('network error')).mockResolvedValueOnce(undefined);
     renderPage({ create, get: vi.fn().mockResolvedValue(routine) });
 
+    await user.click(await screen.findByRole('button', { name: /水を飲む/ }));
     await user.click(await screen.findByRole('button', { name: '実行結果を投稿する' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('実行画面を表示できませんでした。時間をおいて再試行してください。');
     await user.click(screen.getByRole('button', { name: '実行結果を投稿する' }));
@@ -94,6 +107,7 @@ describe('RoutineExecutionPage', () => {
     const create = vi.fn().mockRejectedValue(new RoutineExecutionError('unauthorized', 401));
     renderPage({ create, get: vi.fn().mockResolvedValue(routine) });
 
+    await user.click(await screen.findByRole('button', { name: /水を飲む/ }));
     await user.click(await screen.findByRole('button', { name: '実行結果を投稿する' }));
 
     expect(await screen.findByText('ログイン')).toBeInTheDocument();

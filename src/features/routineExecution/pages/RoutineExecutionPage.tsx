@@ -77,7 +77,7 @@ export function RoutineExecutionPage({ service = routineExecutionService }: Rout
       <div className="routine-execution-action-bar">
         <button
           className="routine-execution-main-action"
-          disabled={execution.isSubmitting}
+          disabled={achieved === 0 || execution.isSubmitting}
           onClick={() => void execution.create()}
           type="button"
         >
