@@ -147,7 +147,7 @@
   },
   "account": {
     "achievementRate": "達成率",
-    "achieved": "達成",
+    "achieved": "達成項目数",
     "complete": "完璧",
     "countLoading": "-",
     "duration": "所要時間",

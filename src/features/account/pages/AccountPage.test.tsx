@@ -73,7 +73,7 @@ describe('AccountPage', () => {
 
     await user.click(screen.getByRole('tab', { name: /実行履歴/ }));
     expect(screen.getByText('集中できました')).toBeInTheDocument();
-    expect(screen.getByText('達成')).toBeInTheDocument();
+    expect(screen.getByText('達成項目数')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
     expect(screen.getByText('応援')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
