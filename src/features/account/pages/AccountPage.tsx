@@ -96,11 +96,16 @@ export function AccountPage({ isOwnAccount = true, likeService = routineLikeServ
       });
   }
 
-  async function like(postIdentifier: string) {
+  async function toggleLike(postIdentifier: string) {
     setLikeError(false);
     try {
-      await likeService.create(postIdentifier);
-      const updateLike = (routine: Routine) => routine.id === postIdentifier ? { ...routine, liked: true, likes: routine.likes + 1 } : routine;
+      const routine = [...posts, ...likes].find((item) => item.id === postIdentifier);
+      if (routine?.liked) {
+        await likeService.remove(postIdentifier);
+      } else {
+        await likeService.create(postIdentifier);
+      }
+      const updateLike = (item: Routine) => item.id === postIdentifier ? { ...item, liked: !item.liked, likes: item.likes + (item.liked ? -1 : 1) } : item;
       setPosts((current) => current.map(updateLike));
       setLikes((current) => current.map(updateLike));
     } catch (error) {
@@ -177,8 +182,8 @@ export function AccountPage({ isOwnAccount = true, likeService = routineLikeServ
           </div>
         </section>
 
-        {activeTab === 'posts' && <AccountPostsList likeError={likeError} onLike={like} posts={posts} />}
-        {activeTab === 'likes' && <AccountLikesList likeError={likeError} likes={likes} onLike={like} status={likesStatus} />}
+        {activeTab === 'posts' && <AccountPostsList likeError={likeError} onLike={toggleLike} posts={posts} />}
+        {activeTab === 'likes' && <AccountLikesList likeError={likeError} likes={likes} onLike={toggleLike} status={likesStatus} />}
         {activeTab === 'executionHistory' && <ExecutionHistoryList histories={executionHistories} />}
       </div>
     </section>

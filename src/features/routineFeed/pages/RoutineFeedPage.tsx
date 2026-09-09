@@ -84,12 +84,17 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
     setActiveTab(tab);
   }
 
-  async function like(postIdentifier: string) {
+  async function toggleLike(postIdentifier: string) {
     setLikingPostIdentifier(postIdentifier);
     setLikeError(false);
     try {
-      await likeService.create(postIdentifier);
-      setRoutines((current) => current.map((routine) => routine.id === postIdentifier ? { ...routine, liked: true, likes: routine.likes + 1 } : routine));
+      const routine = routines.find((item) => item.id === postIdentifier);
+      if (routine?.liked) {
+        await likeService.remove(postIdentifier);
+      } else {
+        await likeService.create(postIdentifier);
+      }
+      setRoutines((current) => current.map((item) => item.id === postIdentifier ? { ...item, liked: !item.liked, likes: item.likes + (item.liked ? -1 : 1) } : item));
     } catch (error) {
       if (error instanceof RoutineLikeUnauthorizedError) {
         clearAuthenticated();
@@ -160,7 +165,7 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
         {!isLoading && !hasError && routines.length > 0 && (
           <Stack className="routine-feed-list">
             {likeError && <Alert severity="error">{messages.routineFeed.likeError}</Alert>}
-            {routines.map((routine) => <RoutineCard isLiking={likingPostIdentifier === routine.id} key={routine.id} onLike={like} routine={routine} />)}
+            {routines.map((routine) => <RoutineCard isLiking={likingPostIdentifier === routine.id} key={routine.id} onLike={toggleLike} routine={routine} />)}
             <Box className="routine-feed-list__spacer" />
           </Stack>
         )}

@@ -16,6 +16,7 @@ export class RoutineLikeUnauthorizedError extends RoutineLikeError {
 
 export type RoutineLikeService = {
   create: (postIdentifier: string) => Promise<void>;
+  remove: (postIdentifier: string) => Promise<void>;
 };
 
 const csrfTokenSchema = z.object({ csrf_token: z.string().min(1) });
@@ -35,5 +36,19 @@ export const routineLikeService: RoutineLikeService = {
 
     if (response.status === 401) throw new RoutineLikeUnauthorizedError();
     if (!response.ok) throw new RoutineLikeError('Failed to create routine like', response.status);
+  },
+  remove: async (postIdentifier) => {
+    const csrfResponse = await fetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
+    if (!csrfResponse.ok) throw new RoutineLikeError('Failed to fetch CSRF token', csrfResponse.status);
+
+    const csrfToken = csrfTokenSchema.parse(await csrfResponse.json()).csrf_token;
+    const response = await fetch(`/api/likes/${postIdentifier}`, {
+      credentials: 'include',
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      method: 'DELETE',
+    });
+
+    if (response.status === 401) throw new RoutineLikeUnauthorizedError();
+    if (!response.ok) throw new RoutineLikeError('Failed to remove routine like', response.status);
   },
 };

@@ -28,4 +28,20 @@ describe('routineLikeService', () => {
 
     await expect(routineLikeService.create('11111111-1111-4111-8111-111111111111')).rejects.toBeInstanceOf(RoutineLikeUnauthorizedError);
   });
+
+  it('CSRFトークン付きでいいね解除APIを呼び出す', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' })))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await routineLikeService.remove('11111111-1111-4111-8111-111111111111');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/csrf-token', { credentials: 'include', method: 'GET' });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/likes/11111111-1111-4111-8111-111111111111', {
+      credentials: 'include',
+      headers: { 'X-CSRF-TOKEN': 'csrf-token' },
+      method: 'DELETE',
+    });
+  });
 });

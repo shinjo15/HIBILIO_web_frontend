@@ -67,7 +67,7 @@ describe('RoutineFeedPage', () => {
 
   it('いいね成功時にカードの状態と件数を更新する', async () => {
     const user = userEvent.setup();
-    const likeService: RoutineLikeService = { create: vi.fn().mockResolvedValue(undefined) };
+    const likeService: RoutineLikeService = { create: vi.fn().mockResolvedValue(undefined), remove: vi.fn().mockResolvedValue(undefined) };
     renderPage({ list: async () => [routine] }, likeService);
     await screen.findByRole('heading', { name: '朝の集中ルーティン' });
 
@@ -75,6 +75,11 @@ describe('RoutineFeedPage', () => {
 
     expect(likeService.create).toHaveBeenCalledWith('post-1');
     expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toHaveTextContent('15');
+
+    await user.click(screen.getByRole('button', { name: 'いいねを取り消す' }));
+
+    expect(likeService.remove).toHaveBeenCalledWith('post-1');
+    expect(screen.getByRole('button', { name: 'いいねする' })).toHaveTextContent('14');
   });
 
   it('未認証時は人気タブだけを表示して人気一覧を取得する', async () => {

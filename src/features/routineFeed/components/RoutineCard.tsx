@@ -62,7 +62,7 @@ export function RoutineCard({ isLiking = false, onLike, routine }: RoutineCardPr
           </Stack>
 
           <Stack className="routine-card__actions">
-            <button aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass} disabled={routine.liked || isLiking || onLike === undefined} onClick={() => onLike?.(routine.id)} type="button">
+            <button aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass} disabled={isLiking || onLike === undefined} onClick={() => onLike?.(routine.id)} type="button">
               <HeartIcon filled={routine.liked} />
               <Typography component="span" className="routine-card__action-value">{routine.likes}</Typography>
             </button>
