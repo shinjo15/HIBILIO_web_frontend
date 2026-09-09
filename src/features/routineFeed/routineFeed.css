@@ -346,8 +346,13 @@
 .routine-card__like {
   background: none;
   border: 0;
+  cursor: pointer;
   margin: 0;
   padding: 0;
+}
+
+.routine-card__like:disabled {
+  cursor: default;
 }
 
 .routine-card__like--liked {

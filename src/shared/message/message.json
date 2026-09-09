@@ -86,6 +86,7 @@
     "retry": "再試行",
     "moreSteps": "あと{count}項目…",
     "like": "いいねする",
+    "likeError": "いいねできませんでした。時間をおいて再試行してください。",
     "unlike": "いいねを取り消す",
     "customize": "カスタム"
   },

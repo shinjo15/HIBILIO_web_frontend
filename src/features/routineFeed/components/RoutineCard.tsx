@@ -5,10 +5,12 @@ import messages from '../../../shared/message/message.json';
 import { formatDuration, formatPostedAt, type Routine } from '../domain/routine';
 
 type RoutineCardProps = {
+  isLiking?: boolean;
+  onLike?: (postIdentifier: string) => void;
   routine: Routine;
 };
 
-export function RoutineCard({ routine }: RoutineCardProps) {
+export function RoutineCard({ isLiking = false, onLike, routine }: RoutineCardProps) {
   const avatarClasses: Record<string, string> = {
     H: 'routine-card__avatar--h',
     N: 'routine-card__avatar--n',
@@ -60,10 +62,10 @@ export function RoutineCard({ routine }: RoutineCardProps) {
           </Stack>
 
           <Stack className="routine-card__actions">
-            <Box aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass}>
+            <button aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass} disabled={routine.liked || isLiking || onLike === undefined} onClick={() => onLike?.(routine.id)} type="button">
               <HeartIcon filled={routine.liked} />
               <Typography component="span" className="routine-card__action-value">{routine.likes}</Typography>
-            </Box>
+            </button>
             <ActionItem icon={<RunIcon />} value={routine.executions} />
             <ActionItem icon={<ShuffleIcon />} value={routine.customizations} />
           </Stack>

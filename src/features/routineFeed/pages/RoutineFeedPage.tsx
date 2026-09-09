@@ -7,13 +7,14 @@ import { useNavigate } from 'react-router-dom';
 import { RoutineCard } from '../components/RoutineCard';
 import type { Routine, RoutineFeedTab } from '../domain/routine';
 import { routineFeedService, RoutineFeedUnauthorizedError, type RoutineFeedService } from '../services/routineFeedService';
+import { routineLikeService, RoutineLikeUnauthorizedError, type RoutineLikeService } from '../services/routineLikeService';
 import { clearAuthenticated, isAuthenticated as hasAuthenticatedSession } from '../../auth/services/authSession';
 import { HibilioMark } from '../../../shared/brand/HibilioMark';
 import messages from '../../../shared/message/message.json';
 import '../routineFeed.css';
 import '../routineFeedTypography.css';
 
-type RoutineFeedPageProps = { isAuthenticated?: boolean; service?: RoutineFeedService };
+type RoutineFeedPageProps = { isAuthenticated?: boolean; likeService?: RoutineLikeService; service?: RoutineFeedService };
 
 const tabs: Array<{ label: string; value: RoutineFeedTab }> = [
   { label: messages.routineFeed.tabs.following, value: 'following' },
@@ -21,7 +22,7 @@ const tabs: Array<{ label: string; value: RoutineFeedTab }> = [
   { label: messages.routineFeed.tabs.popular, value: 'popular' },
 ];
 
-export function RoutineFeedPage({ isAuthenticated, service = routineFeedService }: RoutineFeedPageProps) {
+export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeService, service = routineFeedService }: RoutineFeedPageProps) {
   const navigate = useNavigate();
   const authenticated = isAuthenticated ?? hasAuthenticatedSession();
   const availableTabs = authenticated ? tabs : tabs.filter((tab) => tab.value === 'popular');
@@ -29,6 +30,8 @@ export function RoutineFeedPage({ isAuthenticated, service = routineFeedService 
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [likingPostIdentifier, setLikingPostIdentifier] = useState<string | null>(null);
+  const [likeError, setLikeError] = useState(false);
 
   const loadRoutines = useCallback(async () => {
     setIsLoading(true);
@@ -79,6 +82,24 @@ export function RoutineFeedPage({ isAuthenticated, service = routineFeedService 
     setIsLoading(true);
     setHasError(false);
     setActiveTab(tab);
+  }
+
+  async function like(postIdentifier: string) {
+    setLikingPostIdentifier(postIdentifier);
+    setLikeError(false);
+    try {
+      await likeService.create(postIdentifier);
+      setRoutines((current) => current.map((routine) => routine.id === postIdentifier ? { ...routine, liked: true, likes: routine.likes + 1 } : routine));
+    } catch (error) {
+      if (error instanceof RoutineLikeUnauthorizedError) {
+        clearAuthenticated();
+        navigate('/login');
+      } else {
+        setLikeError(true);
+      }
+    } finally {
+      setLikingPostIdentifier(null);
+    }
   }
 
 
@@ -138,7 +159,8 @@ export function RoutineFeedPage({ isAuthenticated, service = routineFeedService 
 
         {!isLoading && !hasError && routines.length > 0 && (
           <Stack className="routine-feed-list">
-            {routines.map((routine) => <RoutineCard key={routine.id} routine={routine} />)}
+            {likeError && <Alert severity="error">{messages.routineFeed.likeError}</Alert>}
+            {routines.map((routine) => <RoutineCard isLiking={likingPostIdentifier === routine.id} key={routine.id} onLike={like} routine={routine} />)}
             <Box className="routine-feed-list__spacer" />
           </Stack>
         )}
