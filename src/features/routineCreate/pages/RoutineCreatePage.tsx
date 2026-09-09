@@ -72,7 +72,6 @@ export function RoutineCreatePage({
       <main className="routine-create-scroll">
         <div className="routine-create-content">
           <RoutineCreateForm
-            canSubmit={canSubmit}
             errorMessage={routineCreate.errorMessage}
             form={routineCreate.form}
             isSubmitting={routineCreate.status === 'submitting'}

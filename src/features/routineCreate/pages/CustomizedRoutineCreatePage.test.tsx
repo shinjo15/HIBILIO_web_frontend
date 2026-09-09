@@ -48,6 +48,7 @@ describe('CustomizedRoutineCreatePage', () => {
     expect(screen.getByDisplayValue('朝のルーティン')).toBeInTheDocument();
     expect(screen.getByDisplayValue('元の説明')).toBeInTheDocument();
     expect(screen.getAllByPlaceholderText('行動の内容')).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: '投稿' })).not.toBeInTheDocument();
 
     fireEvent.submit(document.getElementById('routine-create-form')!);
 
