@@ -14,7 +14,6 @@ export function ProfileEditPage({ service = profileEditService }: ProfileEditPag
   const [profile, setProfile] = useState<EditableProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<RegistrationSocialPlatform | null>(null);
   const [socialLinkValue, setSocialLinkValue] = useState('');
   const [tagCandidates, setTagCandidates] = useState<TagCandidate[]>([]);
@@ -53,7 +52,6 @@ export function ProfileEditPage({ service = profileEditService }: ProfileEditPag
 
   function update<K extends keyof EditableProfile>(key: K, value: EditableProfile[K]) {
     setProfile((current) => current === null ? current : { ...current, [key]: value });
-    setSaved(false);
   }
 
   async function save() {
@@ -61,7 +59,7 @@ export function ProfileEditPage({ service = profileEditService }: ProfileEditPag
     setError(null); setIsSaving(true);
     try {
       await service.save(editingProfile);
-      setSaved(true);
+      navigate('/account');
     } catch (saveError: unknown) {
       if (saveError instanceof ProfileEditUnauthorizedError) {
         clearAuthenticated();
@@ -90,7 +88,6 @@ export function ProfileEditPage({ service = profileEditService }: ProfileEditPag
     <header className="profile-edit__header"><Button aria-label={messages.profileEdit.back} onClick={() => navigate('/account')} type="button" variant="text">←</Button><h1>{messages.profileEdit.title}</h1><Button disabled={isSaving} onClick={() => void save()} type="button" variant="text">{messages.profileEdit.save}</Button></header>
     <section className="profile-edit__content">
       {error !== null && <Alert severity="error">{error}</Alert>}
-      {saved && <Alert severity="success">{messages.profileEdit.saved}</Alert>}
       <div className="profile-edit__header-image"><label><span>{messages.profileEdit.changeHeader}</span><input accept="image/png,image/jpeg,image/webp" onChange={(event) => update('headerImage', event.target.files?.[0] ?? null)} type="file" /></label></div>
       <div className="profile-edit__avatar"><span>{editingProfile.name.slice(0, 1).toUpperCase()}</span><label><span>{messages.profileEdit.changeIcon}</span><input accept="image/png,image/jpeg,image/webp" onChange={(event) => update('iconImage', event.target.files?.[0] ?? null)} type="file" /></label></div>
       <label><span>{messages.profileEdit.name}</span><input maxLength={50} onChange={(event) => update('name', event.target.value)} value={editingProfile.name} /></label>

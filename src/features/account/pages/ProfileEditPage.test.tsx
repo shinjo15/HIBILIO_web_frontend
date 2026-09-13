@@ -64,7 +64,7 @@ describe('ProfileEditPage', () => {
     expect(screen.getByText('/')).toBeInTheDocument();
   });
 
-  it('保存すると編集済みプロフィールをサービスへ渡す', async () => {
+  it('保存すると編集済みプロフィールをサービスへ渡してアカウント画面へ遷移する', async () => {
     const user = userEvent.setup();
     const save = vi.fn().mockResolvedValue(undefined);
     renderPage({ ...service, save });
@@ -73,7 +73,7 @@ describe('ProfileEditPage', () => {
     await user.click(screen.getAllByRole('button', { name: '保存' })[0]);
 
     expect(save).toHaveBeenCalledWith(editableProfile);
-    expect(await screen.findByText('変更内容を保存しました。')).toBeInTheDocument();
+    expect(await screen.findByText('/account')).toBeInTheDocument();
   });
 
   it('保存が401なら認証状態を削除してログインへ遷移する', async () => {
