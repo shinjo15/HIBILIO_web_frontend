@@ -3,11 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import type { AccountService } from '../services/accountService';
 import { publicAccountService, type PublicAccountService } from '../services/publicAccountService';
 import { AccountPage } from './AccountPage';
+import { accountBlockService, type AccountBlockService } from '../services/accountBlockService';
 import messages from '../../../shared/message/message.json';
 
-type PublicAccountPageProps = { service?: PublicAccountService };
+type PublicAccountPageProps = { blockService?: AccountBlockService; service?: PublicAccountService };
 
-export function PublicAccountPage({ service = publicAccountService }: PublicAccountPageProps) {
+export function PublicAccountPage({ blockService = accountBlockService, service = publicAccountService }: PublicAccountPageProps) {
   const navigate = useNavigate();
   const { accountId = '' } = useParams<{ accountId: string }>();
   const accountService = useMemo<AccountService>(() => ({
@@ -18,5 +19,5 @@ export function PublicAccountPage({ service = publicAccountService }: PublicAcco
     listPosts: async () => service.listPosts(accountId),
   }), [accountId, service]);
 
-  return <AccountPage isOwnAccount={false} notFoundMessage={messages.publicAccount.notFound} onBack={() => navigate(-1)} service={accountService} />;
+  return <AccountPage blockService={blockService} isOwnAccount={false} notFoundMessage={messages.publicAccount.notFound} onBack={() => navigate(-1)} service={accountService} />;
 }

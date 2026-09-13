@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const accountProfileSchema = z.object({
+  accountIdentifier: z.string().min(1),
   bio: z.string().nullable(),
   favoriteTags: z.array(z.object({ id: z.string().min(1), name: z.string().min(1) })),
   initial: z.string().min(1).max(1),

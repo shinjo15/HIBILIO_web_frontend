@@ -56,6 +56,7 @@ export function createPublicAccountService(adapter: PublicAccountAdapter = publi
 
       const profile = publicAccountResponseSchema.parse(response);
       return accountProfileSchema.parse({
+        accountIdentifier: profile.account_identifier,
         bio: profile.account_bio,
         favoriteTags: profile.favorite_tags.map((tag) => ({ id: tag.tag_identifier, name: tag.tag_name })),
         initial: profile.account_name.charAt(0),

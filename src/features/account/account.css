@@ -161,6 +161,22 @@
   margin-left: 8px;
 }
 
+.account-page__block:disabled {
+  cursor: default;
+}
+
+.account-page__block--blocked {
+  border-color: var(--hibilio-color-primary);
+  color: var(--hibilio-color-primary);
+}
+
+.account-page__block-error {
+  color: var(--hibilio-color-primary);
+  font-size: 12px;
+  margin: 0 20px 12px;
+  text-align: right;
+}
+
 .account-profile__details {
   margin-top: 16px;
 }

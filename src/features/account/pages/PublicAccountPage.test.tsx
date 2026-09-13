@@ -1,17 +1,18 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PublicAccountPage } from './PublicAccountPage';
 import { createPublicAccountService, type PublicAccountService } from '../services/publicAccountService';
+import type { AccountBlockService } from '../services/accountBlockService';
 
 afterEach(() => cleanup());
 
-function renderPage(service: PublicAccountService, path = '/accounts/account-1') {
+function renderPage(service: PublicAccountService, path = '/accounts/account-1', blockService?: AccountBlockService) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route element={<PublicAccountPage service={service} />} path="/accounts/:accountId" />
+        <Route element={<PublicAccountPage blockService={blockService} service={service} />} path="/accounts/:accountId" />
       </Routes>
     </MemoryRouter>,
   );
@@ -44,6 +45,19 @@ describe('PublicAccountPage', () => {
 
     expect(await screen.findByText('アカウントが見つかりませんでした。')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '戻る' })).toBeInTheDocument();
+  });
+
+  it('ブロック成功時に対象アカウントをブロック済みとして表示する', async () => {
+    const user = userEvent.setup();
+    const blockService: AccountBlockService = { create: vi.fn().mockResolvedValue(undefined) };
+    const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '公開アカウント', favorite_tags: [], social_links: [] }) });
+    renderPage(service, '/accounts/account-1', blockService);
+    await screen.findByRole('heading', { name: '公開アカウント' });
+
+    await user.click(screen.getByRole('button', { name: 'ブロック' }));
+
+    expect(blockService.create).toHaveBeenCalledWith('account-1');
+    expect(screen.getByRole('button', { name: 'ブロック済み' })).toBeDisabled();
   });
 
   it('遷移元へ戻る', async () => {
