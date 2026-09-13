@@ -93,13 +93,15 @@ describe('AccountPage', () => {
     expect(isAuthenticated()).toBe(false);
   });
 
-  it('デスクトップ用ヘッダー内の設定ボタンからアカウント設定画面へ遷移する', async () => {
+  it('アカウントヘッダーのタイトルと設定ボタンを表示し、設定画面へ遷移する', async () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByRole('heading', { name: '山田 由紀' });
 
     const settingsButton = screen.getByRole('button', { name: '設定' });
-    expect(settingsButton.closest('header')).toHaveClass('account-page__header--own');
+    const header = settingsButton.closest('header');
+    expect(header).toHaveClass('account-page__header--own');
+    expect(header).toContainElement(screen.getByRole('heading', { name: 'アカウント' }));
 
     await user.click(settingsButton);
 

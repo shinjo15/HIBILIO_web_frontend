@@ -406,20 +406,6 @@
   }
 
   .account-page__header--own {
-    background: transparent;
-    border: 0;
-    box-sizing: border-box;
     display: flex;
-    left: 50%;
-    max-width: 672px;
-    position: absolute;
-    top: 0;
-    transform: translateX(-50%);
-    width: 100%;
-    z-index: 1;
-  }
-
-  .account-page__header--own .account-page__header-title {
-    display: none;
   }
 }
