@@ -1,6 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
-import { afterEach, describe, expect, it } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProfileEditPage } from './ProfileEditPage';
 import { ProfileEditUnauthorizedError, type ProfileEditService } from '../services/profileEditService';
 import { isAuthenticated, markAuthenticated } from '../../auth/services/authSession';
@@ -13,17 +14,23 @@ function renderPage(service: ProfileEditService) {
   return render(<MemoryRouter><ProfileEditPage service={service} /><Location /></MemoryRouter>);
 }
 
+const editableProfile = {
+  accountIdentifier: '11111111-1111-4111-8111-111111111111',
+  bio: 'APIから読み込んだ自己紹介',
+  favoriteTags: [{ identifier: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', label: '朝活' }],
+  headerImage: null,
+  iconImage: null,
+  name: 'ログインアカウント',
+  socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/example' }],
+  uiMode: 'system' as const,
+};
+
 const service: ProfileEditService = {
   load: async () => ({
-    accountIdentifier: '11111111-1111-4111-8111-111111111111',
-    bio: 'APIから読み込んだ自己紹介',
-    favoriteTags: [{ identifier: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', label: '朝活' }],
-    headerImageName: null,
-    iconImageName: null,
-    name: 'ログインアカウント',
-    socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/example' }],
-    uiMode: 'system',
+    ...editableProfile,
   }),
+  loadTagCandidates: async () => [],
+  save: async () => undefined,
 };
 
 afterEach(() => {
@@ -55,5 +62,29 @@ describe('ProfileEditPage', () => {
 
     expect(await screen.findByText('プロフィールを読み込めませんでした。')).toBeInTheDocument();
     expect(screen.getByText('/')).toBeInTheDocument();
+  });
+
+  it('保存すると編集済みプロフィールをサービスへ渡す', async () => {
+    const user = userEvent.setup();
+    const save = vi.fn().mockResolvedValue(undefined);
+    renderPage({ ...service, save });
+
+    await screen.findByDisplayValue('ログインアカウント');
+    await user.click(screen.getAllByRole('button', { name: '保存' })[0]);
+
+    expect(save).toHaveBeenCalledWith(editableProfile);
+    expect(await screen.findByText('変更内容を保存しました。')).toBeInTheDocument();
+  });
+
+  it('保存が401なら認証状態を削除してログインへ遷移する', async () => {
+    const user = userEvent.setup();
+    markAuthenticated();
+    renderPage({ ...service, save: async () => { throw new ProfileEditUnauthorizedError(); } });
+
+    await screen.findByDisplayValue('ログインアカウント');
+    await user.click(screen.getAllByRole('button', { name: '保存' })[0]);
+
+    await waitFor(() => expect(screen.getByText('/login')).toBeInTheDocument());
+    expect(isAuthenticated()).toBe(false);
   });
 });

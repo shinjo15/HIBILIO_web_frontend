@@ -1,47 +1,107 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createProfileEditService } from './profileEditService';
+import { createProfileEditService, type EditableProfile } from './profileEditService';
 
 afterEach(() => vi.unstubAllGlobals());
+
+const apiProfile = {
+  account_bio: null,
+  account_identifier: '11111111-1111-4111-8111-111111111111',
+  account_name: 'ログインアカウント',
+  favorite_tags: [{ tag_identifier: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', tag_name: '朝活' }],
+  social_links: [{ social_type: 'x', social_url: 'https://x.com/example' }],
+  ui_mode: 'system',
+};
+
+const editableProfile: EditableProfile = {
+  accountIdentifier: '11111111-1111-4111-8111-111111111111',
+  bio: '',
+  favoriteTags: [{ identifier: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', label: '朝活' }],
+  headerImage: null,
+  iconImage: null,
+  name: '更新後アカウント',
+  socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/updated' }],
+  uiMode: 'system',
+};
 
 describe('createProfileEditService', () => {
   it('GET /api/my/account の応答を編集用プロフィールへ変換し、タグ識別子を保持する', async () => {
     const service = createProfileEditService({
-      get: async () => ({
-        account_bio: null,
-        account_identifier: '11111111-1111-4111-8111-111111111111',
-        account_name: 'ログインアカウント',
-        favorite_tags: [{ tag_identifier: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', tag_name: '朝活' }],
-        social_links: [{ social_type: 'x', social_url: 'https://x.com/example' }],
-        ui_mode: 'system',
-      }),
+      get: async () => apiProfile,
+      getCsrfToken: async () => ({ csrf_token: 'csrf-token' }),
+      getTagCandidates: async () => ({ tags: [] }),
+      patch: async () => new Response(null, { status: 204 }),
     });
 
     await expect(service.load()).resolves.toEqual({
-      accountIdentifier: '11111111-1111-4111-8111-111111111111',
-      bio: '',
-      favoriteTags: [{ identifier: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', label: '朝活' }],
-      headerImageName: null,
-      iconImageName: null,
+      ...editableProfile,
       name: 'ログインアカウント',
       socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/example' }],
-      uiMode: 'system',
     });
   });
 
-  it('既定アダプターは認証Cookie付きで GET /api/my/account を呼ぶ', async () => {
+  it('JSONで全プロフィール項目をCSRFとCookie付きPATCHし、空文字と空配列をnull・[]で送る', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' })))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await createProfileEditService().save({ ...editableProfile, favoriteTags: [], socialLinks: [] });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/csrf-token', { credentials: 'include', method: 'GET' });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/my/account', {
+      body: JSON.stringify({
+        account_bio: null,
+        account_name: '更新後アカウント',
+        favorite_tag_identifiers: [],
+        social_links: [],
+      }),
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': 'csrf-token' },
+      method: 'PATCH',
+    });
+  });
+
+  it('選択した画像がある場合、JSON保存後に選択済みファイルだけをmultipart PATCHする', async () => {
+    const icon = new File(['icon'], 'icon.png', { type: 'image/png' });
+    const header = new File(['header'], 'header.webp', { type: 'image/webp' });
+    const patch = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    const service = createProfileEditService({
+      get: async () => apiProfile,
+      getCsrfToken: vi.fn().mockResolvedValue({ csrf_token: 'csrf-token' }),
+      getTagCandidates: async () => ({ tags: [] }),
+      patch,
+    });
+
+    await service.save({ ...editableProfile, iconImage: icon, headerImage: header });
+
+    expect(patch).toHaveBeenNthCalledWith(1, expect.any(String), {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': 'csrf-token',
+    });
+    const imageBody = patch.mock.calls[1][0] as FormData;
+    expect(imageBody.get('icon_image')).toBe(icon);
+    expect(imageBody.get('header_image')).toBe(header);
+    expect(patch).toHaveBeenNthCalledWith(2, imageBody, { 'X-CSRF-TOKEN': 'csrf-token' });
+  });
+
+  it('タグ候補をGET /api/tagsから識別子付きで取得する', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      account_bio: '自己紹介',
-      account_identifier: '11111111-1111-4111-8111-111111111111',
-      account_name: 'ログインアカウント',
-      favorite_tags: [],
-      social_links: [],
-      ui_mode: 'dark',
+      tags: [{ tag_identifier: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', tag_name: '朝活' }],
     })));
     vi.stubGlobal('fetch', fetchMock);
 
-    await createProfileEditService().load();
+    await expect(createProfileEditService().loadTagCandidates()).resolves.toEqual([
+      { identifier: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', label: '朝活' },
+    ]);
+    expect(fetchMock).toHaveBeenCalledWith('/api/tags');
+  });
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/my/account', { credentials: 'include', method: 'GET' });
+  it('保存時の401を未認証エラーにする', async () => {
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' })))
+      .mockResolvedValueOnce(new Response(null, { status: 401 })));
+
+    await expect(createProfileEditService().save(editableProfile)).rejects.toMatchObject({ name: 'ProfileEditUnauthorizedError' });
   });
 
   it('既定アダプターが401を返すと未認証エラーにする', async () => {
@@ -49,19 +109,4 @@ describe('createProfileEditService', () => {
 
     await expect(createProfileEditService().load()).rejects.toMatchObject({ name: 'ProfileEditUnauthorizedError' });
   });
-
-  it('アダプター応答に ui_mode がなければ zod の契約エラーにする', async () => {
-    const service = createProfileEditService({
-      get: async () => ({
-        account_bio: null,
-        account_identifier: '11111111-1111-4111-8111-111111111111',
-        account_name: 'ログインアカウント',
-        favorite_tags: [],
-        social_links: [],
-      }),
-    });
-
-    await expect(service.load()).rejects.toMatchObject({ name: 'ZodError' });
-  });
-
 });
