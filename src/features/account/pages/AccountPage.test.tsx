@@ -12,6 +12,8 @@ const service: AccountService = {
     : null,
   getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: '毎日続けることが目標。', favoriteTags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '睡眠' }], initial: '山', name: '山田 由紀', socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/yuki_sleep' }] }),
   listExecutionHistories: async () => [{ executedActionCount: 2, id: 'execution-1', memo: '集中できました', postedAt: '2026-09-03T12:00:00+00:00', routineId: 'routine-1', routineTitle: '朝の集中ルーティン', supportCount: 3 }],
+  listBlockedAccounts: async () => [],
+  listFollowedAccounts: async () => [],
   listLikes: async () => [{ accountId: '11111111-1111-4111-8111-111111111111', authorName: '田中 陽介', createdAt: '2026-09-03T12:00:00.000Z', customizations: 1, durationMinutes: 20, executions: 3, id: 'post-2', liked: true, likes: 2, routineId: 'routine-2', steps: [{ action: '読書', durationMinutes: 20 }], supports: 4, tags: ['読書'], title: '夜の読書ルーティン' }],
   listPosts: async () => [{ accountId: '11111111-1111-4111-8111-111111111111', authorName: '山田 由紀', createdAt: '2026-09-03T12:00:00.000Z', customizations: 1, durationMinutes: 30, executions: 3, id: 'post-1', liked: false, likes: 2, routineId: 'routine-1', steps: [{ action: '集中', durationMinutes: 30 }], supports: 4, tags: ['睡眠'], title: '朝の集中ルーティン' }],
 };
@@ -38,7 +40,7 @@ describe('AccountPage', () => {
     expect(await screen.findByRole('heading', { name: '山田 由紀' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '編集' })).toBeInTheDocument();
     expect(screen.queryByText('11111111-1111-4111-8111-111111111111')).not.toBeInTheDocument();
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['1投稿', '-いいね', '1実行履歴']);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['1投稿', '-いいね', '1実行履歴', '-フォロー中', '-ブロック中']);
 
     await user.click(screen.getByRole('link', { name: '朝の集中ルーティン' }));
     expect(screen.getByText('/routines/routine-1')).toBeInTheDocument();
@@ -64,6 +66,32 @@ describe('AccountPage', () => {
 
     await user.click(screen.getByRole('tab', { name: /いいね/ }));
     expect(await screen.findByText('いいねしたルーティンを読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
+  });
+
+  it('フォロー中タブは選択時にだけ読み込み、公開プロフィールへ遷移できる', async () => {
+    const user = userEvent.setup();
+    const listFollowedAccounts = vi.fn().mockResolvedValue([{
+      accountIdentifier: '22222222-2222-4222-8222-222222222222',
+      bio: '朝の時間を大切にしています。',
+      name: '田中 花子',
+    }]);
+    renderPage({ ...service, listFollowedAccounts });
+    await screen.findByRole('heading', { name: '山田 由紀' });
+
+    expect(listFollowedAccounts).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('tab', { name: /フォロー中/ }));
+    expect(await screen.findByText('田中 花子')).toBeInTheDocument();
+    expect(screen.getByText('朝の時間を大切にしています。')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '田中 花子' })).toHaveAttribute('href', '/accounts/22222222-2222-4222-8222-222222222222');
+  });
+
+  it('ブロック中タブで取得エラーを表示する', async () => {
+    const user = userEvent.setup();
+    renderPage({ ...service, listBlockedAccounts: vi.fn().mockRejectedValue(new Error('failed')) });
+    await screen.findByRole('heading', { name: '山田 由紀' });
+
+    await user.click(screen.getByRole('tab', { name: /ブロック中/ }));
+    expect(await screen.findByText('ブロック中のアカウントを読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
   });
 
   it('実行履歴タブにAPI由来の実行内容を表示する', async () => {

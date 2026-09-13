@@ -149,6 +149,9 @@
   "account": {
     "achievementRate": "達成率",
     "achieved": "達成項目数",
+    "blockedAccountsEmpty": "ブロック中のアカウントはまだありません",
+    "blockedAccountsError": "ブロック中のアカウントを読み込めませんでした。時間をおいて再試行してください。",
+    "blockedAccountsLoading": "ブロック中のアカウントを読み込んでいます…",
     "complete": "完璧",
     "countLoading": "-",
     "duration": "所要時間",
@@ -157,6 +160,9 @@
     "executionHistoryEmpty": "実行履歴はまだありません",
     "executionHistoryDescription": "完了したステップを確認できます。",
     "executionHistoryNotFound": "実行履歴が見つかりませんでした。",
+    "followedAccountsEmpty": "フォロー中のアカウントはまだありません",
+    "followedAccountsError": "フォロー中のアカウントを読み込めませんでした。時間をおいて再試行してください。",
+    "followedAccountsLoading": "フォロー中のアカウントを読み込んでいます…",
     "likedRoutine": "いいねしたルーティン",
     "likesEmpty": "いいねしたルーティンはまだありません",
     "likesError": "いいねしたルーティンを読み込めませんでした。時間をおいて再試行してください。",
@@ -168,7 +174,9 @@
     "support": "応援",
     "tabs": {
       "ariaLabel": "アカウント情報の表示切り替え",
+      "blockedAccounts": "ブロック中",
       "executionHistory": "実行履歴",
+      "followedAccounts": "フォロー中",
       "likes": "いいね",
       "posts": "投稿"
     },

@@ -15,6 +15,8 @@ export function PublicAccountPage({ blockService = accountBlockService, service 
     getExecutionHistory: async () => null,
     getProfile: async () => service.get(accountId),
     listExecutionHistories: async () => service.listExecutionHistories(accountId),
+    listBlockedAccounts: async () => [],
+    listFollowedAccounts: async () => [],
     listLikes: async () => service.listLikes(accountId),
     listPosts: async () => service.listPosts(accountId),
   }), [accountId, service]);

@@ -9,6 +9,12 @@ export const accountProfileSchema = z.object({
   socialLinks: z.array(z.object({ socialType: z.string().min(1), socialUrl: z.string().url() })),
 });
 
+export const accountRelationSchema = z.object({
+  accountIdentifier: z.string().min(1),
+  bio: z.string().nullable(),
+  name: z.string().min(1),
+});
+
 export const accountPostSchema = z.object({
   createdAt: z.string().datetime({ offset: true }),
   executions: z.number().int().nonnegative(),
@@ -51,8 +57,9 @@ export const accountExecutionSummarySchema = z.object({
 });
 
 export type AccountProfile = z.infer<typeof accountProfileSchema>;
+export type AccountRelation = z.infer<typeof accountRelationSchema>;
 export type AccountPost = z.infer<typeof accountPostSchema>;
 export type AccountExecutionHistory = z.infer<typeof accountExecutionHistorySchema>;
 export type AccountExecutionSummary = z.infer<typeof accountExecutionSummarySchema>;
 export type LikedRoutine = z.infer<typeof likedRoutineSchema>;
-export type AccountTab = 'posts' | 'likes' | 'executionHistory';
+export type AccountTab = 'posts' | 'likes' | 'executionHistory' | 'followedAccounts' | 'blockedAccounts';
