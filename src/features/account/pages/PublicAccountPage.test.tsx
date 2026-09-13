@@ -65,7 +65,9 @@ describe('PublicAccountPage', () => {
     await user.click(screen.getByRole('button', { name: 'ブロック' }));
 
     expect(blockService.create).toHaveBeenCalledWith('account-1');
-    expect(screen.getByRole('button', { name: 'ブロック済み' })).toBeDisabled();
+    const blockButton = screen.getByRole('button', { name: 'ブロック済み' });
+    expect(blockButton).toHaveClass('account-page__block--blocked');
+    expect(blockButton).toBeDisabled();
   });
 
   it('フォロー成功時に対象アカウントをフォロー中として表示する', async () => {
