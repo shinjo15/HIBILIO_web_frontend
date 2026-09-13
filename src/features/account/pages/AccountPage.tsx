@@ -1,6 +1,6 @@
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type {
   AccountExecutionSummary,
   AccountProfile,
@@ -12,6 +12,7 @@ import { AccountUnauthorizedError, accountService, type AccountService } from '.
 import { registrationSocialPlatforms } from '../../auth/register/services/registrationSocialPlatforms';
 import { clearAuthenticated } from '../../auth/services/authSession';
 import { AccountLikesList, AccountPostsList } from '../components/AccountRoutineLists';
+import { AccountRelationList } from '../../../shared/components/AccountRelationList';
 import { routineLikeService, RoutineLikeUnauthorizedError, type RoutineLikeService } from '../../routineFeed/services/routineLikeService';
 import { accountBlockService, AccountBlockError, AccountBlockUnauthorizedError, type AccountBlockService } from '../services/accountBlockService';
 import messages from '../../../shared/message/message.json';
@@ -23,7 +24,6 @@ const tabs: Array<{ label: string; value: AccountTab }> = [
   { label: messages.account.tabs.posts, value: 'posts' },
   { label: messages.account.tabs.likes, value: 'likes' },
   { label: messages.account.tabs.executionHistory, value: 'executionHistory' },
-  { label: messages.account.tabs.followedAccounts, value: 'followedAccounts' },
   { label: messages.account.tabs.blockedAccounts, value: 'blockedAccounts' },
 ];
 
@@ -33,7 +33,6 @@ export function AccountPage({ blockService = accountBlockService, isOwnAccount =
   const [posts, setPosts] = useState<Routine[]>([]);
   const [executionHistories, setExecutionHistories] = useState<AccountExecutionSummary[]>([]);
   const [likes, setLikes] = useState<Routine[]>([]);
-  const [followedAccounts, setFollowedAccounts] = useState<AccountRelation[]>([]);
   const [blockedAccounts, setBlockedAccounts] = useState<AccountRelation[]>([]);
   const [activeTab, setActiveTab] = useState<AccountTab>('posts');
   const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +44,6 @@ export function AccountPage({ blockService = accountBlockService, isOwnAccount =
   const [likingPostIdentifier, setLikingPostIdentifier] = useState<string | null>(null);
   const [likeAnimation, setLikeAnimation] = useState<{ postIdentifier: string; type: 'like' | 'unlike' } | null>(null);
   const [likesStatus, setLikesStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
-  const [followedAccountsStatus, setFollowedAccountsStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
   const [blockedAccountsStatus, setBlockedAccountsStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
 
   useEffect(() => {
@@ -88,24 +86,6 @@ export function AccountPage({ blockService = accountBlockService, isOwnAccount =
   function selectTab(tab: AccountTab) {
     setActiveTab(tab);
 
-    if (tab === 'followedAccounts' && followedAccountsStatus === 'idle') {
-      setFollowedAccountsStatus('loading');
-      service.listFollowedAccounts()
-        .then((loadedAccounts) => {
-          setFollowedAccounts(loadedAccounts);
-          setFollowedAccountsStatus('loaded');
-        })
-        .catch((error: unknown) => {
-          if (error instanceof AccountUnauthorizedError) {
-            clearAuthenticated();
-            navigate('/login');
-            return;
-          }
-
-          setFollowedAccountsStatus('error');
-        });
-      return;
-    }
 
     if (tab === 'blockedAccounts' && blockedAccountsStatus === 'idle') {
       setBlockedAccountsStatus('loading');
@@ -214,7 +194,7 @@ export function AccountPage({ blockService = accountBlockService, isOwnAccount =
   const tabCounts: Record<AccountTab, number | null> = {
     blockedAccounts: blockedAccountsStatus === 'loaded' ? blockedAccounts.length : null,
     executionHistory: executionHistories.length,
-    followedAccounts: followedAccountsStatus === 'loaded' ? followedAccounts.length : null,
+
     likes: likesStatus === 'loaded' ? likes.length : null,
     posts: posts.length,
   };
@@ -272,8 +252,7 @@ export function AccountPage({ blockService = accountBlockService, isOwnAccount =
         {activeTab === 'posts' && <AccountPostsList likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} onLike={toggleLike} posts={posts} />}
         {activeTab === 'likes' && <AccountLikesList likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} likes={likes} onLike={toggleLike} status={likesStatus} />}
         {activeTab === 'executionHistory' && <ExecutionHistoryList histories={executionHistories} />}
-        {activeTab === 'followedAccounts' && <AccountRelationList accounts={followedAccounts} emptyMessage={messages.account.followedAccountsEmpty} errorMessage={messages.account.followedAccountsError} loadingMessage={messages.account.followedAccountsLoading} status={followedAccountsStatus} />}
-        {activeTab === 'blockedAccounts' && <AccountRelationList accounts={blockedAccounts} emptyMessage={messages.account.blockedAccountsEmpty} errorMessage={messages.account.blockedAccountsError} loadingMessage={messages.account.blockedAccountsLoading} status={blockedAccountsStatus} />}
+        {activeTab === 'blockedAccounts' && <AccountRelationListState accounts={blockedAccounts} emptyMessage={messages.account.blockedAccountsEmpty} errorMessage={messages.account.blockedAccountsError} loadingMessage={messages.account.blockedAccountsLoading} status={blockedAccountsStatus} />}
       </div>
     </section>
   );
@@ -311,10 +290,10 @@ function ExecutionHistoryList({ histories }: { histories: AccountExecutionSummar
   })}</div>;
 }
 
-function AccountRelationList({ accounts, emptyMessage, errorMessage, loadingMessage, status }: { accounts: AccountRelation[]; emptyMessage: string; errorMessage: string; loadingMessage: string; status: 'idle' | 'loading' | 'loaded' | 'error' }) {
+function AccountRelationListState({ accounts, emptyMessage, errorMessage, loadingMessage, status }: { accounts: AccountRelation[]; emptyMessage: string; errorMessage: string; loadingMessage: string; status: 'idle' | 'loading' | 'loaded' | 'error' }) {
   if (status === 'idle' || status === 'loading') return <p className="account-page__state account-page__state--loading">{loadingMessage}</p>;
   if (status === 'error') return <p className="account-page__state account-page__state--error">{errorMessage}</p>;
   if (accounts.length === 0) return <p className="account-page__state">{emptyMessage}</p>;
 
-  return <div className="account-page__list" role="tabpanel">{accounts.map((account) => <Link aria-label={account.name} className="account-relation-card" key={account.accountIdentifier} to={`/accounts/${account.accountIdentifier}`}><span aria-hidden="true" className="account-relation-card__avatar">{account.name.charAt(0)}</span><span className="account-relation-card__body"><strong className="account-relation-card__name">{account.name}</strong>{account.bio !== null && <span className="account-relation-card__bio">{account.bio}</span>}</span></Link>)}</div>;
+  return <AccountRelationList accounts={accounts} className="account-page__list" />;
 }

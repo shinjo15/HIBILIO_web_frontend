@@ -33,9 +33,6 @@ const accountRelationListResponseSchema = z.object({
   })),
 });
 
-const followingAccountsResponseSchema = z.object({
-  following_accounts: accountRelationListResponseSchema.shape.blocks,
-});
 
 type AccountExecutionAdapter = {
   listExecutionHistories: () => Promise<unknown>;
@@ -53,9 +50,6 @@ type AccountLikesAdapter = {
   listLikes: () => Promise<unknown>;
 };
 
-type AccountFollowsAdapter = {
-  listFollowedAccounts: () => Promise<unknown>;
-};
 
 type AccountBlocksAdapter = {
   listBlockedAccounts: () => Promise<unknown>;
@@ -73,7 +67,7 @@ export type AccountService = {
   getProfile: () => Promise<AccountProfile | null>;
   listExecutionHistories: () => Promise<AccountExecutionSummary[]>;
   listBlockedAccounts: () => Promise<AccountRelation[]>;
-  listFollowedAccounts: () => Promise<AccountRelation[]>;
+
   listLikes: () => Promise<Routine[]>;
   listPosts: () => Promise<Routine[]>;
 };
@@ -125,21 +119,6 @@ const accountLikesApiAdapter: AccountLikesAdapter = {
   },
 };
 
-const accountFollowsApiAdapter: AccountFollowsAdapter = {
-  listFollowedAccounts: async () => {
-    const response = await fetch('/api/my/following', { credentials: 'include', method: 'GET' });
-
-    if (response.status === 401) {
-      throw new AccountUnauthorizedError('Followed accounts require authentication');
-    }
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch followed accounts');
-    }
-
-    return response.json();
-  },
-};
 
 const accountBlocksApiAdapter: AccountBlocksAdapter = {
   listBlockedAccounts: async () => {
@@ -181,7 +160,7 @@ export function createAccountService(
   likesAdapter: AccountLikesAdapter = accountLikesApiAdapter,
   profileAdapter: AccountProfileAdapter = accountProfileApiAdapter,
   postsAdapter: AccountPostsAdapter = accountPostsApiAdapter,
-  followsAdapter: AccountFollowsAdapter = accountFollowsApiAdapter,
+
   blocksAdapter: AccountBlocksAdapter = accountBlocksApiAdapter,
 ): AccountService {
   return {
@@ -199,9 +178,7 @@ export function createAccountService(
     },
     listExecutionHistories: async () => parseAccountRoutineExecutions(await executionAdapter.listExecutionHistories()),
     listBlockedAccounts: async () => parseAccountRelations(await blocksAdapter.listBlockedAccounts()),
-    listFollowedAccounts: async () => parseAccountRelations({
-      blocks: followingAccountsResponseSchema.parse(await followsAdapter.listFollowedAccounts()).following_accounts,
-    }),
+
     listLikes: async () => parseLikedRoutines(await likesAdapter.listLikes()),
     listPosts: async () => parseAccountPosts(await postsAdapter.listPosts()),
   };

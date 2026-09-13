@@ -156,6 +156,12 @@
   gap: 12px;
 }
 
+.routine-feed-account-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .routine-feed-list__spacer {
   height: 16px;
 }

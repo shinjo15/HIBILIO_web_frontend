@@ -1,0 +1,47 @@
+.account-relation-card {
+  align-items: center;
+  background-color: var(--hibilio-color-card);
+  border: 1px solid var(--hibilio-color-border);
+  border-radius: 12px;
+  color: inherit;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  text-decoration: none;
+}
+
+.account-relation-card:hover,
+.account-relation-card:focus-visible {
+  border-color: var(--hibilio-color-primary);
+}
+
+.account-relation-card__avatar {
+  align-items: center;
+  background-color: var(--hibilio-color-primary);
+  border-radius: 50%;
+  color: var(--hibilio-color-on-primary);
+  display: flex;
+  flex: 0 0 auto;
+  font-size: 16px;
+  font-weight: 600;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+
+.account-relation-card__body,
+.account-relation-card__name,
+.account-relation-card__bio {
+  display: block;
+}
+
+.account-relation-card__name {
+  font-size: 14px;
+}
+
+.account-relation-card__bio {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+  line-height: 1.4;
+  margin-top: 4px;
+}

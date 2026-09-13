@@ -26,6 +26,14 @@ export type Routine = z.infer<typeof routineSchema>;
 export type RoutineStep = z.infer<typeof routineStepSchema>;
 export type RoutineFeedTab = 'following' | 'recommended' | 'popular';
 
+export const followingAccountSchema = z.object({
+  accountIdentifier: z.string().min(1),
+  bio: z.string().nullable(),
+  name: z.string().min(1),
+});
+
+export type FollowingAccount = z.infer<typeof followingAccountSchema>;
+
 export function formatDuration(minutes: number): string {
   if (minutes < 60) {
     return `${minutes}分`;
