@@ -155,6 +155,11 @@
   color: var(--hibilio-color-primary);
 }
 
+.account-page__follow--followed {
+  background: var(--hibilio-color-primary);
+  color: var(--hibilio-color-on-primary);
+}
+
 .account-page__block {
   border: 1px solid var(--hibilio-color-border);
   color: var(--hibilio-color-muted-text);

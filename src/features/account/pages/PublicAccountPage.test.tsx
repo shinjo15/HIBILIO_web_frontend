@@ -78,7 +78,9 @@ describe('PublicAccountPage', () => {
     await user.click(screen.getByRole('button', { name: 'フォロー' }));
 
     expect(followService.create).toHaveBeenCalledWith('account-1');
-    expect(screen.getByRole('button', { name: 'フォロー中' })).toBeDisabled();
+    const followButton = screen.getByRole('button', { name: 'フォロー中' });
+    expect(followButton).toHaveClass('account-page__follow--followed');
+    expect(followButton).toBeDisabled();
   });
 
   it('フォロー要求中はボタンを無効化する', async () => {
@@ -91,7 +93,9 @@ describe('PublicAccountPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'フォロー' }));
 
-    expect(screen.getByRole('button', { name: 'フォローしています…' })).toBeDisabled();
+    const followButton = screen.getByRole('button', { name: 'フォローしています…' });
+    expect(followButton).not.toHaveClass('account-page__follow--followed');
+    expect(followButton).toBeDisabled();
     resolveFollow();
     expect(await screen.findByRole('button', { name: 'フォロー中' })).toBeDisabled();
   });
@@ -105,7 +109,9 @@ describe('PublicAccountPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'フォロー' }));
 
-    expect(await screen.findByRole('button', { name: 'フォロー中' })).toBeDisabled();
+    const followButton = await screen.findByRole('button', { name: 'フォロー中' });
+    expect(followButton).toHaveClass('account-page__follow--followed');
+    expect(followButton).toBeDisabled();
   });
 
   it('フォローが401なら認証状態を削除してログインへ遷移する', async () => {
