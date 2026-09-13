@@ -1,5 +1,5 @@
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type {
   AccountExecutionSummary,
@@ -41,6 +41,8 @@ export function AccountPage({ blockService = accountBlockService, isOwnAccount =
   const [blockError, setBlockError] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlocking, setIsBlocking] = useState(false);
+  const [unblockingAccountIdentifier, setUnblockingAccountIdentifier] = useState<string | null>(null);
+  const [unblockError, setUnblockError] = useState(false);
   const [likingPostIdentifier, setLikingPostIdentifier] = useState<string | null>(null);
   const [likeAnimation, setLikeAnimation] = useState<{ postIdentifier: string; type: 'like' | 'unlike' } | null>(null);
   const [likesStatus, setLikesStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
@@ -181,6 +183,29 @@ export function AccountPage({ blockService = accountBlockService, isOwnAccount =
     }
   }
 
+  async function removeBlock(account: AccountRelation) {
+    const index = blockedAccounts.findIndex((item) => item.accountIdentifier === account.accountIdentifier);
+    setUnblockingAccountIdentifier(account.accountIdentifier);
+    setUnblockError(false);
+    setBlockedAccounts((current) => current.filter((item) => item.accountIdentifier !== account.accountIdentifier));
+    try {
+      await blockService.remove(account.accountIdentifier);
+    } catch (error) {
+      if (error instanceof AccountBlockUnauthorizedError) {
+        clearAuthenticated();
+        navigate('/login');
+      } else {
+        setBlockedAccounts((current) => {
+          if (current.some((item) => item.accountIdentifier === account.accountIdentifier)) return current;
+          return [...current.slice(0, index), account, ...current.slice(index)];
+        });
+        setUnblockError(true);
+      }
+    } finally {
+      setUnblockingAccountIdentifier(null);
+    }
+  }
+
   if (isLoading) {
     return <p className="account-page__state account-page__state--loading">{messages.account.loading}</p>;
   }
@@ -252,7 +277,7 @@ export function AccountPage({ blockService = accountBlockService, isOwnAccount =
         {activeTab === 'posts' && <AccountPostsList likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} onLike={toggleLike} posts={posts} />}
         {activeTab === 'likes' && <AccountLikesList likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} likes={likes} onLike={toggleLike} status={likesStatus} />}
         {activeTab === 'executionHistory' && <ExecutionHistoryList histories={executionHistories} />}
-        {activeTab === 'blockedAccounts' && <AccountRelationListState accounts={blockedAccounts} emptyMessage={messages.account.blockedAccountsEmpty} errorMessage={messages.account.blockedAccountsError} loadingMessage={messages.account.blockedAccountsLoading} status={blockedAccountsStatus} />}
+        {activeTab === 'blockedAccounts' && <AccountRelationListState accounts={blockedAccounts} action={(account) => <button disabled={unblockingAccountIdentifier === account.accountIdentifier} onClick={(event) => { event.stopPropagation(); void removeBlock(account); }} type="button">{unblockingAccountIdentifier === account.accountIdentifier ? messages.account.unblocking : messages.account.unblock}</button>} actionError={unblockError ? messages.account.unblockError : null} emptyMessage={messages.account.blockedAccountsEmpty} errorMessage={messages.account.blockedAccountsError} loadingMessage={messages.account.blockedAccountsLoading} status={blockedAccountsStatus} />}
       </div>
     </section>
   );
@@ -290,10 +315,10 @@ function ExecutionHistoryList({ histories }: { histories: AccountExecutionSummar
   })}</div>;
 }
 
-function AccountRelationListState({ accounts, emptyMessage, errorMessage, loadingMessage, status }: { accounts: AccountRelation[]; emptyMessage: string; errorMessage: string; loadingMessage: string; status: 'idle' | 'loading' | 'loaded' | 'error' }) {
+function AccountRelationListState({ accounts, action, actionError, emptyMessage, errorMessage, loadingMessage, status }: { accounts: AccountRelation[]; action: (account: AccountRelation) => ReactNode; actionError: string | null; emptyMessage: string; errorMessage: string; loadingMessage: string; status: 'idle' | 'loading' | 'loaded' | 'error' }) {
   if (status === 'idle' || status === 'loading') return <p className="account-page__state account-page__state--loading">{loadingMessage}</p>;
   if (status === 'error') return <p className="account-page__state account-page__state--error">{errorMessage}</p>;
   if (accounts.length === 0) return <p className="account-page__state">{emptyMessage}</p>;
 
-  return <AccountRelationList accounts={accounts} className="account-page__list" />;
+  return <>{actionError !== null && <p className="account-page__state account-page__state--error" role="alert">{actionError}</p>}<AccountRelationList accounts={accounts} action={action} className="account-page__list" /></>;
 }

@@ -15,6 +15,20 @@
   border-color: var(--hibilio-color-primary);
 }
 
+.account-relation-card-with-action {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.account-relation-card-with-action .account-relation-card {
+  flex: 1;
+}
+
+.account-relation-card-with-action__action button {
+  white-space: nowrap;
+}
+
 .account-relation-card__avatar {
   align-items: center;
   background-color: var(--hibilio-color-primary);

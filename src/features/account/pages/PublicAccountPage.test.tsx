@@ -49,7 +49,7 @@ describe('PublicAccountPage', () => {
 
   it('ブロック成功時に対象アカウントをブロック済みとして表示する', async () => {
     const user = userEvent.setup();
-    const blockService: AccountBlockService = { create: vi.fn().mockResolvedValue(undefined) };
+    const blockService: AccountBlockService = { create: vi.fn().mockResolvedValue(undefined), remove: vi.fn().mockResolvedValue(undefined) };
     const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '公開アカウント', favorite_tags: [], social_links: [] }) });
     renderPage(service, '/accounts/account-1', blockService);
     await screen.findByRole('heading', { name: '公開アカウント' });

@@ -4,6 +4,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AccountPage } from './AccountPage';
 import { AccountUnauthorizedError, type AccountService } from '../services/accountService';
+import { AccountBlockUnauthorizedError, type AccountBlockService } from '../services/accountBlockService';
 import { isAuthenticated, markAuthenticated } from '../../auth/services/authSession';
 
 const service: AccountService = {
@@ -21,8 +22,8 @@ function Location() {
   return <output>{useLocation().pathname}</output>;
 }
 
-function renderPage(accountService: AccountService = service) {
-  return render(<MemoryRouter><AccountPage service={accountService} /><Location /></MemoryRouter>);
+function renderPage(accountService: AccountService = service, blockService?: AccountBlockService) {
+  return render(<MemoryRouter><AccountPage blockService={blockService} service={accountService} /><Location /></MemoryRouter>);
 }
 
 afterEach(() => {
@@ -75,6 +76,62 @@ describe('AccountPage', () => {
 
     await user.click(screen.getByRole('tab', { name: /ブロック中/ }));
     expect(await screen.findByText('ブロック中のアカウントを読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
+  });
+
+  it('ブロック中のアカウントを即時に一覧から削除する', async () => {
+    const user = userEvent.setup();
+    const blockedAccount = { accountIdentifier: '22222222-2222-4222-8222-222222222222', bio: 'ブロック中です', name: 'ブロック中のアカウント' };
+    let resolveRemove: () => void = () => {};
+    const blockService: AccountBlockService = {
+      create: vi.fn(),
+      remove: vi.fn().mockImplementation(() => new Promise<void>((resolve) => { resolveRemove = resolve; })),
+    };
+    renderPage({ ...service, listBlockedAccounts: async () => [blockedAccount] }, blockService);
+    await screen.findByRole('heading', { name: '山田 由紀' });
+
+    await user.click(screen.getByRole('tab', { name: /ブロック中/ }));
+    await screen.findByText('ブロック中のアカウント');
+    const unblockButton = screen.getByRole('button', { name: 'ブロック解除' });
+    expect(unblockButton.closest('a')).toBeNull();
+
+    await user.click(unblockButton);
+
+    expect(blockService.remove).toHaveBeenCalledWith(blockedAccount.accountIdentifier);
+    expect(screen.queryByText('ブロック中のアカウント')).not.toBeInTheDocument();
+
+    resolveRemove();
+    await waitFor(() => expect(screen.getByText('ブロック中のアカウントはまだありません')).toBeInTheDocument());
+  });
+
+  it('ブロック解除が失敗したときに対象を復元してエラーを表示する', async () => {
+    const user = userEvent.setup();
+    const blockedAccount = { accountIdentifier: '22222222-2222-4222-8222-222222222222', bio: null, name: 'ブロック中のアカウント' };
+    const blockService: AccountBlockService = { create: vi.fn(), remove: vi.fn().mockRejectedValue(new Error('failed')) };
+    renderPage({ ...service, listBlockedAccounts: async () => [blockedAccount] }, blockService);
+    await screen.findByRole('heading', { name: '山田 由紀' });
+    await user.click(screen.getByRole('tab', { name: /ブロック中/ }));
+    await screen.findByText('ブロック中のアカウント');
+
+    await user.click(screen.getByRole('button', { name: 'ブロック解除' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('ブロックを解除できませんでした。時間をおいて再試行してください。');
+    expect(screen.getByText('ブロック中のアカウント')).toBeInTheDocument();
+  });
+
+  it('ブロック解除が401なら認証状態を削除してログインへ遷移する', async () => {
+    const user = userEvent.setup();
+    const blockedAccount = { accountIdentifier: '22222222-2222-4222-8222-222222222222', bio: null, name: 'ブロック中のアカウント' };
+    const blockService: AccountBlockService = { create: vi.fn(), remove: vi.fn().mockRejectedValue(new AccountBlockUnauthorizedError()) };
+    markAuthenticated();
+    renderPage({ ...service, listBlockedAccounts: async () => [blockedAccount] }, blockService);
+    await screen.findByRole('heading', { name: '山田 由紀' });
+    await user.click(screen.getByRole('tab', { name: /ブロック中/ }));
+    await screen.findByText('ブロック中のアカウント');
+
+    await user.click(screen.getByRole('button', { name: 'ブロック解除' }));
+
+    await waitFor(() => expect(screen.getByText('/login')).toBeInTheDocument());
+    expect(isAuthenticated()).toBe(false);
   });
 
   it('実行履歴タブにAPI由来の実行内容を表示する', async () => {
