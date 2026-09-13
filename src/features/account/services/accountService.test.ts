@@ -122,9 +122,9 @@ describe('createAccountService', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/my/likes?page=1&number_of_items_per_page=20', { credentials: 'include', method: 'GET' });
   });
 
-  it('フォロー中アカウントを一時的な blocks API 契約から表示モデルへ変換する', async () => {
+  it('GET /api/my/following の契約をフォロー中アカウントの表示モデルへ変換する', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      blocks: [{
+      following_accounts: [{
         account_bio: '朝の時間を大切にしています。',
         account_identifier: '22222222-2222-4222-8222-222222222222',
         account_name: '田中 花子',
@@ -138,7 +138,14 @@ describe('createAccountService', () => {
       bio: '朝の時間を大切にしています。',
       name: '田中 花子',
     }]);
-    expect(fetchMock).toHaveBeenCalledWith('/api/my/blocks', { credentials: 'include', method: 'GET' });
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/following', { credentials: 'include', method: 'GET' });
+  });
+
+  it('フォロー中アカウント取得が401なら未認証エラーを返す', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
+    const service = createAccountService();
+
+    await expect(service.listFollowedAccounts()).rejects.toMatchObject({ name: 'AccountUnauthorizedError' });
   });
 
   it('ブロック中アカウント取得が401なら未認証エラーを返す', async () => {

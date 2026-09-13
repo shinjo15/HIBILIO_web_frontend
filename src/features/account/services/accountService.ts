@@ -33,6 +33,10 @@ const accountRelationListResponseSchema = z.object({
   })),
 });
 
+const followingAccountsResponseSchema = z.object({
+  following_accounts: accountRelationListResponseSchema.shape.blocks,
+});
+
 type AccountExecutionAdapter = {
   listExecutionHistories: () => Promise<unknown>;
 };
@@ -123,7 +127,7 @@ const accountLikesApiAdapter: AccountLikesAdapter = {
 
 const accountFollowsApiAdapter: AccountFollowsAdapter = {
   listFollowedAccounts: async () => {
-    const response = await fetch('/api/my/blocks', { credentials: 'include', method: 'GET' });
+    const response = await fetch('/api/my/following', { credentials: 'include', method: 'GET' });
 
     if (response.status === 401) {
       throw new AccountUnauthorizedError('Followed accounts require authentication');
@@ -195,7 +199,9 @@ export function createAccountService(
     },
     listExecutionHistories: async () => parseAccountRoutineExecutions(await executionAdapter.listExecutionHistories()),
     listBlockedAccounts: async () => parseAccountRelations(await blocksAdapter.listBlockedAccounts()),
-    listFollowedAccounts: async () => parseAccountRelations(await followsAdapter.listFollowedAccounts()),
+    listFollowedAccounts: async () => parseAccountRelations({
+      blocks: followingAccountsResponseSchema.parse(await followsAdapter.listFollowedAccounts()).following_accounts,
+    }),
     listLikes: async () => parseLikedRoutines(await likesAdapter.listLikes()),
     listPosts: async () => parseAccountPosts(await postsAdapter.listPosts()),
   };
