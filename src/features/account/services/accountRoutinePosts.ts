@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { routineSchema, type Routine } from '../../routineFeed/domain/routine';
+import type { PageResult } from '../../../shared/hooks/useInfiniteList';
 
 const routinePostResponseSchema = z.object({
   account_identifier: z.string().min(1),
@@ -56,9 +57,19 @@ function toRoutine(post: z.infer<typeof routinePostResponseSchema>, liked: boole
 }
 
 export function parseAccountPosts(response: unknown): Routine[] {
-  return accountRoutinePostsResponseSchema.parse(response).items.map((post) => toRoutine(post, false));
+  return parseAccountPostsPage(response).items;
 }
 
 export function parseLikedRoutines(response: unknown): Routine[] {
-  return accountLikedRoutinePostsResponseSchema.parse(response).items.map((post) => toRoutine(post, true));
+  return parseLikedRoutinesPage(response).items;
+}
+
+export function parseAccountPostsPage(response: unknown): PageResult<Routine> {
+  const parsed = accountRoutinePostsResponseSchema.parse(response);
+  return { items: parsed.items.map((post) => toRoutine(post, false)), total: parsed.total };
+}
+
+export function parseLikedRoutinesPage(response: unknown): PageResult<Routine> {
+  const parsed = accountLikedRoutinePostsResponseSchema.parse(response);
+  return { items: parsed.items.map((post) => toRoutine(post, true)), total: parsed.total };
 }

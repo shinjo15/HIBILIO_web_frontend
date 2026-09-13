@@ -7,6 +7,9 @@ import { AccountUnauthorizedError, type AccountService } from '../services/accou
 import { AccountBlockUnauthorizedError, type AccountBlockService } from '../services/accountBlockService';
 import { isAuthenticated, markAuthenticated } from '../../auth/services/authSession';
 
+const firstPost = { accountId: '11111111-1111-4111-8111-111111111111', authorName: '山田 由紀', createdAt: '2026-09-03T12:00:00.000Z', customizations: 1, durationMinutes: 30, executions: 3, id: 'post-1', liked: false, likes: 2, routineId: 'routine-1', steps: [{ action: '集中', durationMinutes: 30 }], supports: 4, tags: ['睡眠'], title: '朝の集中ルーティン' };
+const likedPost = { accountId: '11111111-1111-4111-1111-111111111111', authorName: '田中 陽介', createdAt: '2026-09-03T12:00:00.000Z', customizations: 1, durationMinutes: 20, executions: 3, id: 'post-2', liked: true, likes: 2, routineId: 'routine-2', steps: [{ action: '読書', durationMinutes: 20 }], supports: 4, tags: ['読書'], title: '夜の読書ルーティン' };
+
 const service: AccountService = {
   getExecutionHistory: async (executionId) => executionId === 'execution-1'
     ? { achievedActions: 2, completedActionIndexes: [0, 1], completed: true, executedAtLabel: '今日', id: 'execution-1', minutes: 30, routineId: 'routine-1', routineTitle: '朝の集中ルーティン', totalActions: 2 }
@@ -14,8 +17,25 @@ const service: AccountService = {
   getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: '毎日続けることが目標。', favoriteTags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '睡眠' }], initial: '山', name: '山田 由紀', socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/yuki_sleep' }] }),
   listExecutionHistories: async () => [{ executedActionCount: 2, id: 'execution-1', memo: '集中できました', postedAt: '2026-09-03T12:00:00+00:00', routineId: 'routine-1', routineTitle: '朝の集中ルーティン', supportCount: 3 }],
   listBlockedAccounts: async () => [],
-  listLikes: async () => [{ accountId: '11111111-1111-4111-8111-111111111111', authorName: '田中 陽介', createdAt: '2026-09-03T12:00:00.000Z', customizations: 1, durationMinutes: 20, executions: 3, id: 'post-2', liked: true, likes: 2, routineId: 'routine-2', steps: [{ action: '読書', durationMinutes: 20 }], supports: 4, tags: ['読書'], title: '夜の読書ルーティン' }],
-  listPosts: async () => [{ accountId: '11111111-1111-4111-8111-111111111111', authorName: '山田 由紀', createdAt: '2026-09-03T12:00:00.000Z', customizations: 1, durationMinutes: 30, executions: 3, id: 'post-1', liked: false, likes: 2, routineId: 'routine-1', steps: [{ action: '集中', durationMinutes: 30 }], supports: 4, tags: ['睡眠'], title: '朝の集中ルーティン' }],
+  listLikes: async () => [likedPost],
+  listPosts: async () => [firstPost],
+};
+
+const secondPost = {
+  accountId: '11111111-1111-4111-8111-111111111111',
+  authorName: '山田 由紀',
+  createdAt: '2026-09-04T00:00:00.000Z',
+  customizations: 1,
+  durationMinutes: 20,
+  executions: 2,
+  id: 'post-3',
+  liked: false,
+  likes: 4,
+  routineId: 'routine-3',
+  steps: [{ action: '読書', durationMinutes: 20 }],
+  supports: 2,
+  tags: ['読書'],
+  title: '夜の読書ルーティン',
 };
 
 function Location() {
@@ -29,6 +49,7 @@ function renderPage(accountService: AccountService = service, blockService?: Acc
 afterEach(() => {
   cleanup();
   window.sessionStorage.clear();
+  vi.unstubAllGlobals();
 });
 
 describe('AccountPage', () => {
@@ -44,6 +65,73 @@ describe('AccountPage', () => {
 
     await user.click(screen.getByRole('link', { name: '朝の集中ルーティン' }));
     expect(screen.getByText('/routines/routine-1')).toBeInTheDocument();
+  });
+
+  it('投稿といいねのページを末尾へ追加し、タブごとの一覧を保持する', async () => {
+    const user = userEvent.setup();
+    let notifyIntersection: (() => void) | undefined;
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback: IntersectionObserverCallback) {
+        notifyIntersection = () => callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+      }
+
+      disconnect() {}
+      observe() {}
+      unobserve() {}
+      root = null;
+      rootMargin = '';
+      thresholds = [];
+      takeRecords() { return []; }
+    });
+    const listPostsPage = vi.fn()
+      .mockResolvedValueOnce({ items: [firstPost], total: 2 })
+      .mockResolvedValueOnce({ items: [secondPost], total: 2 });
+    const listLikesPage = vi.fn().mockResolvedValue({ items: [likedPost], total: 1 });
+    renderPage({ ...service, listPostsPage, listLikesPage });
+
+    await screen.findByRole('heading', { name: '山田 由紀' });
+    await screen.findByRole('heading', { name: '朝の集中ルーティン' });
+    notifyIntersection?.();
+    expect(await screen.findByRole('heading', { name: '夜の読書ルーティン' })).toBeInTheDocument();
+    notifyIntersection?.();
+    await waitFor(() => expect(listPostsPage).toHaveBeenCalledTimes(2));
+
+    await user.click(screen.getByRole('tab', { name: /いいね/ }));
+    expect(await screen.findByRole('heading', { name: '夜の読書ルーティン' })).toBeInTheDocument();
+    expect(listLikesPage).toHaveBeenCalledWith(1);
+    await user.click(screen.getByRole('tab', { name: /投稿/ }));
+    expect(screen.getByRole('heading', { name: '夜の読書ルーティン' })).toBeInTheDocument();
+    expect(listPostsPage).toHaveBeenCalledTimes(2);
+  });
+
+  it('次ページ取得エラー時も既存投稿を保持し、再試行できる', async () => {
+    let notifyIntersection: (() => void) | undefined;
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback: IntersectionObserverCallback) {
+        notifyIntersection = () => callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+      }
+
+      disconnect() {}
+      observe() {}
+      unobserve() {}
+      root = null;
+      rootMargin = '';
+      thresholds = [];
+      takeRecords() { return []; }
+    });
+    const listPostsPage = vi.fn()
+      .mockResolvedValueOnce({ items: [firstPost], total: 2 })
+      .mockRejectedValueOnce(new Error('temporary failure'))
+      .mockResolvedValueOnce({ items: [secondPost], total: 2 });
+    renderPage({ ...service, listPostsPage });
+
+    await screen.findByRole('heading', { name: '朝の集中ルーティン' });
+    notifyIntersection?.();
+    expect(await screen.findByText('アカウント情報を読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '朝の集中ルーティン' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '再試行' }));
+    expect(await screen.findByRole('heading', { name: '夜の読書ルーティン' })).toBeInTheDocument();
+    expect(listPostsPage).toHaveBeenCalledTimes(3);
   });
 
   it('いいねタブで API 由来の一覧を表示し、ルーティン詳細へ遷移する', async () => {

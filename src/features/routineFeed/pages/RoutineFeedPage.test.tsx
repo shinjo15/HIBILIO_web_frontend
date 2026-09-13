@@ -25,12 +25,14 @@ const routine: Routine = {
   title: '朝の集中ルーティン',
 };
 
+const routinePage2: Routine = { ...routine, id: 'post-2', title: '夜の読書ルーティン' };
+
 afterEach(() => {
   cleanup();
   window.sessionStorage.clear();
 });
 
-function renderPage(service: Pick<RoutineFeedService, 'list'> & Partial<Pick<RoutineFeedService, 'listFollowingAccounts'>>, likeService?: RoutineLikeService) {
+function renderPage(service: Pick<RoutineFeedService, 'list'> & Partial<Pick<RoutineFeedService, 'listFollowingAccounts' | 'listPage'>>, likeService?: RoutineLikeService) {
   return render(<MemoryRouter><RoutineFeedPage isAuthenticated likeService={likeService} service={{ listFollowingAccounts: async () => [], ...service }} /></MemoryRouter>);
 }
 
@@ -64,6 +66,35 @@ describe('RoutineFeedPage', () => {
     renderPage({ list: async () => [] });
 
     expect(await screen.findByRole('heading', { name: 'ルーティンが見つかりません' })).toBeInTheDocument();
+  });
+
+  it('末尾カードの表示で2ページ目を末尾へ追加し、total到達後は追加取得しない', async () => {
+    let notifyIntersection: (() => void) | undefined;
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback: IntersectionObserverCallback) {
+        notifyIntersection = () => callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+      }
+
+      disconnect() {}
+      observe() {}
+      unobserve() {}
+      root = null;
+      rootMargin = '';
+      thresholds = [];
+      takeRecords() { return []; }
+    });
+    const listPage = vi.fn()
+      .mockResolvedValueOnce({ items: [routine], total: 2 })
+      .mockResolvedValueOnce({ items: [routinePage2], total: 2 });
+    renderPage({ list: async () => [], listPage });
+
+    await screen.findByRole('heading', { name: '朝の集中ルーティン' });
+    notifyIntersection?.();
+    expect(await screen.findByRole('heading', { name: '夜の読書ルーティン' })).toBeInTheDocument();
+    notifyIntersection?.();
+    await waitFor(() => expect(listPage).toHaveBeenCalledTimes(2));
+    expect(listPage).toHaveBeenNthCalledWith(1, 'recommended', 1);
+    expect(listPage).toHaveBeenNthCalledWith(2, 'recommended', 2);
   });
 
   it('いいね成功時にカードの状態と件数を更新する', async () => {

@@ -16,10 +16,13 @@ export function PublicAccountPage({ blockService = accountBlockService, followSe
     getExecutionHistory: async () => null,
     getProfile: async () => service.get(accountId),
     listExecutionHistories: async () => service.listExecutionHistories(accountId),
+    listExecutionHistoriesPage: service.listExecutionHistoriesPage === undefined ? undefined : async (page) => service.listExecutionHistoriesPage?.(accountId, page) ?? { items: [], total: 0 },
     listBlockedAccounts: async () => [],
 
     listLikes: async () => service.listLikes(accountId),
+    listLikesPage: service.listLikesPage === undefined ? undefined : async (page) => service.listLikesPage?.(accountId, page) ?? { items: [], total: 0 },
     listPosts: async () => service.listPosts(accountId),
+    listPostsPage: service.listPostsPage === undefined ? undefined : async (page) => service.listPostsPage?.(accountId, page) ?? { items: [], total: 0 },
   }), [accountId, service]);
 
   return <AccountPage blockService={blockService} followService={followService} isOwnAccount={false} notFoundMessage={messages.publicAccount.notFound} onBack={() => navigate(-1)} service={accountService} />;

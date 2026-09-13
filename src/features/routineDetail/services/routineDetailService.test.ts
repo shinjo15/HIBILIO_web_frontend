@@ -90,8 +90,8 @@ describe('routineDetailService', () => {
       title: '朝のルーティン',
     });
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/routines/30000000-0000-4000-8000-000000000001');
-    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines/30000000-0000-4000-8000-000000000001/customized?page=1&number_of_items_per_page=20');
-    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/routines/30000000-0000-4000-8000-000000000001/execution-posts?page=1&number_of_items_per_page=20');
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines/30000000-0000-4000-8000-000000000001/customized?page=1&number_of_items_per_page=40');
+    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/routines/30000000-0000-4000-8000-000000000001/execution-posts?page=1&number_of_items_per_page=40');
   });
 
   it('routine ID を adapter に渡し、DTO を画面用 ViewModel に変換する', async () => {
@@ -116,5 +116,48 @@ describe('routineDetailService', () => {
     const service = createRoutineDetailService({ get: async () => null });
 
     await expect(service.get('missing')).resolves.toBeNull();
+  });
+
+  it('カスタマイズと実行投稿のページ結果を items と total で返す', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        items: [{
+          account_identifier: '10000000-0000-4000-8000-000000000004',
+          account_name: '美香',
+          customization_count: 0,
+          execution_count: 0,
+          like_count: 0,
+          routine_execution_minutes: 20,
+          routine_identifier: '30000000-0000-4000-8000-000000000004',
+          routine_memo: '短縮版です。',
+          routine_name: '短縮ルーティン',
+        }],
+        total: 3,
+      })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        items: [{
+          account_identifier: '10000000-0000-4000-8000-000000000001',
+          account_name: '実行した人',
+          executed_action_count: 1,
+          posted_at: '2026-09-07T14:26:31+00:00',
+          routine_execution_identifier: '70000000-0000-4000-8000-000000000001',
+          routine_execution_memo: '実行メモです。',
+          support_count: 2,
+        }],
+        total: 4,
+      })));
+    vi.stubGlobal('fetch', fetchMock);
+    const service = createRoutineDetailService(apiRoutineDetailAdapter);
+
+    await expect(service.listCustomizationsPage?.('30000000-0000-4000-8000-000000000001', 2)).resolves.toMatchObject({
+      items: [{ id: '30000000-0000-4000-8000-000000000004', authorName: '美香' }],
+      total: 3,
+    });
+    await expect(service.listExecutionPostsPage?.('30000000-0000-4000-8000-000000000001', 3, 2)).resolves.toMatchObject({
+      items: [{ achieved: 1, id: '70000000-0000-4000-8000-000000000001', total: 2 }],
+      total: 4,
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/routines/30000000-0000-4000-8000-000000000001/customized?page=2&number_of_items_per_page=40');
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines/30000000-0000-4000-8000-000000000001/execution-posts?page=3&number_of_items_per_page=40');
   });
 });

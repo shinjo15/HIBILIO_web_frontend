@@ -1,7 +1,7 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RoutineDetailPage } from './RoutineDetailPage';
 import { createRoutineDetailService, type RoutineDetailService } from '../services/routineDetailService';
 
@@ -38,7 +38,10 @@ const detail = {
   title: 'テストルーティン',
 };
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 function renderPage(service: RoutineDetailService, path = '/routines/routine-1') {
   return render(
@@ -95,6 +98,53 @@ describe('RoutineDetailPage', () => {
     expect(screen.getByText('まだカスタマイズはありません')).toBeInTheDocument();
   });
 
+  it('実行投稿とカスタマイズをそれぞれ末尾へ追加し、total到達後は取得しない', async () => {
+    const user = userEvent.setup();
+    const intersectionNotifiers: Array<() => void> = [];
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback: IntersectionObserverCallback) {
+        intersectionNotifiers.push(() => callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver));
+      }
+
+      disconnect() {}
+      observe() {}
+      unobserve() {}
+      root = null;
+      rootMargin = '';
+      thresholds = [];
+      takeRecords() { return []; }
+    });
+    const notifyIntersection = () => intersectionNotifiers.forEach((notify) => notify());
+    const executionPost = { achieved: 2, avatar: 'A', cheers: 1, date: '昨日', id: 'execution-2', minutes: 20, total: 2, userHandle: 'another', userName: '別の実行者' };
+    const customization = { authorName: '別の作者', description: 'もう一つの版です。', id: 'customization-2', title: 'もう一つの版' };
+    const listExecutionPostsPage = vi.fn().mockResolvedValue({ items: [executionPost], total: 2 });
+    const listCustomizationsPage = vi.fn().mockResolvedValue({ items: [customization], total: 2 });
+    const service = createRoutineDetailService({
+      get: async () => ({ ...detail, customizationsList: [{ authorName: '最初の作者', description: '最初の版です。', id: 'customization-1', routineId: 'routine-1', title: '最初の版' }], customizationsTotal: 2, executionPostsTotal: 2 }),
+      listCustomizations: async () => ({ items: [], total: 0 }),
+      listExecutionPosts: async () => ({ items: [], total: 0 }),
+    });
+    const pagedService = { ...service, listExecutionPostsPage, listCustomizationsPage };
+    renderPage(pagedService);
+
+    await screen.findByRole('heading', { name: 'テストルーティン' });
+    await screen.findByLabelText('さらに読み込む');
+    notifyIntersection();
+    expect(await screen.findByText(/別の実行者/)).toBeInTheDocument();
+    notifyIntersection();
+    await waitFor(() => expect(listExecutionPostsPage).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByRole('tab', { name: 'カスタマイズ' }));
+    expect(screen.getByText(/最初の作者/)).toBeInTheDocument();
+    await screen.findByLabelText('さらに読み込む');
+    notifyIntersection();
+    expect(await screen.findByText(/別の作者/)).toBeInTheDocument();
+    notifyIntersection();
+    await waitFor(() => expect(listCustomizationsPage).toHaveBeenCalledTimes(1));
+    expect(listExecutionPostsPage).toHaveBeenCalledWith('routine-1', 2, 2);
+    expect(listCustomizationsPage).toHaveBeenCalledWith('routine-1', 2);
+  });
+
   it('カスタマイズ一覧を表示し、各ルーティンの詳細へ遷移できる', async () => {
     const user = userEvent.setup();
     const service = createRoutineDetailService({
@@ -116,6 +166,42 @@ describe('RoutineDetailPage', () => {
     await user.click(screen.getByRole('tab', { name: 'カスタマイズ' }));
     expect(screen.getByText('カスタマイズ版 — カスタマイズした人')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '短縮版' })).toHaveAttribute('href', '/routines/customized-routine');
+  });
+
+  it('次ページ取得エラー時も実行投稿を保持し、再試行できる', async () => {
+    const intersectionNotifiers: Array<() => void> = [];
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback: IntersectionObserverCallback) {
+        intersectionNotifiers.push(() => callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver));
+      }
+
+      disconnect() {}
+      observe() {}
+      unobserve() {}
+      root = null;
+      rootMargin = '';
+      thresholds = [];
+      takeRecords() { return []; }
+    });
+    const notifyIntersection = () => intersectionNotifiers.forEach((notify) => notify());
+    const executionPost = { achieved: 2, avatar: 'A', cheers: 1, date: '昨日', id: 'execution-2', minutes: 20, total: 2, userHandle: 'another', userName: '別の実行者' };
+    const listExecutionPostsPage = vi.fn()
+      .mockRejectedValueOnce(new Error('temporary failure'))
+      .mockResolvedValueOnce({ items: [executionPost], total: 2 });
+    const service: RoutineDetailService = {
+      ...createRoutineDetailService({ get: async () => ({ ...detail, executionPostsTotal: 2 }) }),
+      listExecutionPostsPage,
+    };
+    renderPage(service);
+
+    await screen.findByRole('heading', { name: 'テストルーティン' });
+    await screen.findByLabelText('さらに読み込む');
+    notifyIntersection();
+    expect(await screen.findByText(/ルーティン詳細を読み込めませんでした。時間をおいて再試行してください。/)).toBeInTheDocument();
+    expect(screen.getByText('実行した人')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '再試行' }));
+    expect(await screen.findByText(/別の実行者/)).toBeInTheDocument();
+    expect(listExecutionPostsPage).toHaveBeenCalledTimes(2);
   });
 
   it('一覧へ戻るリンクと、存在しないルーティンの空状態を表示する', async () => {

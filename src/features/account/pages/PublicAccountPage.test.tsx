@@ -8,9 +8,12 @@ import type { AccountBlockService } from '../services/accountBlockService';
 import { AccountFollowError, AccountFollowUnauthorizedError, type AccountFollowService } from '../services/accountFollowService';
 import { isAuthenticated, markAuthenticated } from '../../auth/services/authSession';
 
+const publicPost = { accountId: 'account-1', authorName: '公開アカウント', createdAt: '2026-09-03T12:00:00.000Z', customizations: 0, durationMinutes: 20, executions: 1, id: 'post-1', liked: false, likes: 2, routineId: 'routine-1', steps: [{ action: '集中', durationMinutes: 20 }], supports: 0, tags: [], title: '公開1' };
+
 afterEach(() => {
   cleanup();
   window.sessionStorage.clear();
+  vi.unstubAllGlobals();
 });
 
 function renderPage(service: PublicAccountService, path = '/accounts/account-1', blockService?: AccountBlockService, followService?: AccountFollowService) {
@@ -46,6 +49,40 @@ describe('PublicAccountPage', () => {
     expect(screen.getByText('朝活')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /example/ })).toHaveAttribute('href', 'https://x.com/example');
     expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['0投稿', '-いいね', '0実行履歴']);
+  });
+
+  it('公開投稿のページを末尾へ追加する', async () => {
+    let notifyIntersection: (() => void) | undefined;
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback: IntersectionObserverCallback) {
+        notifyIntersection = () => callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+      }
+
+      disconnect() {}
+      observe() {}
+      unobserve() {}
+      root = null;
+      rootMargin = '';
+      thresholds = [];
+      takeRecords() { return []; }
+    });
+    const listPostsPage = vi.fn()
+      .mockResolvedValueOnce({ items: [{ ...publicPost, title: '公開1' }], total: 2 })
+      .mockResolvedValueOnce({ items: [{ ...publicPost, id: 'post-2', title: '公開2' }], total: 2 });
+    const service: PublicAccountService = {
+      get: async () => ({ accountIdentifier: 'account-1', bio: null, favoriteTags: [], initial: '公', name: '公開アカウント', socialLinks: [] }),
+      listExecutionHistories: async () => [],
+      listLikes: async () => [],
+      listPosts: async () => [],
+      listPostsPage,
+    };
+    renderPage(service);
+
+    await screen.findByRole('heading', { name: '公開1' });
+    notifyIntersection?.();
+    expect(await screen.findByRole('heading', { name: '公開2' })).toBeInTheDocument();
+    expect(listPostsPage).toHaveBeenNthCalledWith(1, 'account-1', 1);
+    expect(listPostsPage).toHaveBeenNthCalledWith(2, 'account-1', 2);
   });
 
   it('非表示または存在しない公開アカウントの状態を表示する', async () => {

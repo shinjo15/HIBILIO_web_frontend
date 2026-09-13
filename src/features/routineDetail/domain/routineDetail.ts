@@ -39,11 +39,13 @@ export const routineDetailDtoSchema = z.object({
     name: z.string().min(1),
   }),
   customizations: z.number().int().nonnegative(),
+  customizationsTotal: z.number().int().nonnegative().optional(),
   customizationsList: z.array(customizationDtoSchema),
   description: z.string(),
   durationMinutes: z.number().int().positive().nullable(),
   executions: z.number().int().nonnegative(),
   executionPosts: z.array(executionPostDtoSchema),
+  executionPostsTotal: z.number().int().nonnegative().optional(),
   id: z.string().min(1),
   liked: z.boolean(),
   likes: z.number().int().nonnegative(),
@@ -57,6 +59,7 @@ export type RoutineDetailDto = z.infer<typeof routineDetailDtoSchema>;
 export type RoutineDetailViewModel = {
   author: RoutineDetailDto['author'] & { initial: string };
   customizations: number;
+  customizationsTotal?: number;
   description: string;
   duration: string;
   durationMinutes: number | null;
@@ -73,6 +76,7 @@ export type RoutineDetailViewModel = {
     userHandle: string;
     userName: string;
   }>;
+  executionPostsTotal?: number;
   id: string;
   liked: boolean;
   likes: number;
@@ -96,6 +100,7 @@ export function toRoutineDetailViewModel(input: unknown): RoutineDetailViewModel
       initial: dto.author.handle.slice(0, 1).toUpperCase(),
     },
     customizations: dto.customizations,
+    customizationsTotal: dto.customizationsTotal,
     customizationsList: dto.customizationsList.map(({ authorName, description, id, title }) => ({
       authorName,
       description,
@@ -118,6 +123,7 @@ export function toRoutineDetailViewModel(input: unknown): RoutineDetailViewModel
       userHandle: post.userHandle,
       userName: post.userName,
     })),
+    executionPostsTotal: dto.executionPostsTotal,
     id: dto.id,
     liked: dto.liked,
     likes: dto.likes,

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { accountExecutionSummarySchema, type AccountExecutionSummary } from '../domain/account';
+import type { PageResult } from '../../../shared/hooks/useInfiniteList';
 
 const routineExecutionResponseSchema = z.object({
   items: z.array(z.object({
@@ -15,13 +16,21 @@ const routineExecutionResponseSchema = z.object({
 });
 
 export function parseAccountRoutineExecutions(response: unknown): AccountExecutionSummary[] {
-  return routineExecutionResponseSchema.parse(response).items.map((item) => accountExecutionSummarySchema.parse({
-    executedActionCount: item.executedActionCount,
-    id: item.routineExecutionIdentifier,
-    memo: item.routineExecutionMemo,
-    postedAt: item.postedAt,
-    routineId: item.routineIdentifier,
-    routineTitle: item.routineName,
-    supportCount: item.supportCount,
-  }));
+  return parseAccountRoutineExecutionsPage(response).items;
+}
+
+export function parseAccountRoutineExecutionsPage(response: unknown): PageResult<AccountExecutionSummary> {
+  const parsed = routineExecutionResponseSchema.parse(response);
+  return {
+    items: parsed.items.map((item) => accountExecutionSummarySchema.parse({
+      executedActionCount: item.executedActionCount,
+      id: item.routineExecutionIdentifier,
+      memo: item.routineExecutionMemo,
+      postedAt: item.postedAt,
+      routineId: item.routineIdentifier,
+      routineTitle: item.routineName,
+      supportCount: item.supportCount,
+    })),
+    total: parsed.total,
+  };
 }

@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+/* eslint-disable react-hooks/refs */
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { RoutineDetailViewModel } from '../domain/routineDetail';
 import {
   routineDetailService,
   type RoutineDetailService,
 } from '../services/routineDetailService';
+import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
 import messages from '../../../shared/message/message.json';
 import '../routineDetail.css';
 
@@ -51,10 +53,10 @@ export function RoutineDetailPage({ service = routineDetailService }: RoutineDet
     return <DetailState message={messages.routineDetail.notFound} />;
   }
 
-  return <RoutineDetailContent routine={routine} />;
+  return <RoutineDetailContent routine={routine} service={service} />;
 }
 
-function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) {
+function RoutineDetailContent({ routine, service }: { routine: RoutineDetailViewModel; service: RoutineDetailService }) {
   const navigate = useNavigate();
   const [liked, setLiked] = useState(routine.liked);
   const [likeCount, setLikeCount] = useState(routine.likes);
@@ -63,6 +65,26 @@ function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) 
   const [openStepMemos, setOpenStepMemos] = useState<Record<number, boolean>>({});
   const [stepsOpen, setStepsOpen] = useState(true);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const fetchExecutionPostsPage = useCallback(async (page: number) => {
+    if (page === 1 && routine.executionPostsTotal !== undefined) {
+      return { items: routine.executionPosts, total: routine.executionPostsTotal };
+    }
+    if (service.listExecutionPostsPage !== undefined) {
+      return service.listExecutionPostsPage(routine.id, page, routine.steps.length);
+    }
+    return { items: routine.executionPosts, total: routine.executionPosts.length };
+  }, [routine, service]);
+  const fetchCustomizationsPage = useCallback(async (page: number) => {
+    if (page === 1 && routine.customizationsTotal !== undefined) {
+      return { items: routine.customizationsList, total: routine.customizationsTotal };
+    }
+    if (service.listCustomizationsPage !== undefined) {
+      return service.listCustomizationsPage(routine.id, page);
+    }
+    return { items: routine.customizationsList, total: routine.customizationsList.length };
+  }, [routine, service]);
+  const executionPostsList = useInfiniteList({ fetchPage: fetchExecutionPostsPage, key: `routine-execution-posts-${routine.id}`, preserveWhenDisabled: true });
+  const customizationsList = useInfiniteList({ fetchPage: fetchCustomizationsPage, key: `routine-customizations-${routine.id}`, preserveWhenDisabled: true });
 
   function toggleLike() {
     setLiked((current) => !current);
@@ -223,8 +245,10 @@ function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) 
 
             {activeTab === 'executionPosts' && (
               <div className="routine-detail-post-list" role="tabpanel">
-                {routine.executionPosts.length === 0 && <DetailEmptyState message={messages.routineDetail.executionPostsEmpty} />}
-                {routine.executionPosts.map((post) => {
+                {executionPostsList.error && executionPostsList.items.length === 0 && <DetailListError retry={executionPostsList.retry} />}
+                {!executionPostsList.error && executionPostsList.items.length === 0 && <DetailEmptyState message={messages.routineDetail.executionPostsEmpty} />}
+                {executionPostsList.error && executionPostsList.items.length > 0 && <DetailListError retry={executionPostsList.retry} />}
+                {executionPostsList.items.map((post) => {
                   const supported = supportedPosts[post.id] ?? false;
                   return (
                     <article className="routine-detail-post" key={post.id}>
@@ -252,19 +276,23 @@ function RoutineDetailContent({ routine }: { routine: RoutineDetailViewModel }) 
                     </article>
                   );
                 })}
+                {executionPostsList.items.length > 0 && <div aria-label="さらに読み込む" ref={executionPostsList.sentinelRef} />}
               </div>
             )}
 
             {activeTab === 'customizations' && (
               <div className="routine-detail-customization-list" role="tabpanel">
-                {routine.customizationsList.length === 0 && <DetailEmptyState message={messages.routineDetail.customizationsEmpty} />}
-                {routine.customizationsList.map((customization) => (
+                {customizationsList.error && customizationsList.items.length === 0 && <DetailListError retry={customizationsList.retry} />}
+                {!customizationsList.error && customizationsList.items.length === 0 && <DetailEmptyState message={messages.routineDetail.customizationsEmpty} />}
+                {customizationsList.error && customizationsList.items.length > 0 && <DetailListError retry={customizationsList.retry} />}
+                {customizationsList.items.map((customization) => (
                   <article className="routine-detail-customization" key={customization.id}>
                     <p className="routine-detail-customization__author">{messages.routineDetail.customizationVersion} — {customization.authorName}</p>
                     <h2><Link to={`/routines/${customization.id}`}>{customization.title}</Link></h2>
                     {customization.description !== '' && <p>{customization.description}</p>}
                   </article>
                 ))}
+                {customizationsList.items.length > 0 && <div aria-label="さらに読み込む" ref={customizationsList.sentinelRef} />}
               </div>
             )}
           </div>
@@ -288,6 +316,10 @@ function DetailState({ message }: { message: string }) {
 
 function DetailEmptyState({ message }: { message: string }) {
   return <p className="routine-detail-empty">{message}</p>;
+}
+
+function DetailListError({ retry }: { retry: () => void }) {
+  return <p className="routine-detail-empty routine-detail-empty--error">{messages.routineDetail.error} <button onClick={retry} type="button">再試行</button></p>;
 }
 
 function Avatar({ initial }: { initial: string }) {
