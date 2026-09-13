@@ -413,4 +413,8 @@
   .account-page__header--own {
     display: flex;
   }
+
+  .account-page__header--public {
+    display: flex;
+  }
 }
