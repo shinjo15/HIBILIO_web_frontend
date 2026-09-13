@@ -16,6 +16,7 @@ export class AccountBlockUnauthorizedError extends AccountBlockError {
 
 export type AccountBlockService = {
   create: (accountIdentifier: string) => Promise<void>;
+  remove: (accountIdentifier: string) => Promise<void>;
 };
 
 const csrfTokenSchema = z.object({ csrf_token: z.string().min(1) });
@@ -35,5 +36,19 @@ export const accountBlockService: AccountBlockService = {
 
     if (response.status === 401) throw new AccountBlockUnauthorizedError();
     if (!response.ok) throw new AccountBlockError('Failed to create account block', response.status);
+  },
+  remove: async (accountIdentifier) => {
+    const csrfResponse = await fetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
+    if (!csrfResponse.ok) throw new AccountBlockError('Failed to fetch CSRF token', csrfResponse.status);
+
+    const csrfToken = csrfTokenSchema.parse(await csrfResponse.json()).csrf_token;
+    const response = await fetch(`/api/blocks/${accountIdentifier}`, {
+      credentials: 'include',
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      method: 'DELETE',
+    });
+
+    if (response.status === 401) throw new AccountBlockUnauthorizedError();
+    if (!response.ok) throw new AccountBlockError('Failed to remove account block', response.status);
   },
 };

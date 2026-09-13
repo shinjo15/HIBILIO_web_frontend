@@ -19,6 +19,7 @@ const accountService: AccountService = {
   }),
   getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: '', favoriteTags: [], initial: 'テ', name: 'テスト', socialLinks: [] }),
   listExecutionHistories: async () => [],
+  listBlockedAccounts: async () => [],
   listLikes: async () => [],
   listPosts: async () => [],
 };

@@ -75,6 +75,7 @@
     "tabs": {
       "ariaLabel": "ルーティンの並び替え",
       "following": "フォロー中",
+      "followingAccounts": "フォロー中アカウント",
       "recommended": "おすすめ",
       "popular": "人気",
       "recent": "新着"
@@ -83,6 +84,9 @@
     "emptyTitle": "ルーティンが見つかりません",
     "emptyDescription": "条件に合うルーティンがまだありません。",
     "error": "ルーティンを読み込めませんでした。時間をおいて再試行してください。",
+    "followingAccountsEmptyDescription": "フォローしたアカウントがここに表示されます。",
+    "followingAccountsEmptyTitle": "フォロー中のアカウントはいません",
+    "followingAccountsError": "フォロー中のアカウントを読み込めませんでした。時間をおいて再試行してください。",
     "retry": "再試行",
     "moreSteps": "あと{count}項目…",
     "like": "いいねする",
@@ -149,6 +153,12 @@
   "account": {
     "achievementRate": "達成率",
     "achieved": "達成項目数",
+    "blockedAccountsEmpty": "ブロック中のアカウントはまだありません",
+    "blockedAccountsError": "ブロック中のアカウントを読み込めませんでした。時間をおいて再試行してください。",
+    "blockedAccountsLoading": "ブロック中のアカウントを読み込んでいます…",
+    "unblock": "ブロック解除",
+    "unblockError": "ブロックを解除できませんでした。時間をおいて再試行してください。",
+    "unblocking": "ブロックを解除しています…",
     "complete": "完璧",
     "countLoading": "-",
     "duration": "所要時間",
@@ -157,6 +167,7 @@
     "executionHistoryEmpty": "実行履歴はまだありません",
     "executionHistoryDescription": "完了したステップを確認できます。",
     "executionHistoryNotFound": "実行履歴が見つかりませんでした。",
+
     "likedRoutine": "いいねしたルーティン",
     "likesEmpty": "いいねしたルーティンはまだありません",
     "likesError": "いいねしたルーティンを読み込めませんでした。時間をおいて再試行してください。",
@@ -168,7 +179,9 @@
     "support": "応援",
     "tabs": {
       "ariaLabel": "アカウント情報の表示切り替え",
+      "blockedAccounts": "ブロック中",
       "executionHistory": "実行履歴",
+
       "likes": "いいね",
       "posts": "投稿"
     },

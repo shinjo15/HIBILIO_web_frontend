@@ -242,12 +242,16 @@
 
 .account-tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   margin-top: 16px;
 }
 
 .account-tabs--two {
   grid-template-columns: repeat(2, 1fr);
+}
+
+.account-tabs--three {
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .account-tabs__tab {
@@ -306,6 +310,7 @@
 .account-page__card:focus-visible {
   border-color: var(--hibilio-color-primary);
 }
+
 
 .account-page__card-body {
   padding: 16px;

@@ -30,8 +30,8 @@ afterEach(() => {
   window.sessionStorage.clear();
 });
 
-function renderPage(service: RoutineFeedService, likeService?: RoutineLikeService) {
-  return render(<MemoryRouter><RoutineFeedPage isAuthenticated likeService={likeService} service={service} /></MemoryRouter>);
+function renderPage(service: Pick<RoutineFeedService, 'list'> & Partial<Pick<RoutineFeedService, 'listFollowingAccounts'>>, likeService?: RoutineLikeService) {
+  return render(<MemoryRouter><RoutineFeedPage isAuthenticated likeService={likeService} service={{ listFollowingAccounts: async () => [], ...service }} /></MemoryRouter>);
 }
 
 function LocationProbe() {
@@ -43,12 +43,13 @@ describe('RoutineFeedPage', () => {
     let resolveList: ((value: Routine[]) => void) | undefined;
     const service: RoutineFeedService = {
       list: () => new Promise((resolve) => { resolveList = resolve; }),
+      listFollowingAccounts: async () => [],
     };
 
     renderPage(service);
     expect(screen.getByRole('heading', { name: 'HIBILIO' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'ルーティンを検索' })).toBeInTheDocument();
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['フォロー中', 'おすすめ', '人気']);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['フォロー中', 'おすすめ', '人気', 'フォロー中アカウント']);
     expect(screen.getByText('ルーティンを読み込んでいます…')).toBeInTheDocument();
 
     resolveList?.([routine]);
@@ -103,7 +104,7 @@ describe('RoutineFeedPage', () => {
 
   it('未認証時は人気タブだけを表示して人気一覧を取得する', async () => {
     const list = vi.fn().mockResolvedValue([routine]);
-    render(<MemoryRouter><RoutineFeedPage isAuthenticated={false} service={{ list }} /></MemoryRouter>);
+    render(<MemoryRouter><RoutineFeedPage isAuthenticated={false} service={{ list, listFollowingAccounts: async () => [] }} /></MemoryRouter>);
 
     expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['人気']);
     await waitFor(() => expect(list).toHaveBeenCalledWith('popular'));
@@ -111,9 +112,9 @@ describe('RoutineFeedPage', () => {
 
   it('ログイン通過後に再表示すると3タブを表示する', () => {
     markAuthenticated();
-    render(<MemoryRouter><RoutineFeedPage service={{ list: async () => [routine] }} /></MemoryRouter>);
+    render(<MemoryRouter><RoutineFeedPage service={{ list: async () => [routine], listFollowingAccounts: async () => [] }} /></MemoryRouter>);
 
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['フォロー中', 'おすすめ', '人気']);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['フォロー中', 'おすすめ', '人気', 'フォロー中アカウント']);
   });
 
   it('401を含むエラー状態と再試行導線を表示する', async () => {
@@ -127,7 +128,7 @@ describe('RoutineFeedPage', () => {
 
   it('認証必須APIが401ならログイン通過状態を削除してログインへ遷移する', async () => {
     markAuthenticated();
-    const service: RoutineFeedService = { list: async () => { throw new RoutineFeedUnauthorizedError(); } };
+    const service: RoutineFeedService = { list: async () => { throw new RoutineFeedUnauthorizedError(); }, listFollowingAccounts: async () => [] };
     render(<MemoryRouter><RoutineFeedPage isAuthenticated service={service} /><LocationProbe /></MemoryRouter>);
 
     await waitFor(() => expect(screen.getByText('/login')).toBeInTheDocument());
@@ -136,13 +137,18 @@ describe('RoutineFeedPage', () => {
 
   it('タブ切替時に対応するタブ値をserviceへ渡す', async () => {
     const list = vi.fn().mockResolvedValue([routine]);
+    const listFollowingAccounts = vi.fn().mockResolvedValue([{ accountIdentifier: '22222222-2222-4222-8222-222222222222', bio: '朝の時間を大切にしています。', name: '田中 花子' }]);
     const user = userEvent.setup();
-    renderPage({ list });
+    renderPage({ list, listFollowingAccounts });
     await screen.findByRole('heading', { name: '朝の集中ルーティン' });
 
     await user.click(screen.getByRole('tab', { name: 'フォロー中' }));
     await waitFor(() => expect(list).toHaveBeenLastCalledWith('following'));
     await user.click(screen.getByRole('tab', { name: '人気' }));
     await waitFor(() => expect(list).toHaveBeenLastCalledWith('popular'));
+    await user.click(screen.getByRole('tab', { name: 'フォロー中アカウント' }));
+    await waitFor(() => expect(listFollowingAccounts).toHaveBeenCalledWith());
+    expect(await screen.findByText('田中 花子')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '田中 花子' })).toHaveAttribute('href', '/accounts/22222222-2222-4222-8222-222222222222');
   });
 });

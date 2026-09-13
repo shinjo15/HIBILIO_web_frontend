@@ -121,4 +121,12 @@ describe('createAccountService', () => {
     }]);
     expect(fetchMock).toHaveBeenCalledWith('/api/my/likes?page=1&number_of_items_per_page=20', { credentials: 'include', method: 'GET' });
   });
+
+
+  it('ブロック中アカウント取得が401なら未認証エラーを返す', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
+    const service = createAccountService();
+
+    await expect(service.listBlockedAccounts()).rejects.toMatchObject({ name: 'AccountUnauthorizedError' });
+  });
 });

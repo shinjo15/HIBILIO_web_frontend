@@ -30,7 +30,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('routineFeedService', () => {
   it('API DTOをルーティンフィードのViewModelへ変換する', async () => {
-    const service = createRoutineFeedService({ list: async () => response });
+    const service = createRoutineFeedService({ list: async () => response, listFollowingAccounts: async () => ({ following_accounts: [] }) });
 
     await expect(service.list('recommended')).resolves.toEqual([{
       accountId: '10000000-0000-4000-8000-000000000001',
@@ -72,12 +72,30 @@ describe('routineFeedService', () => {
     });
   });
 
+  it('GET /api/my/following の契約をフォロー中アカウントの表示モデルへ変換する', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      following_accounts: [{
+        account_bio: '朝の時間を大切にしています。',
+        account_identifier: '22222222-2222-4222-8222-222222222222',
+        account_name: '田中 花子',
+      }],
+    })));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(routineFeedService.listFollowingAccounts()).resolves.toEqual([{
+      accountIdentifier: '22222222-2222-4222-8222-222222222222',
+      bio: '朝の時間を大切にしています。',
+      name: '田中 花子',
+    }]);
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/following', { credentials: 'include', method: 'GET' });
+  });
+
   it('HTTP失敗と不正なレスポンスをエラーとして扱う', async () => {
     const failedFetch = vi.fn().mockResolvedValue({ ok: false, status: 401 });
     vi.stubGlobal('fetch', failedFetch);
     await expect(routineFeedService.list('following')).rejects.toBeInstanceOf(RoutineFeedUnauthorizedError);
 
-    const service = createRoutineFeedService({ list: async () => ({ posts: [], total: 'invalid' }) });
+    const service = createRoutineFeedService({ list: async () => ({ posts: [], total: 'invalid' }), listFollowingAccounts: async () => ({ following_accounts: [] }) });
     await expect(service.list()).rejects.toThrow();
   });
 });

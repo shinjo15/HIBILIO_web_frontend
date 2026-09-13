@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { routineSchema, type Routine, type RoutineFeedTab } from '../domain/routine';
+import { followingAccountSchema, routineSchema, type FollowingAccount, type Routine, type RoutineFeedTab } from '../domain/routine';
 
 const page = 1;
 const numberOfItemsPerPage = 20;
@@ -32,16 +32,26 @@ const routineFeedResponseSchema = z.object({
   total: z.number().int().nonnegative(),
 });
 
+const followingAccountsResponseSchema = z.object({
+  following_accounts: z.array(z.object({
+    account_bio: z.string().nullable(),
+    account_identifier: z.string().min(1),
+    account_name: z.string().min(1),
+  })),
+});
+
 type RoutineFeedResponse = z.infer<typeof routineFeedResponseSchema>;
 
 export class RoutineFeedUnauthorizedError extends Error {}
 
 export type RoutineFeedAdapter = {
   list: (tab: RoutineFeedTab) => Promise<unknown>;
+  listFollowingAccounts: () => Promise<unknown>;
 };
 
 export type RoutineFeedService = {
   list: (tab?: RoutineFeedTab) => Promise<Routine[]>;
+  listFollowingAccounts: () => Promise<FollowingAccount[]>;
 };
 
 const paths: Record<RoutineFeedTab, string> = {
@@ -67,6 +77,22 @@ const routineFeedApiAdapter: RoutineFeedAdapter = {
 
     if (!response.ok) {
       throw new Error(`Failed to fetch routine feed: ${response.status}`);
+    }
+
+    return response.json();
+  },
+  listFollowingAccounts: async () => {
+    const response = await fetch('/api/my/following', {
+      credentials: 'include',
+      method: 'GET',
+    });
+
+    if (response.status === 401) {
+      throw new RoutineFeedUnauthorizedError('Following accounts require authentication');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch following accounts: ${response.status}`);
     }
 
     return response.json();
@@ -98,6 +124,11 @@ function toRoutine(post: RoutineFeedResponse['posts'][number]): Routine {
 export function createRoutineFeedService(adapter: RoutineFeedAdapter = routineFeedApiAdapter): RoutineFeedService {
   return {
     list: async (tab = 'recommended') => routineFeedResponseSchema.parse(await adapter.list(tab)).posts.map(toRoutine),
+    listFollowingAccounts: async () => followingAccountsResponseSchema.parse(await adapter.listFollowingAccounts()).following_accounts.map((account) => followingAccountSchema.parse({
+      accountIdentifier: account.account_identifier,
+      bio: account.account_bio,
+      name: account.account_name,
+    })),
   };
 }
 

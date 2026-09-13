@@ -4,9 +4,11 @@ import { parseAccountRoutineExecutions } from './accountRoutineExecutions';
 import type { Routine } from '../../routineFeed/domain/routine';
 import {
   accountProfileSchema,
+  accountRelationSchema,
   type AccountExecutionHistory,
   type AccountExecutionSummary,
   type AccountProfile,
+  type AccountRelation,
 } from '../domain/account';
 
 const getMyAccountResponseSchema = z.object({
@@ -22,6 +24,15 @@ const getMyAccountResponseSchema = z.object({
     social_url: z.string().url(),
   })),
 });
+
+const accountRelationListResponseSchema = z.object({
+  blocks: z.array(z.object({
+    account_bio: z.string().nullable(),
+    account_identifier: z.string().min(1),
+    account_name: z.string().min(1),
+  })),
+});
+
 
 type AccountExecutionAdapter = {
   listExecutionHistories: () => Promise<unknown>;
@@ -39,6 +50,11 @@ type AccountLikesAdapter = {
   listLikes: () => Promise<unknown>;
 };
 
+
+type AccountBlocksAdapter = {
+  listBlockedAccounts: () => Promise<unknown>;
+};
+
 export class AccountUnauthorizedError extends Error {
   constructor(message = 'Account profile requires authentication') {
     super(message);
@@ -50,6 +66,8 @@ export type AccountService = {
   getExecutionHistory: (executionId: string) => Promise<AccountExecutionHistory | null>;
   getProfile: () => Promise<AccountProfile | null>;
   listExecutionHistories: () => Promise<AccountExecutionSummary[]>;
+  listBlockedAccounts: () => Promise<AccountRelation[]>;
+
   listLikes: () => Promise<Routine[]>;
   listPosts: () => Promise<Routine[]>;
 };
@@ -101,6 +119,23 @@ const accountLikesApiAdapter: AccountLikesAdapter = {
   },
 };
 
+
+const accountBlocksApiAdapter: AccountBlocksAdapter = {
+  listBlockedAccounts: async () => {
+    const response = await fetch('/api/my/blocks', { credentials: 'include', method: 'GET' });
+
+    if (response.status === 401) {
+      throw new AccountUnauthorizedError('Blocked accounts require authentication');
+    }
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch blocked accounts');
+    }
+
+    return response.json();
+  },
+};
+
 const accountPostsApiAdapter: AccountPostsAdapter = {
   listPosts: async () => {
     const response = await fetch('/api/my/posts?page=1&number_of_items_per_page=20', {
@@ -125,6 +160,8 @@ export function createAccountService(
   likesAdapter: AccountLikesAdapter = accountLikesApiAdapter,
   profileAdapter: AccountProfileAdapter = accountProfileApiAdapter,
   postsAdapter: AccountPostsAdapter = accountPostsApiAdapter,
+
+  blocksAdapter: AccountBlocksAdapter = accountBlocksApiAdapter,
 ): AccountService {
   return {
     getExecutionHistory: async () => null,
@@ -140,9 +177,19 @@ export function createAccountService(
       });
     },
     listExecutionHistories: async () => parseAccountRoutineExecutions(await executionAdapter.listExecutionHistories()),
+    listBlockedAccounts: async () => parseAccountRelations(await blocksAdapter.listBlockedAccounts()),
+
     listLikes: async () => parseLikedRoutines(await likesAdapter.listLikes()),
     listPosts: async () => parseAccountPosts(await postsAdapter.listPosts()),
   };
+}
+
+function parseAccountRelations(response: unknown): AccountRelation[] {
+  return accountRelationListResponseSchema.parse(response).blocks.map((account) => accountRelationSchema.parse({
+    accountIdentifier: account.account_identifier,
+    bio: account.account_bio,
+    name: account.account_name,
+  }));
 }
 
 export const accountService = createAccountService();
