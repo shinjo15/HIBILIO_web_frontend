@@ -5,14 +5,20 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PublicAccountPage } from './PublicAccountPage';
 import { createPublicAccountService, type PublicAccountService } from '../services/publicAccountService';
 import type { AccountBlockService } from '../services/accountBlockService';
+import { AccountFollowError, AccountFollowUnauthorizedError, type AccountFollowService } from '../services/accountFollowService';
+import { isAuthenticated, markAuthenticated } from '../../auth/services/authSession';
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  window.sessionStorage.clear();
+});
 
-function renderPage(service: PublicAccountService, path = '/accounts/account-1', blockService?: AccountBlockService) {
+function renderPage(service: PublicAccountService, path = '/accounts/account-1', blockService?: AccountBlockService, followService?: AccountFollowService) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route element={<PublicAccountPage blockService={blockService} service={service} />} path="/accounts/:accountId" />
+        <Route element={<PublicAccountPage blockService={blockService} followService={followService} service={service} />} path="/accounts/:accountId" />
+        <Route element={<Location />} path="/login" />
       </Routes>
     </MemoryRouter>,
   );
@@ -60,6 +66,72 @@ describe('PublicAccountPage', () => {
 
     expect(blockService.create).toHaveBeenCalledWith('account-1');
     expect(screen.getByRole('button', { name: 'ブロック済み' })).toBeDisabled();
+  });
+
+  it('フォロー成功時に対象アカウントをフォロー中として表示する', async () => {
+    const user = userEvent.setup();
+    const followService: AccountFollowService = { create: vi.fn().mockResolvedValue(undefined) };
+    const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '公開アカウント', favorite_tags: [], social_links: [] }) });
+    renderPage(service, '/accounts/account-1', undefined, followService);
+    await screen.findByRole('heading', { name: '公開アカウント' });
+
+    await user.click(screen.getByRole('button', { name: 'フォロー' }));
+
+    expect(followService.create).toHaveBeenCalledWith('account-1');
+    expect(screen.getByRole('button', { name: 'フォロー中' })).toBeDisabled();
+  });
+
+  it('フォロー要求中はボタンを無効化する', async () => {
+    const user = userEvent.setup();
+    let resolveFollow: () => void = () => {};
+    const followService: AccountFollowService = { create: vi.fn().mockImplementation(() => new Promise<void>((resolve) => { resolveFollow = resolve; })) };
+    const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '公開アカウント', favorite_tags: [], social_links: [] }) });
+    renderPage(service, '/accounts/account-1', undefined, followService);
+    await screen.findByRole('heading', { name: '公開アカウント' });
+
+    await user.click(screen.getByRole('button', { name: 'フォロー' }));
+
+    expect(screen.getByRole('button', { name: 'フォローしています…' })).toBeDisabled();
+    resolveFollow();
+    expect(await screen.findByRole('button', { name: 'フォロー中' })).toBeDisabled();
+  });
+
+  it('重複フォロー時も対象アカウントをフォロー中として表示する', async () => {
+    const user = userEvent.setup();
+    const followService: AccountFollowService = { create: vi.fn().mockRejectedValue(new AccountFollowError('duplicate', 409)) };
+    const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '公開アカウント', favorite_tags: [], social_links: [] }) });
+    renderPage(service, '/accounts/account-1', undefined, followService);
+    await screen.findByRole('heading', { name: '公開アカウント' });
+
+    await user.click(screen.getByRole('button', { name: 'フォロー' }));
+
+    expect(await screen.findByRole('button', { name: 'フォロー中' })).toBeDisabled();
+  });
+
+  it('フォローが401なら認証状態を削除してログインへ遷移する', async () => {
+    const user = userEvent.setup();
+    const followService: AccountFollowService = { create: vi.fn().mockRejectedValue(new AccountFollowUnauthorizedError()) };
+    const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '公開アカウント', favorite_tags: [], social_links: [] }) });
+    markAuthenticated();
+    renderPage(service, '/accounts/account-1', undefined, followService);
+    await screen.findByRole('heading', { name: '公開アカウント' });
+
+    await user.click(screen.getByRole('button', { name: 'フォロー' }));
+
+    expect(await screen.findByText('/login')).toBeInTheDocument();
+    expect(isAuthenticated()).toBe(false);
+  });
+
+  it('フォローに失敗したときにエラーを表示する', async () => {
+    const user = userEvent.setup();
+    const followService: AccountFollowService = { create: vi.fn().mockRejectedValue(new AccountFollowError('failed', 422)) };
+    const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '公開アカウント', favorite_tags: [], social_links: [] }) });
+    renderPage(service, '/accounts/account-1', undefined, followService);
+    await screen.findByRole('heading', { name: '公開アカウント' });
+
+    await user.click(screen.getByRole('button', { name: 'フォロー' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('アカウントをフォローできませんでした。時間をおいて再試行してください。');
   });
 
   it('遷移元へ戻る', async () => {
