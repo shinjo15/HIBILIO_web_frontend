@@ -4,11 +4,12 @@ import type { AccountService } from '../services/accountService';
 import { publicAccountService, type PublicAccountService } from '../services/publicAccountService';
 import { AccountPage } from './AccountPage';
 import { accountBlockService, type AccountBlockService } from '../services/accountBlockService';
+import { accountFollowService, type AccountFollowService } from '../services/accountFollowService';
 import messages from '../../../shared/message/message.json';
 
-type PublicAccountPageProps = { blockService?: AccountBlockService; service?: PublicAccountService };
+type PublicAccountPageProps = { blockService?: AccountBlockService; followService?: AccountFollowService; service?: PublicAccountService };
 
-export function PublicAccountPage({ blockService = accountBlockService, service = publicAccountService }: PublicAccountPageProps) {
+export function PublicAccountPage({ blockService = accountBlockService, followService = accountFollowService, service = publicAccountService }: PublicAccountPageProps) {
   const navigate = useNavigate();
   const { accountId = '' } = useParams<{ accountId: string }>();
   const accountService = useMemo<AccountService>(() => ({
@@ -21,5 +22,5 @@ export function PublicAccountPage({ blockService = accountBlockService, service 
     listPosts: async () => service.listPosts(accountId),
   }), [accountId, service]);
 
-  return <AccountPage blockService={blockService} isOwnAccount={false} notFoundMessage={messages.publicAccount.notFound} onBack={() => navigate(-1)} service={accountService} />;
+  return <AccountPage blockService={blockService} followService={followService} isOwnAccount={false} notFoundMessage={messages.publicAccount.notFound} onBack={() => navigate(-1)} service={accountService} />;
 }

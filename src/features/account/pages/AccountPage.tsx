@@ -15,10 +15,11 @@ import { AccountLikesList, AccountPostsList } from '../components/AccountRoutine
 import { AccountRelationList } from '../../../shared/components/AccountRelationList';
 import { routineLikeService, RoutineLikeUnauthorizedError, type RoutineLikeService } from '../../routineFeed/services/routineLikeService';
 import { accountBlockService, AccountBlockError, AccountBlockUnauthorizedError, type AccountBlockService } from '../services/accountBlockService';
+import { accountFollowService, AccountFollowError, AccountFollowUnauthorizedError, type AccountFollowService } from '../services/accountFollowService';
 import messages from '../../../shared/message/message.json';
 import '../account.css';
 
-type AccountPageProps = { blockService?: AccountBlockService; isOwnAccount?: boolean; likeService?: RoutineLikeService; notFoundMessage?: string; onBack?: () => void; service?: AccountService };
+type AccountPageProps = { blockService?: AccountBlockService; followService?: AccountFollowService; isOwnAccount?: boolean; likeService?: RoutineLikeService; notFoundMessage?: string; onBack?: () => void; service?: AccountService };
 
 const tabs: Array<{ label: string; value: AccountTab }> = [
   { label: messages.account.tabs.posts, value: 'posts' },
@@ -27,7 +28,7 @@ const tabs: Array<{ label: string; value: AccountTab }> = [
   { label: messages.account.tabs.blockedAccounts, value: 'blockedAccounts' },
 ];
 
-export function AccountPage({ blockService = accountBlockService, isOwnAccount = true, likeService = routineLikeService, notFoundMessage, onBack, service = accountService }: AccountPageProps) {
+export function AccountPage({ blockService = accountBlockService, followService = accountFollowService, isOwnAccount = true, likeService = routineLikeService, notFoundMessage, onBack, service = accountService }: AccountPageProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [posts, setPosts] = useState<Routine[]>([]);
@@ -41,6 +42,9 @@ export function AccountPage({ blockService = accountBlockService, isOwnAccount =
   const [blockError, setBlockError] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlocking, setIsBlocking] = useState(false);
+  const [followError, setFollowError] = useState(false);
+  const [isFollowed, setIsFollowed] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
   const [unblockingAccountIdentifier, setUnblockingAccountIdentifier] = useState<string | null>(null);
   const [unblockError, setUnblockError] = useState(false);
   const [likingPostIdentifier, setLikingPostIdentifier] = useState<string | null>(null);
@@ -183,6 +187,28 @@ export function AccountPage({ blockService = accountBlockService, isOwnAccount =
     }
   }
 
+  async function followAccount() {
+    if (!profile || isFollowing || isFollowed) return;
+
+    setIsFollowing(true);
+    setFollowError(false);
+    try {
+      await followService.create(profile.accountIdentifier);
+      setIsFollowed(true);
+    } catch (error) {
+      if (error instanceof AccountFollowUnauthorizedError) {
+        clearAuthenticated();
+        navigate('/login');
+      } else if (error instanceof AccountFollowError && error.status === 409) {
+        setIsFollowed(true);
+      } else {
+        setFollowError(true);
+      }
+    } finally {
+      setIsFollowing(false);
+    }
+  }
+
   async function removeBlock(account: AccountRelation) {
     const index = blockedAccounts.findIndex((item) => item.accountIdentifier === account.accountIdentifier);
     setUnblockingAccountIdentifier(account.accountIdentifier);
@@ -240,7 +266,7 @@ export function AccountPage({ blockService = accountBlockService, isOwnAccount =
           <div className="account-profile__body">
             <div className="account-profile__actions">
               {isOwnAccount && <button className="account-page__edit" onClick={() => navigate('/account/edit')} type="button">{messages.account.edit}</button>}
-              {!isOwnAccount && <><button className="account-page__follow" type="button"><FollowIcon />{messages.publicAccount.follow}</button><button aria-label={isBlocking ? messages.publicAccount.blocking : isBlocked ? messages.publicAccount.blocked : messages.publicAccount.block} className={isBlocked ? 'account-page__block account-page__block--blocked' : 'account-page__block'} disabled={isBlocking || isBlocked} onClick={() => void blockAccount()} type="button"><BlockIcon />{isBlocking ? messages.publicAccount.blocking : isBlocked ? messages.publicAccount.blocked : messages.publicAccount.block}</button></>}
+              {!isOwnAccount && <><button aria-label={isFollowing ? messages.publicAccount.following : isFollowed ? messages.publicAccount.followed : messages.publicAccount.follow} className={isFollowed ? 'account-page__follow account-page__follow--followed' : 'account-page__follow'} disabled={isFollowing || isFollowed} onClick={() => void followAccount()} type="button"><FollowIcon />{isFollowing ? messages.publicAccount.following : isFollowed ? messages.publicAccount.followed : messages.publicAccount.follow}</button><button aria-label={isBlocking ? messages.publicAccount.blocking : isBlocked ? messages.publicAccount.blocked : messages.publicAccount.block} className={isBlocked ? 'account-page__block account-page__block--blocked' : 'account-page__block'} disabled={isBlocking || isBlocked} onClick={() => void blockAccount()} type="button"><BlockIcon />{isBlocking ? messages.publicAccount.blocking : isBlocked ? messages.publicAccount.blocked : messages.publicAccount.block}</button></>}
             </div>
             <div className="account-profile__details">
               <h1 className="account-profile__name">{profile.name}</h1>
@@ -257,6 +283,7 @@ export function AccountPage({ blockService = accountBlockService, isOwnAccount =
             </div>
           </div>
           {blockError && <p className="account-page__block-error" role="alert">{messages.publicAccount.blockError}</p>}
+          {followError && <p className="account-page__block-error" role="alert">{messages.publicAccount.followError}</p>}
           <div aria-label={messages.account.tabs.ariaLabel} className={isOwnAccount ? 'account-tabs' : 'account-tabs account-tabs--three'} role="tablist">
             {displayedTabs.map((tab) => (
               <button
