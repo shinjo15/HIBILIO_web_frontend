@@ -404,4 +404,8 @@
   .account-page__header {
     display: none;
   }
+
+  .account-page__header--own {
+    display: flex;
+  }
 }

@@ -174,7 +174,7 @@ export function AccountPage({ blockService = accountBlockService, isOwnAccount =
 
   return (
     <section className="account-page">
-      <header className="account-page__header">
+      <header className={isOwnAccount ? 'account-page__header account-page__header--own' : 'account-page__header'}>
         {!isOwnAccount && <button aria-label={messages.publicAccount.back} className="account-page__back" onClick={onBack} type="button">← {messages.publicAccount.back}</button>}
         {isOwnAccount && <><h1 className="account-page__header-title">{messages.account.title}</h1><button aria-label={messages.account.settings} className="account-page__settings" onClick={() => navigate('/account/settings')} type="button"><SettingsOutlinedIcon fontSize="small" /></button></>}
       </header>
