@@ -64,12 +64,22 @@ describe('SettingsPage', () => {
     expect(screen.getByText('dark')).toBeInTheDocument();
   });
 
-  it('戻る操作とローカルのログアウト操作で遷移する', async () => {
+  it('通常の設定ヘッダーに戻るボタンとタイトルを表示し、戻る操作で遷移する', async () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(screen.getByRole('button', { name: 'アカウントに戻る' }));
+    const backButton = screen.getByRole('button', { name: 'アカウントに戻る' });
+    const header = backButton.closest('header');
+    expect(header).toHaveClass('settings-page__header');
+    expect(header).toContainElement(screen.getByRole('heading', { name: '設定' }));
+
+    await user.click(backButton);
     expect(screen.getByText('/account')).toBeInTheDocument();
+  });
+
+  it('ローカルのログアウト操作でログインへ遷移する', async () => {
+    const user = userEvent.setup();
+    renderPage();
 
     await user.click(screen.getByRole('button', { name: 'ログアウト' }));
     expect(screen.getByText('/login')).toBeInTheDocument();
