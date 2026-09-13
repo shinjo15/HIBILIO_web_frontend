@@ -171,8 +171,7 @@
 }
 
 .account-page__block--blocked {
-  border-color: var(--hibilio-color-primary);
-  color: var(--hibilio-color-primary);
+  background: var(--hibilio-color-muted);
 }
 
 .account-page__block-error {
