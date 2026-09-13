@@ -31,7 +31,9 @@ describe('PublicAccountPage', () => {
     renderPage(service);
 
     expect(await screen.findByRole('heading', { name: '公開アカウント' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '戻る' })).toBeInTheDocument();
+    const backButton = screen.getByRole('button', { name: '戻る' });
+    expect(backButton).toBeInTheDocument();
+    expect(backButton.closest('header')).toHaveClass('account-page__header--public');
     expect(screen.getByRole('button', { name: 'フォロー' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'ブロック' })).toBeInTheDocument();
     expect(screen.getByText('朝の習慣を続けています。')).toBeInTheDocument();
