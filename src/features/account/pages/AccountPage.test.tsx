@@ -93,6 +93,11 @@ describe('AccountPage', () => {
     await screen.findByText('ブロック中のアカウント');
     const unblockButton = screen.getByRole('button', { name: 'ブロック解除' });
     expect(unblockButton.closest('a')).toBeNull();
+    expect(unblockButton).toHaveClass('account-relation-card-with-action__button');
+    expect(unblockButton.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    const blockedAccountLink = screen.getByRole('link', { name: 'ブロック中のアカウント' });
+    expect(blockedAccountLink).toHaveClass('account-relation-card');
+    expect(blockedAccountLink.closest('.account-relation-card-with-action')).toContainElement(unblockButton);
 
     await user.click(unblockButton);
 
