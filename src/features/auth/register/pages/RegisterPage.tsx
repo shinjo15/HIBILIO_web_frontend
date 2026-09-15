@@ -1,4 +1,5 @@
-import { Alert, Button } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import { Alert, Button, IconButton } from '@mui/material';
 import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -151,7 +152,7 @@ export function RegisterPage() {
               <h3>{messages.auth.addedSocialLinks}</h3>
               <div>{registration.socialLinks.map((link) => {
                 const platform = registrationSocialPlatforms.find((item) => item.socialType === link.socialType);
-                return platform === undefined ? null : <div className="hibilio-register__social-link" key={link.socialType}><platform.Icon className={`hibilio-register__social-icon hibilio-register__social-icon--${link.socialType}`} /><span>{link.socialUrl.replace(platform.urlPrefix, '')}</span></div>;
+                return platform === undefined ? null : <div className="hibilio-register__social-link" key={link.socialType}><platform.Icon className={`hibilio-register__social-icon hibilio-register__social-icon--${link.socialType}`} /><span>{link.socialUrl.replace(platform.urlPrefix, '')}</span><IconButton aria-label={messages.auth.removeSocialLink.replace('{platform}', platform.label)} className="hibilio-register__social-link-remove" onClick={() => registration.removeSocialLink(link.socialType)} size="small" type="button"><CloseIcon fontSize="small" /></IconButton></div>;
               })}</div>
             </section>}
             {selectedSocialPlatform === null ? <div className="hibilio-register__social-platforms">

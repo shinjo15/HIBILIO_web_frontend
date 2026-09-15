@@ -112,6 +112,44 @@ describe('RegisterPage', () => {
     }));
   });
 
+  it('追加したXのリンクを削除して空のソーシャルリンクでアカウントを作成する', async () => {
+    const user = userEvent.setup();
+    const fetchMock = csrfAwareFetch(201);
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MemoryRouter><RegisterPage /></MemoryRouter>);
+
+    await user.type(screen.getByLabelText('メールアドレス'), 'new-member@example.com');
+    await user.click(screen.getByRole('button', { name: 'パスコードを送信' }));
+    await user.type(screen.getByLabelText('パスコード 1桁目'), '123456');
+    await user.click(screen.getByRole('button', { name: '確認して次へ' }));
+    await user.type(screen.getByLabelText('アカウント名'), '山田 由紀');
+    await user.type(screen.getByLabelText('ユーザーID（@ハンドル）'), 'yuki_sleep');
+    await user.click(screen.getByRole('button', { name: '次へ' }));
+    await user.click(screen.getByRole('button', { name: 'X (Twitter)' }));
+    await user.type(screen.getByLabelText('X (Twitter)のリンク'), 'hibilio');
+    await user.click(screen.getByRole('button', { name: '追加' }));
+
+    expect(screen.getByText('hibilio')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'X (Twitter)のリンクを削除' }));
+
+    expect(screen.queryByText('hibilio')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '次へ' }));
+    await user.click(await screen.findByRole('button', { name: 'HIBILIOをはじめる' }));
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/accounts', expect.objectContaining({
+      body: JSON.stringify({
+        account_bio: null,
+        account_name: '山田 由紀',
+        favorite_tag_identifiers: [],
+        social_links: [],
+      }),
+      method: 'POST',
+    }));
+  });
+
   it('選択したサービスのアイコン付き入力欄を表示し、追加したリンクを表示する', async () => {
     const user = userEvent.setup();
 
