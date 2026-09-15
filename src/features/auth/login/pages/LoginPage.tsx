@@ -130,7 +130,7 @@ export function LoginPage() {
             </div>
 
             <div className="hibilio-login__providers">
-              <Button className="hibilio-login__provider hibilio-login__provider--google" fullWidth startIcon={<GoogleIcon />} type="button" variant="outlined">
+              <Button className="hibilio-login__provider hibilio-login__provider--google" component="a" fullWidth href="http://localhost:8001/auth/social/google" startIcon={<GoogleIcon />} variant="outlined">
                 {messages.auth.googleLogin}
               </Button>
               <Button className="hibilio-login__provider hibilio-login__provider--apple" fullWidth startIcon={<AppleIcon />} type="button" variant="contained">

@@ -12,6 +12,15 @@ afterEach(() => {
 });
 
 describe('LoginPage', () => {
+  it('GoogleログインはOAuth認証先へブラウザ遷移するリンクである', () => {
+    render(<MemoryRouter><LoginPage /></MemoryRouter>);
+
+    expect(screen.getByRole('link', { name: 'Googleでログイン' })).toHaveAttribute(
+      'href',
+      'http://localhost:8001/auth/social/google',
+    );
+  });
+
   it('メールアドレスからパスコードを送信し、モック準拠の6桁入力画面で照合する', async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn((path: string) => Promise.resolve(path === '/api/csrf-token'
@@ -24,7 +33,7 @@ describe('LoginPage', () => {
     expect(screen.getByRole('heading', { name: 'HIBILIO' })).toBeInTheDocument();
     expect(screen.getByLabelText('メールアドレス')).toHaveAttribute('type', 'email');
     expect(screen.getByRole('button', { name: 'パスコードを送信' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Googleでログイン' })).toHaveAttribute('type', 'button');
+    expect(screen.getByRole('link', { name: 'Googleでログイン' })).toHaveAttribute('href', 'http://localhost:8001/auth/social/google');
     expect(screen.getByRole('button', { name: 'Appleでログイン' })).toHaveAttribute('type', 'button');
 
     await user.type(screen.getByLabelText('メールアドレス'), 'member@example.com');
