@@ -68,6 +68,10 @@ export function useAccountRegistration(onRegistered: () => void) {
     setSocialLinks((current) => [...current.filter((item) => item.socialType !== socialLink.socialType), socialLink]);
   }
 
+  function removeSocialLink(socialType: RegistrationSocialLink['socialType']): void {
+    setSocialLinks((current) => current.filter((item) => item.socialType !== socialType));
+  }
+
   function toggleFavoriteTag(identifier: string): void {
     setFavoriteTagIdentifiers((current) => current.includes(identifier)
       ? current.filter((currentIdentifier) => currentIdentifier !== identifier)
@@ -78,5 +82,5 @@ export function useAccountRegistration(onRegistered: () => void) {
   function returnToProfile(): void { setErrorMessage(null); setStep('profile'); }
   function returnToSocialLinks(): void { setErrorMessage(null); setStep('social'); }
 
-  return { accountBio, accountName, addSocialLink, continueToSocialLinks, continueToTags, emailAddress, errorMessage, favoriteTagIdentifiers, isSubmitting, passcode, pickupTags, returnToEmailAddress, returnToProfile, returnToSocialLinks, setAccountBio, setAccountName, setEmailAddress, setPasscode, setUserHandle, socialLinks, step, submitEmailAddress, submitFavoriteTags, submitPasscode, tagLoadError, toggleFavoriteTag, userHandle };
+  return { accountBio, accountName, addSocialLink, continueToSocialLinks, continueToTags, emailAddress, errorMessage, favoriteTagIdentifiers, isSubmitting, passcode, pickupTags, removeSocialLink, returnToEmailAddress, returnToProfile, returnToSocialLinks, setAccountBio, setAccountName, setEmailAddress, setPasscode, setUserHandle, socialLinks, step, submitEmailAddress, submitFavoriteTags, submitPasscode, tagLoadError, toggleFavoriteTag, userHandle };
 }

@@ -383,7 +383,18 @@
 }
 
 .hibilio-register__social-link span {
+  flex: 1;
   overflow-wrap: anywhere;
+}
+
+.hibilio-register__social-link-remove.MuiIconButton-root {
+  color: var(--hibilio-color-primary);
+  flex: 0 0 auto;
+}
+
+.hibilio-register__social-link-remove.MuiIconButton-root:hover,
+.hibilio-register__social-link-remove.MuiIconButton-root:focus-visible {
+  background: color-mix(in srgb, var(--hibilio-color-primary) 12%, transparent);
 }
 
 .hibilio-register__social-icon--x,
