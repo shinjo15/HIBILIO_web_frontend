@@ -388,7 +388,6 @@
 }
 
 .hibilio-register__social-link-remove.MuiIconButton-root {
-  border: 1px solid currentcolor;
   color: var(--hibilio-color-primary);
   flex: 0 0 auto;
 }
