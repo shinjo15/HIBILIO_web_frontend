@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs */
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
@@ -12,6 +13,7 @@ import { clearAuthenticated, isAuthenticated as hasAuthenticatedSession } from '
 import { AccountRelationList } from '../../../shared/components/AccountRelationList';
 import { HibilioMark } from '../../../shared/brand/HibilioMark';
 import messages from '../../../shared/message/message.json';
+import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
 import '../routineFeed.css';
 import '../routineFeedTypography.css';
 
@@ -30,38 +32,26 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
   const authenticated = isAuthenticated ?? hasAuthenticatedSession();
   const availableTabs = authenticated ? tabs : tabs.filter((tab) => tab.value === 'popular');
   const [activeTab, setActiveTab] = useState<FeedTab>(authenticated ? 'recommended' : 'popular');
-  const [routines, setRoutines] = useState<Routine[]>([]);
   const [followingAccounts, setFollowingAccounts] = useState<FollowingAccount[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [likingPostIdentifier, setLikingPostIdentifier] = useState<string | null>(null);
   const [likeAnimation, setLikeAnimation] = useState<{ postIdentifier: string; type: 'like' | 'unlike' } | null>(null);
   const [likeError, setLikeError] = useState(false);
 
-  const loadActiveTab = useCallback(async () => {
-    setIsLoading(true);
-    setHasError(false);
-
-    try {
-      if (activeTab === 'followingAccounts') {
-        setFollowingAccounts(await service.listFollowingAccounts());
-      } else {
-        setRoutines(await service.list(activeTab));
-      }
-    } catch (error) {
-      if (error instanceof RoutineFeedUnauthorizedError) {
-        clearAuthenticated();
-        navigate('/login');
-        return;
-      }
-
-      if (activeTab === 'followingAccounts') setFollowingAccounts([]);
-      else setRoutines([]);
-      setHasError(true);
-    } finally {
-      setIsLoading(false);
+  const fetchRoutinePage = useCallback(async (page: number) => {
+    if (service.listPage !== undefined) return service.listPage(activeTab as RoutineFeedTab, page);
+    const items = await service.list(activeTab as RoutineFeedTab);
+    return { items, total: items.length };
+  }, [activeTab, service]);
+  const handleRoutineError = useCallback((error: unknown) => {
+    if (error instanceof RoutineFeedUnauthorizedError) {
+      clearAuthenticated();
+      navigate('/login');
     }
-  }, [activeTab, navigate, service]);
+  }, [navigate]);
+  const routineList = useInfiniteList({ enabled: activeTab !== 'followingAccounts', fetchPage: fetchRoutinePage, key: activeTab, onError: handleRoutineError });
+  const routines = routineList.items;
+  const setRoutines = routineList.setItems;
 
   useEffect(() => {
     let cancelled = false;
@@ -74,10 +64,8 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
           return;
         }
 
-        if (activeTab === 'followingAccounts') setFollowingAccounts([]);
-        else setRoutines([]);
+        setFollowingAccounts([]);
         setHasError(true);
-        setIsLoading(false);
       }
     };
 
@@ -85,14 +73,6 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
       service.listFollowingAccounts().then((result) => {
         if (!cancelled) {
           setFollowingAccounts(result);
-          setIsLoading(false);
-        }
-      }).catch(handleError);
-    } else {
-      service.list(activeTab).then((result) => {
-        if (!cancelled) {
-          setRoutines(result);
-          setIsLoading(false);
         }
       }).catch(handleError);
     }
@@ -101,7 +81,6 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
   }, [activeTab, navigate, service]);
 
   function handleTabChange(tab: FeedTab) {
-    setIsLoading(true);
     setHasError(false);
     setActiveTab(tab);
   }
@@ -165,16 +144,16 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
 
       <Box className="routine-feed-scroll">
         <Box className="routine-feed-content">
-        {isLoading && (
+        {(activeTab === 'followingAccounts' ? false : routineList.isInitialLoading) && (
           <Stack className="routine-feed-loading">
             <CircularProgress aria-label={messages.routineFeed.loading} className="routine-feed-loading__progress" />
             <Typography className="routine-feed-loading__text">{messages.routineFeed.loading}</Typography>
           </Stack>
         )}
 
-        {!isLoading && hasError && (
+        {((activeTab === 'followingAccounts' && hasError) || (activeTab !== 'followingAccounts' && routineList.error)) && (
           <Alert
-            action={<Button className="routine-feed-error__retry" onClick={() => void loadActiveTab()} startIcon={<RefreshOutlinedIcon />}>{messages.routineFeed.retry}</Button>}
+            action={<Button className="routine-feed-error__retry" onClick={() => activeTab === 'followingAccounts' ? handleTabChange(activeTab) : routineList.retry()} startIcon={<RefreshOutlinedIcon />}>{messages.routineFeed.retry}</Button>}
             icon={<ErrorOutlineOutlinedIcon />}
             severity="error"
             className="routine-feed-error"
@@ -183,26 +162,27 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
           </Alert>
         )}
 
-        {!isLoading && !hasError && activeTab !== 'followingAccounts' && routines.length === 0 && (
+        {!routineList.isInitialLoading && !routineList.error && activeTab !== 'followingAccounts' && routines.length === 0 && (
           <Stack className="routine-feed-empty">
             <Typography component="h2" className="routine-feed-empty__title">{messages.routineFeed.emptyTitle}</Typography>
             <Typography className="routine-feed-empty__description">{messages.routineFeed.emptyDescription}</Typography>
           </Stack>
         )}
 
-        {!isLoading && !hasError && activeTab === 'followingAccounts' && followingAccounts.length === 0 && (
+        {!hasError && activeTab === 'followingAccounts' && followingAccounts.length === 0 && (
           <Stack className="routine-feed-empty">
             <Typography component="h2" className="routine-feed-empty__title">{messages.routineFeed.followingAccountsEmptyTitle}</Typography>
             <Typography className="routine-feed-empty__description">{messages.routineFeed.followingAccountsEmptyDescription}</Typography>
           </Stack>
         )}
 
-        {!isLoading && !hasError && activeTab === 'followingAccounts' && followingAccounts.length > 0 && <AccountRelationList accounts={followingAccounts} className="routine-feed-account-list" />}
+        {!hasError && activeTab === 'followingAccounts' && followingAccounts.length > 0 && <AccountRelationList accounts={followingAccounts} className="routine-feed-account-list" />}
 
-        {!isLoading && !hasError && activeTab !== 'followingAccounts' && routines.length > 0 && (
+        {!routineList.isInitialLoading && activeTab !== 'followingAccounts' && routines.length > 0 && (
           <Stack className="routine-feed-list">
             {likeError && <Alert severity="error">{messages.routineFeed.likeError}</Alert>}
             {routines.map((routine) => <RoutineCard isLiking={likingPostIdentifier === routine.id} key={routine.id} likeAnimation={likeAnimation?.postIdentifier === routine.id ? likeAnimation.type : null} onLike={toggleLike} routine={routine} />)}
+            <Box aria-label="さらに読み込む" ref={routineList.sentinelRef} />
             <Box className="routine-feed-list__spacer" />
           </Stack>
         )}

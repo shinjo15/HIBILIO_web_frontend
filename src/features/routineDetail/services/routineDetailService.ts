@@ -5,13 +5,18 @@ import {
 } from '../domain/routineDetail';
 import { formatPostedAt } from '../../routineFeed/domain/routine';
 import { z } from 'zod';
+import type { PageResult } from '../../../shared/hooks/useInfiniteList';
 
 export type RoutineDetailAdapter = {
   get: (routineId: string) => Promise<unknown>;
+  listCustomizations?: (routineId: string, page: number) => Promise<unknown>;
+  listExecutionPosts?: (routineId: string, page: number) => Promise<unknown>;
 };
 
 export type RoutineDetailService = {
   get: (routineId: string) => Promise<RoutineDetailViewModel | null>;
+  listCustomizationsPage?: (routineId: string, page: number) => Promise<PageResult<RoutineDetailViewModel['customizationsList'][number]>>;
+  listExecutionPostsPage?: (routineId: string, page: number, totalActions?: number) => Promise<PageResult<RoutineDetailViewModel['executionPosts'][number]>>;
 };
 
 export type DummyRoutineDetailMode = 'success' | 'empty' | 'error';
@@ -224,12 +229,43 @@ export function createDummyRoutineDetailAdapter(mode: DummyRoutineDetailMode = '
 }
 
 export function createRoutineDetailService(adapter: RoutineDetailAdapter): RoutineDetailService {
+  const listCustomizationsPage = adapter.listCustomizations === undefined ? undefined : async (routineId: string, page: number) => {
+    const response = customizedRoutinesResponseSchema.parse(await adapter.listCustomizations?.(routineId, page));
+    return {
+      items: response.items.map((customization) => ({
+        authorName: customization.account_name,
+        description: customization.routine_memo ?? '',
+        id: customization.routine_identifier,
+        title: customization.routine_name,
+      })),
+      total: response.total,
+    };
+  };
+  const listExecutionPostsPage = adapter.listExecutionPosts === undefined ? undefined : async (routineId: string, page: number, totalActions = 0) => {
+    const response = routineExecutionPostsResponseSchema.parse(await adapter.listExecutionPosts?.(routineId, page));
+    return {
+      items: response.items.map((post) => ({
+        achieved: post.executed_action_count,
+        avatar: post.account_name.slice(0, 1).toUpperCase(),
+        cheers: post.support_count,
+        comment: post.routine_execution_memo ?? undefined,
+        date: formatPostedAt(post.posted_at),
+        id: post.routine_execution_identifier,
+        minutes: undefined,
+        total: totalActions,
+        userHandle: '',
+        userName: post.account_name,
+      })),
+      total: response.total,
+    };
+  };
+
   async function get(routineId: string): Promise<RoutineDetailViewModel | null> {
     const response = await adapter.get(routineId);
     return response === null ? null : toRoutineDetailViewModel(response);
   }
 
-  return { get };
+  return { get, listCustomizationsPage, listExecutionPostsPage };
 }
 
 const routineDetailsResponseSchema = z.object({
@@ -281,8 +317,8 @@ export const apiRoutineDetailAdapter: RoutineDetailAdapter = {
   get: async (routineId) => {
     const [detailResponse, customizationsResponse, executionPostsResponse] = await Promise.all([
       fetch(`/api/routines/${routineId}`),
-      fetch(`/api/routines/${routineId}/customized?page=1&number_of_items_per_page=20`),
-      fetch(`/api/routines/${routineId}/execution-posts?page=1&number_of_items_per_page=20`),
+      fetch(`/api/routines/${routineId}/customized?page=1&number_of_items_per_page=40`),
+      fetch(`/api/routines/${routineId}/execution-posts?page=1&number_of_items_per_page=40`),
     ]);
     if (detailResponse.status === 404) {
       return null;
@@ -299,6 +335,7 @@ export const apiRoutineDetailAdapter: RoutineDetailAdapter = {
     return {
       author: { accountId: detail.account_identifier, handle: '', name: detail.account_name },
       customizations: detail.customization_count,
+      customizationsTotal: customizations.total,
       customizationsList: customizations.items.map((customization) => ({
         authorName: customization.account_name,
         description: customization.routine_memo ?? '',
@@ -321,6 +358,7 @@ export const apiRoutineDetailAdapter: RoutineDetailAdapter = {
         userHandle: '',
         userName: post.account_name,
       })),
+      executionPostsTotal: executionPosts.total,
       id: routineId,
       liked: false,
       likes: detail.like_count,
@@ -334,6 +372,16 @@ export const apiRoutineDetailAdapter: RoutineDetailAdapter = {
       tags: [],
       title: detail.routine_name,
     } satisfies RoutineDetailDto;
+  },
+  listCustomizations: async (routineId, page) => {
+    const response = await fetch(`/api/routines/${routineId}/customized?page=${page}&number_of_items_per_page=40`);
+    if (!response.ok) throw new Error(`Failed to fetch customized routines: ${response.status}`);
+    return response.json();
+  },
+  listExecutionPosts: async (routineId, page) => {
+    const response = await fetch(`/api/routines/${routineId}/execution-posts?page=${page}&number_of_items_per_page=40`);
+    if (!response.ok) throw new Error(`Failed to fetch routine execution posts: ${response.status}`);
+    return response.json();
   },
 };
 

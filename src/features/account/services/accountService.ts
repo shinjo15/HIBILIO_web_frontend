@@ -1,7 +1,8 @@
 import { z } from 'zod';
-import { parseAccountPosts, parseLikedRoutines } from './accountRoutinePosts';
-import { parseAccountRoutineExecutions } from './accountRoutineExecutions';
+import { parseAccountPostsPage, parseLikedRoutinesPage } from './accountRoutinePosts';
+import { parseAccountRoutineExecutionsPage } from './accountRoutineExecutions';
 import type { Routine } from '../../routineFeed/domain/routine';
+import type { PageResult } from '../../../shared/hooks/useInfiniteList';
 import {
   accountProfileSchema,
   accountRelationSchema,
@@ -35,11 +36,11 @@ const accountRelationListResponseSchema = z.object({
 
 
 type AccountExecutionAdapter = {
-  listExecutionHistories: () => Promise<unknown>;
+  listExecutionHistories: (page?: number) => Promise<unknown>;
 };
 
 type AccountPostsAdapter = {
-  listPosts: () => Promise<unknown>;
+  listPosts: (page?: number) => Promise<unknown>;
 };
 
 type AccountProfileAdapter = {
@@ -47,7 +48,7 @@ type AccountProfileAdapter = {
 };
 
 type AccountLikesAdapter = {
-  listLikes: () => Promise<unknown>;
+  listLikes: (page?: number) => Promise<unknown>;
 };
 
 
@@ -66,15 +67,18 @@ export type AccountService = {
   getExecutionHistory: (executionId: string) => Promise<AccountExecutionHistory | null>;
   getProfile: () => Promise<AccountProfile | null>;
   listExecutionHistories: () => Promise<AccountExecutionSummary[]>;
+  listExecutionHistoriesPage?: (page: number) => Promise<PageResult<AccountExecutionSummary>>;
   listBlockedAccounts: () => Promise<AccountRelation[]>;
 
   listLikes: () => Promise<Routine[]>;
+  listLikesPage?: (page: number) => Promise<PageResult<Routine>>;
   listPosts: () => Promise<Routine[]>;
+  listPostsPage?: (page: number) => Promise<PageResult<Routine>>;
 };
 
 const accountExecutionApiAdapter: AccountExecutionAdapter = {
-  listExecutionHistories: async () => {
-    const response = await fetch('/api/my/routine-executions?page=1&number_of_items_per_page=20', { credentials: 'include', method: 'GET' });
+  listExecutionHistories: async (page = 1) => {
+    const response = await fetch(`/api/my/routine-executions?page=${page}&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' });
     if (response.status === 401) throw new AccountUnauthorizedError('Routine executions require authentication');
     if (!response.ok) throw new Error(`Failed to fetch routine executions: ${response.status}`);
     return response.json();
@@ -101,8 +105,8 @@ const accountProfileApiAdapter: AccountProfileAdapter = {
 };
 
 const accountLikesApiAdapter: AccountLikesAdapter = {
-  listLikes: async () => {
-    const response = await fetch('/api/my/likes?page=1&number_of_items_per_page=20', {
+  listLikes: async (page = 1) => {
+    const response = await fetch(`/api/my/likes?page=${page}&number_of_items_per_page=40`, {
       credentials: 'include',
       method: 'GET',
     });
@@ -137,8 +141,8 @@ const accountBlocksApiAdapter: AccountBlocksAdapter = {
 };
 
 const accountPostsApiAdapter: AccountPostsAdapter = {
-  listPosts: async () => {
-    const response = await fetch('/api/my/posts?page=1&number_of_items_per_page=20', {
+  listPosts: async (page = 1) => {
+    const response = await fetch(`/api/my/posts?page=${page}&number_of_items_per_page=40`, {
       credentials: 'include',
       method: 'GET',
     });
@@ -163,6 +167,10 @@ export function createAccountService(
 
   blocksAdapter: AccountBlocksAdapter = accountBlocksApiAdapter,
 ): AccountService {
+  const listExecutionHistoriesPage = async (page: number) => parseAccountRoutineExecutionsPage(await executionAdapter.listExecutionHistories(page));
+  const listLikesPage = async (page: number) => parseLikedRoutinesPage(await likesAdapter.listLikes(page));
+  const listPostsPage = async (page: number) => parseAccountPostsPage(await postsAdapter.listPosts(page));
+
   return {
     getExecutionHistory: async () => null,
     getProfile: async () => {
@@ -176,11 +184,14 @@ export function createAccountService(
         socialLinks: profile.social_links.map((link) => ({ socialType: link.social_type, socialUrl: link.social_url })),
       });
     },
-    listExecutionHistories: async () => parseAccountRoutineExecutions(await executionAdapter.listExecutionHistories()),
+    listExecutionHistories: async () => (await listExecutionHistoriesPage(1)).items,
+    listExecutionHistoriesPage,
     listBlockedAccounts: async () => parseAccountRelations(await blocksAdapter.listBlockedAccounts()),
 
-    listLikes: async () => parseLikedRoutines(await likesAdapter.listLikes()),
-    listPosts: async () => parseAccountPosts(await postsAdapter.listPosts()),
+    listLikes: async () => (await listLikesPage(1)).items,
+    listLikesPage,
+    listPosts: async () => (await listPostsPage(1)).items,
+    listPostsPage,
   };
 }
 

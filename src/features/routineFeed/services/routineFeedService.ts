@@ -1,8 +1,7 @@
 import { z } from 'zod';
 import { followingAccountSchema, routineSchema, type FollowingAccount, type Routine, type RoutineFeedTab } from '../domain/routine';
 
-const page = 1;
-const numberOfItemsPerPage = 20;
+const numberOfItemsPerPage = 40;
 
 const routineFeedResponseSchema = z.object({
   posts: z.array(z.object({
@@ -45,12 +44,13 @@ type RoutineFeedResponse = z.infer<typeof routineFeedResponseSchema>;
 export class RoutineFeedUnauthorizedError extends Error {}
 
 export type RoutineFeedAdapter = {
-  list: (tab: RoutineFeedTab) => Promise<unknown>;
+  list: (tab: RoutineFeedTab, page: number) => Promise<unknown>;
   listFollowingAccounts: () => Promise<unknown>;
 };
 
 export type RoutineFeedService = {
   list: (tab?: RoutineFeedTab) => Promise<Routine[]>;
+  listPage?: (tab: RoutineFeedTab, page: number) => Promise<{ items: Routine[]; total: number }>;
   listFollowingAccounts: () => Promise<FollowingAccount[]>;
 };
 
@@ -61,7 +61,7 @@ const paths: Record<RoutineFeedTab, string> = {
 };
 
 const routineFeedApiAdapter: RoutineFeedAdapter = {
-  list: async (tab) => {
+  list: async (tab, page) => {
     const searchParams = new URLSearchParams({
       number_of_items_per_page: String(numberOfItemsPerPage),
       page: String(page),
@@ -121,9 +121,15 @@ function toRoutine(post: RoutineFeedResponse['posts'][number]): Routine {
   });
 }
 
-export function createRoutineFeedService(adapter: RoutineFeedAdapter = routineFeedApiAdapter): RoutineFeedService {
+export function createRoutineFeedService(adapter: RoutineFeedAdapter = routineFeedApiAdapter): RoutineFeedService & Required<Pick<RoutineFeedService, 'listPage'>> {
+  const listPage = async (tab: RoutineFeedTab, page: number) => {
+    const response = routineFeedResponseSchema.parse(await adapter.list(tab, page));
+    return { items: response.posts.map(toRoutine), total: response.total };
+  };
+
   return {
-    list: async (tab = 'recommended') => routineFeedResponseSchema.parse(await adapter.list(tab)).posts.map(toRoutine),
+    list: async (tab = 'recommended') => (await listPage(tab, 1)).items,
+    listPage,
     listFollowingAccounts: async () => followingAccountsResponseSchema.parse(await adapter.listFollowingAccounts()).following_accounts.map((account) => followingAccountSchema.parse({
       accountIdentifier: account.account_identifier,
       bio: account.account_bio,

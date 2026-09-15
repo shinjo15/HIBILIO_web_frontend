@@ -50,6 +50,19 @@ describe('routineFeedService', () => {
     }]);
   });
 
+  it('ページ指定の結果を items と total で返し、従来の list は配列のまま維持する', async () => {
+    const list = vi.fn().mockResolvedValue(response);
+    const service = createRoutineFeedService({ list, listFollowingAccounts: async () => ({ following_accounts: [] }) });
+
+    await expect(service.listPage('recommended', 2)).resolves.toMatchObject({
+      items: [{ id: 'post-1' }],
+      total: 1,
+    });
+    await expect(service.list('recommended')).resolves.toHaveLength(1);
+    expect(list).toHaveBeenNthCalledWith(1, 'recommended', 2);
+    expect(list).toHaveBeenNthCalledWith(2, 'recommended', 1);
+  });
+
   it('フォロー中・おすすめ・人気の各APIを認証Cookieとページネーション付きで呼び出す', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ json: async () => response, ok: true });
     vi.stubGlobal('fetch', fetchMock);
@@ -57,16 +70,21 @@ describe('routineFeedService', () => {
     await routineFeedService.list('following');
     await routineFeedService.list('recommended');
     await routineFeedService.list('popular');
+    await routineFeedService.listPage('popular', 2);
 
-    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/following/posts?number_of_items_per_page=20&page=1', {
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/following/posts?number_of_items_per_page=40&page=1', {
       credentials: 'include',
       method: 'GET',
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/posts/favorite_tags?number_of_items_per_page=20&page=1', {
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/posts/favorite_tags?number_of_items_per_page=40&page=1', {
       credentials: 'include',
       method: 'GET',
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/posts/popular?number_of_items_per_page=20&page=1', {
+    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/posts/popular?number_of_items_per_page=40&page=1', {
+      credentials: 'include',
+      method: 'GET',
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(4, '/api/posts/popular?number_of_items_per_page=40&page=2', {
       credentials: 'include',
       method: 'GET',
     });

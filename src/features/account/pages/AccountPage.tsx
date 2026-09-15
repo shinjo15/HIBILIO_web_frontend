@@ -1,5 +1,5 @@
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type {
   AccountExecutionSummary,
@@ -17,6 +17,7 @@ import { routineLikeService, RoutineLikeUnauthorizedError, type RoutineLikeServi
 import { accountBlockService, AccountBlockError, AccountBlockUnauthorizedError, type AccountBlockService } from '../services/accountBlockService';
 import { accountFollowService, AccountFollowError, AccountFollowUnauthorizedError, type AccountFollowService } from '../services/accountFollowService';
 import messages from '../../../shared/message/message.json';
+import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
 import '../account.css';
 
 type AccountPageProps = { blockService?: AccountBlockService; followService?: AccountFollowService; isOwnAccount?: boolean; likeService?: RoutineLikeService; notFoundMessage?: string; onBack?: () => void; service?: AccountService };
@@ -31,9 +32,6 @@ const tabs: Array<{ label: string; value: AccountTab }> = [
 export function AccountPage({ blockService = accountBlockService, followService = accountFollowService, isOwnAccount = true, likeService = routineLikeService, notFoundMessage, onBack, service = accountService }: AccountPageProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<AccountProfile | null>(null);
-  const [posts, setPosts] = useState<Routine[]>([]);
-  const [executionHistories, setExecutionHistories] = useState<AccountExecutionSummary[]>([]);
-  const [likes, setLikes] = useState<Routine[]>([]);
   const [blockedAccounts, setBlockedAccounts] = useState<AccountRelation[]>([]);
   const [activeTab, setActiveTab] = useState<AccountTab>('posts');
   const [isLoading, setIsLoading] = useState(true);
@@ -49,8 +47,35 @@ export function AccountPage({ blockService = accountBlockService, followService 
   const [unblockError, setUnblockError] = useState(false);
   const [likingPostIdentifier, setLikingPostIdentifier] = useState<string | null>(null);
   const [likeAnimation, setLikeAnimation] = useState<{ postIdentifier: string; type: 'like' | 'unlike' } | null>(null);
-  const [likesStatus, setLikesStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
   const [blockedAccountsStatus, setBlockedAccountsStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
+
+  const handleListError = useCallback((error: unknown) => {
+    if (error instanceof AccountUnauthorizedError) {
+      clearAuthenticated();
+      navigate('/login');
+    }
+  }, [navigate]);
+  const fetchPostsPage = useCallback(async (page: number) => {
+    if (service.listPostsPage !== undefined) return service.listPostsPage(page);
+    const items = await service.listPosts();
+    return { items, total: items.length };
+  }, [service]);
+  const fetchLikesPage = useCallback(async (page: number) => {
+    if (service.listLikesPage !== undefined) return service.listLikesPage(page);
+    const items = await service.listLikes();
+    return { items, total: items.length };
+  }, [service]);
+  const fetchExecutionHistoriesPage = useCallback(async (page: number) => {
+    if (service.listExecutionHistoriesPage !== undefined) return service.listExecutionHistoriesPage(page);
+    const items = await service.listExecutionHistories();
+    return { items, total: items.length };
+  }, [service]);
+  const postsList = useInfiniteList({ enabled: activeTab === 'posts', fetchPage: fetchPostsPage, key: 'account-posts', onError: handleListError, preserveWhenDisabled: true });
+  const likesList = useInfiniteList({ enabled: activeTab === 'likes', fetchPage: fetchLikesPage, key: 'account-likes', onError: handleListError, preserveWhenDisabled: true });
+  const executionHistoriesList = useInfiniteList({ enabled: true, fetchPage: fetchExecutionHistoriesPage, key: 'account-execution-history', onError: handleListError, preserveWhenDisabled: true });
+  const posts = postsList.items;
+  const likes = likesList.items;
+  const executionHistories = executionHistoriesList.items;
 
   useEffect(() => {
     let cancelled = false;
@@ -79,13 +104,6 @@ export function AccountPage({ blockService = accountBlockService, followService 
         }
       });
 
-    service.listPosts().then((loadedPosts) => {
-      if (!cancelled) setPosts(loadedPosts);
-    }).catch(() => {});
-    service.listExecutionHistories().then((loadedExecutionHistories) => {
-      if (!cancelled) setExecutionHistories(loadedExecutionHistories);
-    }).catch(() => {});
-
     return () => { cancelled = true; };
   }, [navigate, service]);
 
@@ -112,25 +130,6 @@ export function AccountPage({ blockService = accountBlockService, followService 
       return;
     }
 
-    if (tab !== 'likes' || likesStatus !== 'idle') {
-      return;
-    }
-
-    setLikesStatus('loading');
-    service.listLikes()
-      .then((loadedLikes) => {
-        setLikes(loadedLikes);
-        setLikesStatus('loaded');
-      })
-      .catch((error: unknown) => {
-        if (error instanceof AccountUnauthorizedError) {
-          clearAuthenticated();
-          navigate('/login');
-          return;
-        }
-
-        setLikesStatus('error');
-      });
   }
 
   async function toggleLike(postIdentifier: string) {
@@ -141,8 +140,8 @@ export function AccountPage({ blockService = accountBlockService, followService 
     setLikingPostIdentifier(postIdentifier);
     setLikeAnimation({ postIdentifier, type });
     setLikeError(false);
-    setPosts((current) => current.map(updateLike));
-    setLikes((current) => current.map(updateLike));
+    postsList.setItems((current) => current.map(updateLike));
+    likesList.setItems((current) => current.map(updateLike));
     try {
       if (routine.liked) {
         await likeService.remove(postIdentifier);
@@ -151,8 +150,8 @@ export function AccountPage({ blockService = accountBlockService, followService 
       }
     } catch (error) {
       const rollback = (item: Routine) => item.id === postIdentifier ? routine : item;
-      setPosts((current) => current.map(rollback));
-      setLikes((current) => current.map(rollback));
+      postsList.setItems((current) => current.map(rollback));
+      likesList.setItems((current) => current.map(rollback));
       if (error instanceof RoutineLikeUnauthorizedError) {
         clearAuthenticated();
         navigate('/login');
@@ -244,10 +243,10 @@ export function AccountPage({ blockService = accountBlockService, followService 
 
   const tabCounts: Record<AccountTab, number | null> = {
     blockedAccounts: blockedAccountsStatus === 'loaded' ? blockedAccounts.length : null,
-    executionHistory: executionHistories.length,
+    executionHistory: executionHistoriesList.total ?? (executionHistoriesList.error ? executionHistories.length : null),
 
-    likes: likesStatus === 'loaded' ? likes.length : null,
-    posts: posts.length,
+    likes: likesList.total ?? (likesList.error ? likes.length : null),
+    posts: postsList.total ?? (postsList.error ? posts.length : null),
   };
   const displayedTabs = isOwnAccount ? tabs : tabs.slice(0, 3);
 
@@ -301,9 +300,9 @@ export function AccountPage({ blockService = accountBlockService, followService 
           </div>
         </section>
 
-        {activeTab === 'posts' && <AccountPostsList likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} onLike={toggleLike} posts={posts} />}
-        {activeTab === 'likes' && <AccountLikesList likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} likes={likes} onLike={toggleLike} status={likesStatus} />}
-        {activeTab === 'executionHistory' && <ExecutionHistoryList histories={executionHistories} />}
+        {activeTab === 'posts' && <AccountPostsList error={postsList.error} likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} onLike={toggleLike} posts={posts} retry={postsList.retry} sentinelRef={postsList.sentinelRef} />}
+        {activeTab === 'likes' && <AccountLikesList error={likesList.error} likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} likes={likes} onLike={toggleLike} retry={likesList.retry} sentinelRef={likesList.sentinelRef} status={likesList.total === null && !likesList.error ? 'loading' : likesList.error && likes.length === 0 ? 'error' : 'loaded'} />}
+        {activeTab === 'executionHistory' && <ExecutionHistoryList error={executionHistoriesList.error} histories={executionHistories} retry={executionHistoriesList.retry} sentinelRef={executionHistoriesList.sentinelRef} />}
         {activeTab === 'blockedAccounts' && <AccountRelationListState accounts={blockedAccounts} action={(account) => <button className="account-relation-card-with-action__button" disabled={unblockingAccountIdentifier === account.accountIdentifier} onClick={(event) => { event.stopPropagation(); void removeBlock(account); }} type="button"><BlockIcon />{unblockingAccountIdentifier === account.accountIdentifier ? messages.account.unblocking : messages.account.unblock}</button>} actionError={unblockError ? messages.account.unblockError : null} emptyMessage={messages.account.blockedAccountsEmpty} errorMessage={messages.account.blockedAccountsError} loadingMessage={messages.account.blockedAccountsLoading} status={blockedAccountsStatus} />}
       </div>
     </section>
@@ -318,7 +317,8 @@ function BlockIcon() {
   return <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="m4.93 4.93 14.14 14.14" /></svg>;
 }
 
-function ExecutionHistoryList({ histories }: { histories: AccountExecutionSummary[] }) {
+function ExecutionHistoryList({ error, histories, retry, sentinelRef }: { error: boolean; histories: AccountExecutionSummary[]; retry: () => void; sentinelRef: (element: Element | null) => void | (() => void) }) {
+  if (error && histories.length === 0) return <p className="account-page__state account-page__state--error">{messages.account.error} <button onClick={retry} type="button">再試行</button></p>;
   if (histories.length === 0) {
     return <p className="account-page__state">{messages.account.executionHistoryEmpty}</p>;
   }
@@ -339,7 +339,7 @@ function ExecutionHistoryList({ histories }: { histories: AccountExecutionSummar
         </div>
       </article>
     );
-  })}</div>;
+  })}{error && <p className="account-page__state account-page__state--error">{messages.account.error} <button onClick={retry} type="button">再試行</button></p>}<div aria-label="さらに読み込む" ref={sentinelRef} /></div>;
 }
 
 function AccountRelationListState({ accounts, action, actionError, emptyMessage, errorMessage, loadingMessage, status }: { accounts: AccountRelation[]; action: (account: AccountRelation) => ReactNode; actionError: string | null; emptyMessage: string; errorMessage: string; loadingMessage: string; status: 'idle' | 'loading' | 'loaded' | 'error' }) {

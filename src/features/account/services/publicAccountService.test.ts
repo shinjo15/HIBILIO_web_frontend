@@ -31,4 +31,44 @@ describe('createPublicAccountService', () => {
 
     await expect(createPublicAccountService().get('missing-account')).resolves.toBeNull();
   });
+
+  it('公開投稿・いいね・実行履歴のページ結果を返す', async () => {
+    const post = {
+      account_identifier: '11111111-1111-4111-8111-111111111111',
+      account_name: '投稿者',
+      customization_count: 1,
+      execution_count: 3,
+      post_identifier: 'post-1',
+      post_like_count: 2,
+      post_support_count: 4,
+      posted_at: '2026-09-03T12:00:00+00:00',
+      routine_actions: [],
+      routine_execution_minutes: 30,
+      routine_identifier: 'routine-1',
+      routine_name: '朝の集中ルーティン',
+      tags: [],
+    };
+    const execution = {
+      executedActionCount: 2,
+      postedAt: '2026-09-03T12:00:00+00:00',
+      routineExecutionIdentifier: 'execution-1',
+      routineExecutionMemo: '集中できました',
+      routineIdentifier: 'routine-1',
+      routineName: '朝の集中ルーティン',
+      supportCount: 3,
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [post], total: 3 })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [{ ...post, liked_at: '2026-09-04T12:00:00+00:00' }], total: 4 })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [execution], total: 5 })));
+    vi.stubGlobal('fetch', fetchMock);
+    const service = createPublicAccountService();
+
+    await expect(service.listPostsPage?.('account-1', 2)).resolves.toMatchObject({ items: [{ id: 'post-1' }], total: 3 });
+    await expect(service.listLikesPage?.('account-1', 3)).resolves.toMatchObject({ items: [{ id: 'post-1' }], total: 4 });
+    await expect(service.listExecutionHistoriesPage?.('account-1', 4)).resolves.toMatchObject({ items: [{ id: 'execution-1' }], total: 5 });
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/accounts/account-1/posts?page=2&number_of_items_per_page=40');
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/accounts/account-1/likes?page=3&number_of_items_per_page=40');
+    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/accounts/account-1/routine-executions?page=4&number_of_items_per_page=40');
+  });
 });
