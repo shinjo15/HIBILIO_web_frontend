@@ -71,7 +71,7 @@ export function AccountPage({ blockService = accountBlockService, followService 
     return { items, total: items.length };
   }, [service]);
   const postsList = useInfiniteList({ enabled: activeTab === 'posts', fetchPage: fetchPostsPage, key: 'account-posts', onError: handleListError, preserveWhenDisabled: true });
-  const likesList = useInfiniteList({ enabled: activeTab === 'likes', fetchPage: fetchLikesPage, key: 'account-likes', onError: handleListError, preserveWhenDisabled: true });
+  const likesList = useInfiniteList({ enabled: isOwnAccount || activeTab === 'likes', fetchPage: fetchLikesPage, key: 'account-likes', onError: handleListError, preserveWhenDisabled: true });
   const executionHistoriesList = useInfiniteList({ enabled: true, fetchPage: fetchExecutionHistoriesPage, key: 'account-execution-history', onError: handleListError, preserveWhenDisabled: true });
   const posts = postsList.items;
   const likes = likesList.items;
@@ -107,29 +107,33 @@ export function AccountPage({ blockService = accountBlockService, followService 
     return () => { cancelled = true; };
   }, [navigate, service]);
 
-  function selectTab(tab: AccountTab) {
-    setActiveTab(tab);
+  useEffect(() => {
+    if (!isOwnAccount) return;
 
-
-    if (tab === 'blockedAccounts' && blockedAccountsStatus === 'idle') {
-      setBlockedAccountsStatus('loading');
-      service.listBlockedAccounts()
-        .then((loadedAccounts) => {
+    let cancelled = false;
+    service.listBlockedAccounts()
+      .then((loadedAccounts) => {
+        if (!cancelled) {
           setBlockedAccounts(loadedAccounts);
           setBlockedAccountsStatus('loaded');
-        })
-        .catch((error: unknown) => {
-          if (error instanceof AccountUnauthorizedError) {
-            clearAuthenticated();
-            navigate('/login');
-            return;
-          }
+        }
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        if (error instanceof AccountUnauthorizedError) {
+          clearAuthenticated();
+          navigate('/login');
+          return;
+        }
 
-          setBlockedAccountsStatus('error');
-        });
-      return;
-    }
+        setBlockedAccountsStatus('error');
+      });
 
+    return () => { cancelled = true; };
+  }, [isOwnAccount, navigate, service]);
+
+  function selectTab(tab: AccountTab) {
+    setActiveTab(tab);
   }
 
   async function toggleLike(postIdentifier: string) {

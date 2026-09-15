@@ -53,6 +53,22 @@ afterEach(() => {
 });
 
 describe('AccountPage', () => {
+  it('初期表示でいいねとブロック中を取得し、それぞれの件数を表示する', async () => {
+    const listLikesPage = vi.fn().mockResolvedValue({ items: [likedPost], total: 4 });
+    const listBlockedAccounts = vi.fn().mockResolvedValue([
+      { accountIdentifier: '22222222-2222-4222-8222-222222222222', bio: null, name: 'ブロック中のアカウント' },
+      { accountIdentifier: '33333333-3333-4333-8333-333333333333', bio: null, name: 'もう一人のブロック中アカウント' },
+    ]);
+    renderPage({ ...service, listBlockedAccounts, listLikesPage });
+
+    await screen.findByRole('heading', { name: '山田 由紀' });
+
+    await waitFor(() => expect(listLikesPage).toHaveBeenCalledWith(1));
+    await waitFor(() => expect(listBlockedAccounts).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole('tab', { name: '4いいね' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '2ブロック中' })).toBeInTheDocument();
+  });
+
   it('プロフィールと投稿を表示し、投稿からルーティン詳細へ遷移する', async () => {
     const user = userEvent.setup();
     renderPage();
@@ -61,7 +77,7 @@ describe('AccountPage', () => {
     expect(await screen.findByRole('heading', { name: '山田 由紀' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '編集' })).toBeInTheDocument();
     expect(screen.queryByText('11111111-1111-4111-8111-111111111111')).not.toBeInTheDocument();
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['1投稿', '-いいね', '1実行履歴', '-ブロック中']);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['1投稿', '1いいね', '1実行履歴', '0ブロック中']);
 
     await user.click(screen.getByRole('link', { name: '朝の集中ルーティン' }));
     expect(screen.getByText('/routines/routine-1')).toBeInTheDocument();
@@ -91,6 +107,7 @@ describe('AccountPage', () => {
 
     await screen.findByRole('heading', { name: '山田 由紀' });
     await screen.findByRole('heading', { name: '朝の集中ルーティン' });
+    await waitFor(() => expect(listLikesPage).toHaveBeenCalledTimes(1));
     notifyIntersection?.();
     expect(await screen.findByRole('heading', { name: '夜の読書ルーティン' })).toBeInTheDocument();
     notifyIntersection?.();
@@ -98,7 +115,7 @@ describe('AccountPage', () => {
 
     await user.click(screen.getByRole('tab', { name: /いいね/ }));
     expect(await screen.findByRole('heading', { name: '夜の読書ルーティン' })).toBeInTheDocument();
-    expect(listLikesPage).toHaveBeenCalledWith(1);
+    expect(listLikesPage).toHaveBeenCalledTimes(1);
     await user.click(screen.getByRole('tab', { name: /投稿/ }));
     expect(screen.getByRole('heading', { name: '夜の読書ルーティン' })).toBeInTheDocument();
     expect(listPostsPage).toHaveBeenCalledTimes(2);
