@@ -123,6 +123,7 @@
 
 .account-profile__actions {
   display: flex;
+  gap: 8px;
   justify-content: flex-end;
   min-height: 36px;
 }
