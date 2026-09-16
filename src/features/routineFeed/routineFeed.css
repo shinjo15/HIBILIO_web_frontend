@@ -265,6 +265,16 @@
   gap: 2px;
 }
 
+.routine-feed-page .MuiIconButton-root.routine-card__more {
+  color: var(--hibilio-color-muted-text);
+  margin: -6px -8px -2px 0;
+}
+
+.routine-feed-page .MuiIconButton-root.routine-card__more:hover {
+  background: transparent;
+  color: var(--hibilio-color-on-background);
+}
+
 .routine-feed-page .routine-card__duration {
   align-items: center;
   display: flex;

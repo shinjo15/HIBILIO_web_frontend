@@ -8,10 +8,12 @@ import { useNavigate } from 'react-router-dom';
 import { RoutineCard } from '../components/RoutineCard';
 import { FeedAdvertisement } from '../components/feedAdvertisement';
 import { shouldInsertFeedAdvertisement } from '../components/feedAdvertisementPlacement';
+import { ReportDialog } from '../../report/components/ReportDialog';
 import type { FollowingAccount, Routine, RoutineFeedTab } from '../domain/routine';
 import { routineFeedService, RoutineFeedUnauthorizedError, type RoutineFeedService } from '../services/routineFeedService';
 import { routineLikeService, RoutineLikeUnauthorizedError, type RoutineLikeService } from '../services/routineLikeService';
 import { clearAuthenticated, isAuthenticated as hasAuthenticatedSession } from '../../auth/services/authSession';
+import { AccountUnauthorizedError, accountService } from '../../account/services/accountService';
 import { AccountRelationList } from '../../../shared/components/AccountRelationList';
 import { HibilioMark } from '../../../shared/brand/HibilioMark';
 import messages from '../../../shared/message/message.json';
@@ -39,6 +41,19 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
   const [likingPostIdentifier, setLikingPostIdentifier] = useState<string | null>(null);
   const [likeAnimation, setLikeAnimation] = useState<{ postIdentifier: string; type: 'like' | 'unlike' } | null>(null);
   const [likeError, setLikeError] = useState(false);
+  const [reportingRoutine, setReportingRoutine] = useState<Routine | null>(null);
+  const [currentAccountIdentifier, setCurrentAccountIdentifier] = useState<string | null | undefined>(authenticated ? undefined : null);
+
+  useEffect(() => {
+    if (!authenticated) return;
+    let cancelled = false;
+    accountService.getProfile().then((profile) => {
+      if (!cancelled) setCurrentAccountIdentifier(profile?.accountIdentifier ?? null);
+    }).catch((error: unknown) => {
+      if (!cancelled && error instanceof AccountUnauthorizedError) setCurrentAccountIdentifier(null);
+    });
+    return () => { cancelled = true; };
+  }, [authenticated]);
 
   const fetchRoutinePage = useCallback(async (page: number) => {
     if (service.listPage !== undefined) return service.listPage(activeTab as RoutineFeedTab, page);
@@ -183,11 +198,12 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
         {!routineList.isInitialLoading && activeTab !== 'followingAccounts' && routines.length > 0 && (
           <Stack className="routine-feed-list">
             {likeError && <Alert severity="error">{messages.routineFeed.likeError}</Alert>}
-            {routines.map((routine, index) => <div key={routine.id}><RoutineCard isLiking={likingPostIdentifier === routine.id} likeAnimation={likeAnimation?.postIdentifier === routine.id ? likeAnimation.type : null} onLike={toggleLike} routine={routine} />{shouldInsertFeedAdvertisement(index, true) && <FeedAdvertisement />}</div>)}
+            {routines.map((routine, index) => <div key={routine.id}><RoutineCard isLiking={likingPostIdentifier === routine.id} likeAnimation={likeAnimation?.postIdentifier === routine.id ? likeAnimation.type : null} onLike={toggleLike} onReport={!authenticated || currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId) ? setReportingRoutine : undefined} routine={routine} />{shouldInsertFeedAdvertisement(index, true) && <FeedAdvertisement />}</div>)}
             <Box aria-label="さらに読み込む" ref={routineList.sentinelRef} />
             <Box className="routine-feed-list__spacer" />
           </Stack>
         )}
+        {reportingRoutine !== null && <ReportDialog onClose={() => setReportingRoutine(null)} onUnauthorized={() => { clearAuthenticated(); navigate('/login'); }} open targetAccountIdentifier={reportingRoutine.accountId} targetPostIdentifier={reportingRoutine.id} />}
         </Box>
       </Box>
     </Box>

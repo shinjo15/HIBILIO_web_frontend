@@ -37,5 +37,5 @@ export function PublicAccountPage({ blockService = accountBlockService, currentA
     return () => { cancelled = true; };
   }, [currentAccountService]);
 
-  return <AccountPage blockService={blockService} followService={followService} isOwnAccount={false} notFoundMessage={messages.publicAccount.notFound} onBack={() => navigate(-1)} service={accountService} showPublicActions={currentAccountIdentifier !== undefined && currentAccountIdentifier !== accountId} />;
+  return <AccountPage blockService={blockService} currentAccountIdentifier={currentAccountIdentifier} followService={followService} isOwnAccount={false} notFoundMessage={messages.publicAccount.notFound} onBack={() => navigate(-1)} service={accountService} showPublicActions={currentAccountIdentifier !== undefined && currentAccountIdentifier !== accountId} />;
 }

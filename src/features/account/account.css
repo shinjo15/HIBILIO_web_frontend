@@ -182,6 +182,18 @@
   background: var(--hibilio-color-muted);
 }
 
+.account-profile__actions .MuiIconButton-root.account-page__more {
+  border: 1px solid var(--hibilio-color-border);
+  color: var(--hibilio-color-muted-text);
+  height: 36px;
+  width: 36px;
+}
+
+.account-profile__actions .MuiIconButton-root.account-page__more:hover {
+  background: var(--hibilio-color-muted);
+  color: var(--hibilio-color-on-background);
+}
+
 .account-page__block-error {
   color: var(--hibilio-color-primary);
   font-size: 12px;

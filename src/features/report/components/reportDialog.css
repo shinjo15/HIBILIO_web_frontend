@@ -1,0 +1,18 @@
+.report-dialog__description {
+  color: var(--hibilio-color-muted-text);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.report-dialog__error {
+  color: var(--hibilio-color-primary);
+  font-size: 14px;
+  margin: 8px 0 0;
+}
+
+.report-dialog__success {
+  color: var(--hibilio-color-on-background);
+  line-height: 1.5;
+  margin: 8px 0;
+}
