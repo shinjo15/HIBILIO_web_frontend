@@ -47,6 +47,10 @@
   position: relative;
 }
 
+.profile-edit__header-image .account-header-image {
+  border-radius: 0;
+}
+
 .profile-edit__header-image label {
   align-items: center;
   background: color-mix(in srgb, var(--hibilio-color-on-background) 30%, transparent);

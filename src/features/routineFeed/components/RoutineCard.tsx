@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import messages from '../../../shared/message/message.json';
 import { formatDuration, formatPostedAt, type Routine } from '../domain/routine';
+import { AccountAvatar } from '../../../shared/components/AccountImage';
 
 type RoutineCardProps = {
   likeAnimation?: 'like' | 'unlike' | null;
@@ -36,9 +37,7 @@ export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, ro
       <Box className="routine-card__content">
           <Stack className="routine-card__header">
             <Stack className="routine-card__author">
-              <Box aria-hidden="true" className={`routine-card__avatar ${avatarClass}`}>
-                {avatarInitial}
-              </Box>
+              <AccountAvatar className={`routine-card__avatar ${avatarClass}`} iconImageUrl={routine.iconImageUrl ?? null} initial={avatarInitial} />
               <Typography className="routine-card__handle"><Link className="routine-card__author-link" to={`/accounts/${routine.accountId}`}>{routine.authorName}</Link></Typography>
             </Stack>
             <Stack className="routine-card__metadata">

@@ -7,6 +7,8 @@ const apiProfile = {
   account_bio: null,
   account_identifier: '11111111-1111-4111-8111-111111111111',
   account_name: 'ログインアカウント',
+  header_image_url: 'https://example.com/headers/account.webp',
+  icon_image_url: 'https://example.com/icons/account.webp',
   favorite_tags: [{ tag_identifier: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', tag_name: '朝活' }],
   social_links: [{ social_type: 'x', social_url: 'https://x.com/example' }],
   ui_mode: 'system',
@@ -34,6 +36,8 @@ describe('createProfileEditService', () => {
 
     await expect(service.load()).resolves.toEqual({
       ...editableProfile,
+      headerImageUrl: 'https://example.com/headers/account.webp',
+      iconImageUrl: 'https://example.com/icons/account.webp',
       name: 'ログインアカウント',
       socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/example' }],
     });

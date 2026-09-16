@@ -7,6 +7,7 @@ const routineFeedResponseSchema = z.object({
   posts: z.array(z.object({
     account_identifier: z.string().uuid(),
     account_name: z.string().min(1),
+    icon_image_url: z.string().url().nullish().transform((url) => url ?? null),
     customization_count: z.number().int().nonnegative(),
     execution_count: z.number().int().nonnegative(),
     liked: z.boolean(),
@@ -36,6 +37,7 @@ const followingAccountsResponseSchema = z.object({
     account_bio: z.string().nullable(),
     account_identifier: z.string().min(1),
     account_name: z.string().min(1),
+    icon_image_url: z.string().url().nullish().transform((url) => url ?? null),
   })),
 });
 
@@ -108,6 +110,7 @@ function toRoutine(post: RoutineFeedResponse['posts'][number]): Routine {
     durationMinutes: post.routine_execution_minutes,
     executions: post.execution_count,
     id: post.post_identifier,
+    iconImageUrl: post.icon_image_url,
     liked: post.liked,
     likes: post.post_like_count,
     routineId: post.routine_identifier,
@@ -133,6 +136,7 @@ export function createRoutineFeedService(adapter: RoutineFeedAdapter = routineFe
     listFollowingAccounts: async () => followingAccountsResponseSchema.parse(await adapter.listFollowingAccounts()).following_accounts.map((account) => followingAccountSchema.parse({
       accountIdentifier: account.account_identifier,
       bio: account.account_bio,
+      iconImageUrl: account.icon_image_url,
       name: account.account_name,
     })),
   };

@@ -91,6 +91,10 @@
   position: relative;
 }
 
+.account-profile__banner .account-header-image {
+  border-radius: 0;
+}
+
 .account-profile__avatar {
   align-items: center;
   background-color: var(--hibilio-color-primary);
@@ -104,6 +108,7 @@
   height: 72px;
   justify-content: center;
   left: 20px;
+  overflow: hidden;
   position: absolute;
   width: 72px;
 }

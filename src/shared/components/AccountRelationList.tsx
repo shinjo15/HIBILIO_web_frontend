@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { AccountAvatar } from './AccountImage';
 import './accountRelationList.css';
 
 export type AccountRelationListItem = {
   accountIdentifier: string;
   bio: string | null;
+  iconImageUrl?: string | null;
   name: string;
 };
 
@@ -19,7 +21,7 @@ export function AccountRelationList({ accounts, action, className }: AccountRela
     <div className={className} role="tabpanel">
       {accounts.map((account) => {
         const card = <Link aria-label={account.name} className="account-relation-card" key={account.accountIdentifier} to={`/accounts/${account.accountIdentifier}`}>
-          <span aria-hidden="true" className="account-relation-card__avatar">{account.name.charAt(0)}</span>
+          <AccountAvatar className="account-relation-card__avatar" iconImageUrl={account.iconImageUrl ?? null} initial={account.name.charAt(0)} />
           <span className="account-relation-card__body">
             <strong className="account-relation-card__name">{account.name}</strong>
             {account.bio !== null && <span className="account-relation-card__bio">{account.bio}</span>}

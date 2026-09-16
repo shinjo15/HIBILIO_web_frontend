@@ -16,6 +16,8 @@ const getMyAccountResponseSchema = z.object({
   account_bio: z.string().nullable(),
   account_identifier: z.string().min(1),
   account_name: z.string().min(1),
+  header_image_url: z.string().url().nullish().transform((url) => url ?? null),
+  icon_image_url: z.string().url().nullish().transform((url) => url ?? null),
   favorite_tags: z.array(z.object({
     tag_identifier: z.string().min(1),
     tag_name: z.string().min(1),
@@ -31,6 +33,7 @@ const accountRelationListResponseSchema = z.object({
     account_bio: z.string().nullable(),
     account_identifier: z.string().min(1),
     account_name: z.string().min(1),
+    icon_image_url: z.string().url().nullish().transform((url) => url ?? null),
   })),
 });
 
@@ -179,7 +182,9 @@ export function createAccountService(
         accountIdentifier: profile.account_identifier,
         bio: profile.account_bio,
         favoriteTags: profile.favorite_tags.map((tag) => ({ id: tag.tag_identifier, name: tag.tag_name })),
+        headerImageUrl: profile.header_image_url,
         initial: profile.account_name.charAt(0),
+        iconImageUrl: profile.icon_image_url,
         name: profile.account_name,
         socialLinks: profile.social_links.map((link) => ({ socialType: link.social_type, socialUrl: link.social_url })),
       });
@@ -199,6 +204,7 @@ function parseAccountRelations(response: unknown): AccountRelation[] {
   return accountRelationListResponseSchema.parse(response).blocks.map((account) => accountRelationSchema.parse({
     accountIdentifier: account.account_identifier,
     bio: account.account_bio,
+    iconImageUrl: account.icon_image_url,
     name: account.account_name,
   }));
 }

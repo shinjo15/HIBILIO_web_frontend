@@ -9,6 +9,8 @@ describe('createAccountService', () => {
       account_bio: null,
       account_identifier: '11111111-1111-4111-8111-111111111111',
       account_name: 'ログインアカウント',
+      header_image_url: 'https://example.com/headers/account.webp',
+      icon_image_url: 'https://example.com/icons/account.webp',
       favorite_tags: [{
         tag_identifier: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
         tag_name: '朝活',
@@ -25,7 +27,9 @@ describe('createAccountService', () => {
       accountIdentifier: '11111111-1111-4111-8111-111111111111',
       bio: null,
       favoriteTags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '朝活' }],
+      headerImageUrl: 'https://example.com/headers/account.webp',
       initial: 'ロ',
+      iconImageUrl: 'https://example.com/icons/account.webp',
       name: 'ログインアカウント',
       socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/example' }],
     });
@@ -69,6 +73,7 @@ describe('createAccountService', () => {
       durationMinutes: 30,
       executions: 3,
       id: 'post-1',
+      iconImageUrl: null,
       liked: false,
       likes: 2,
       routineId: 'routine-1',
@@ -111,6 +116,7 @@ describe('createAccountService', () => {
       durationMinutes: 30,
       executions: 3,
       id: 'post-1',
+      iconImageUrl: null,
       liked: true,
       likes: 2,
       routineId: 'routine-1',
@@ -160,6 +166,26 @@ describe('createAccountService', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/my/posts?page=2&number_of_items_per_page=40', { credentials: 'include', method: 'GET' });
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/my/likes?page=3&number_of_items_per_page=40', { credentials: 'include', method: 'GET' });
     expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/my/routine-executions?page=4&number_of_items_per_page=40', { credentials: 'include', method: 'GET' });
+  });
+
+  it('GET /api/my/blocks のicon_image_urlをブロック中アカウントへ変換する', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      blocks: [{
+        account_bio: 'ブロック中です',
+        account_identifier: '22222222-2222-4222-8222-222222222222',
+        account_name: 'ブロック中のアカウント',
+        icon_image_url: 'https://example.com/icons/blocked-account.webp',
+      }],
+    })));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createAccountService().listBlockedAccounts()).resolves.toEqual([{
+      accountIdentifier: '22222222-2222-4222-8222-222222222222',
+      bio: 'ブロック中です',
+      iconImageUrl: 'https://example.com/icons/blocked-account.webp',
+      name: 'ブロック中のアカウント',
+    }]);
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/blocks', { credentials: 'include', method: 'GET' });
   });
 
 

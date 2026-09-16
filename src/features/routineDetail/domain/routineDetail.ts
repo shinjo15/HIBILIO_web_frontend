@@ -17,6 +17,7 @@ export const executionPostDtoSchema = z.object({
   comment: z.string().optional(),
   date: z.string().min(1),
   id: z.string().min(1),
+  iconImageUrl: z.string().url().nullish(),
   minutes: z.number().int().positive().optional(),
   routineId: z.string().min(1),
   total: z.number().int().positive(),
@@ -28,6 +29,7 @@ export const customizationDtoSchema = z.object({
   authorName: z.string().min(1),
   description: z.string(),
   id: z.string().min(1),
+  iconImageUrl: z.string().url().nullish(),
   routineId: z.string().min(1),
   title: z.string().min(1),
 });
@@ -36,6 +38,7 @@ export const routineDetailDtoSchema = z.object({
   author: z.object({
     accountId: z.string().uuid(),
     handle: z.string(),
+    iconImageUrl: z.string().url().nullish(),
     name: z.string().min(1),
   }),
   customizations: z.number().int().nonnegative(),
@@ -57,7 +60,7 @@ export const routineDetailDtoSchema = z.object({
 export type RoutineDetailDto = z.infer<typeof routineDetailDtoSchema>;
 
 export type RoutineDetailViewModel = {
-  author: RoutineDetailDto['author'] & { initial: string };
+  author: RoutineDetailDto['author'] & { iconImageUrl: string | null; initial: string };
   customizations: number;
   customizationsTotal?: number;
   description: string;
@@ -71,6 +74,7 @@ export type RoutineDetailViewModel = {
     comment?: string;
     date: string;
     id: string;
+    iconImageUrl: string | null;
     minutes?: number;
     total: number;
     userHandle: string;
@@ -87,6 +91,7 @@ export type RoutineDetailViewModel = {
     authorName: string;
     description: string;
     id: string;
+    iconImageUrl: string | null;
     title: string;
   }>;
 };
@@ -97,14 +102,16 @@ export function toRoutineDetailViewModel(input: unknown): RoutineDetailViewModel
   return {
     author: {
       ...dto.author,
+      iconImageUrl: dto.author.iconImageUrl ?? null,
       initial: dto.author.handle.slice(0, 1).toUpperCase(),
     },
     customizations: dto.customizations,
     customizationsTotal: dto.customizationsTotal,
-    customizationsList: dto.customizationsList.map(({ authorName, description, id, title }) => ({
+    customizationsList: dto.customizationsList.map(({ authorName, description, id, iconImageUrl, title }) => ({
       authorName,
       description,
       id,
+      iconImageUrl: iconImageUrl ?? null,
       title,
     })),
     description: dto.description,
@@ -118,6 +125,7 @@ export function toRoutineDetailViewModel(input: unknown): RoutineDetailViewModel
       comment: post.comment,
       date: post.date,
       id: post.id,
+      iconImageUrl: post.iconImageUrl ?? null,
       minutes: post.minutes,
       total: post.total,
       userHandle: post.userHandle,

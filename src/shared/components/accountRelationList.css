@@ -94,6 +94,8 @@
   font-weight: 600;
   height: 40px;
   justify-content: center;
+  overflow: hidden;
+  position: relative;
   width: 40px;
 }
 

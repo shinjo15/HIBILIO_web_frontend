@@ -4,7 +4,9 @@ export const accountProfileSchema = z.object({
   accountIdentifier: z.string().min(1),
   bio: z.string().nullable(),
   favoriteTags: z.array(z.object({ id: z.string().min(1), name: z.string().min(1) })),
+  headerImageUrl: z.string().url().nullable().optional(),
   initial: z.string().min(1).max(1),
+  iconImageUrl: z.string().url().nullable().optional(),
   name: z.string().min(1),
   socialLinks: z.array(z.object({ socialType: z.string().min(1), socialUrl: z.string().url() })),
 });
@@ -12,6 +14,7 @@ export const accountProfileSchema = z.object({
 export const accountRelationSchema = z.object({
   accountIdentifier: z.string().min(1),
   bio: z.string().nullable(),
+  iconImageUrl: z.string().url().nullable().optional(),
   name: z.string().min(1),
 });
 

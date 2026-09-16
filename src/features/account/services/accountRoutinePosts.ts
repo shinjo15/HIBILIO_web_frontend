@@ -5,6 +5,7 @@ import type { PageResult } from '../../../shared/hooks/useInfiniteList';
 const routinePostResponseSchema = z.object({
   account_identifier: z.string().min(1),
   account_name: z.string().min(1),
+  icon_image_url: z.string().url().nullish().transform((url) => url ?? null),
   customization_count: z.number().int().nonnegative(),
   execution_count: z.number().int().nonnegative(),
   post_identifier: z.string().min(1),
@@ -46,6 +47,7 @@ function toRoutine(post: z.infer<typeof routinePostResponseSchema>, liked: boole
     durationMinutes: post.routine_execution_minutes,
     executions: post.execution_count,
     id: post.post_identifier,
+    iconImageUrl: post.icon_image_url,
     liked,
     likes: post.post_like_count,
     routineId: post.routine_identifier,

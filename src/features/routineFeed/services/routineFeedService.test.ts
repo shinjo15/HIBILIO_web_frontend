@@ -5,6 +5,7 @@ const response = {
   posts: [{
     account_identifier: '10000000-0000-4000-8000-000000000001',
     account_name: '田中 陽介',
+    icon_image_url: 'https://example.com/icons/tanaka.webp',
     customization_count: 3,
     execution_count: 12,
     liked: true,
@@ -40,6 +41,7 @@ describe('routineFeedService', () => {
       durationMinutes: 25,
       executions: 12,
       id: 'post-1',
+      iconImageUrl: 'https://example.com/icons/tanaka.webp',
       liked: true,
       likes: 14,
       routineId: 'routine-1',
@@ -103,6 +105,7 @@ describe('routineFeedService', () => {
     await expect(routineFeedService.listFollowingAccounts()).resolves.toEqual([{
       accountIdentifier: '22222222-2222-4222-8222-222222222222',
       bio: '朝の時間を大切にしています。',
+      iconImageUrl: null,
       name: '田中 花子',
     }]);
     expect(fetchMock).toHaveBeenCalledWith('/api/my/following', { credentials: 'include', method: 'GET' });

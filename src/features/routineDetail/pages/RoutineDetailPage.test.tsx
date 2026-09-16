@@ -6,7 +6,7 @@ import { RoutineDetailPage } from './RoutineDetailPage';
 import { createRoutineDetailService, type RoutineDetailService } from '../services/routineDetailService';
 
 const detail = {
-  author: { accountId: '10000000-0000-4000-8000-000000000002', handle: 'routine-owner', name: 'ルーティン作者' },
+  author: { accountId: '10000000-0000-4000-8000-000000000002', handle: 'routine-owner', iconImageUrl: 'https://example.com/icons/owner.webp', name: 'ルーティン作者' },
   customizations: 2,
   customizationsList: [],
   description: 'ルーティンの詳しい説明です。',
@@ -20,6 +20,7 @@ const detail = {
       comment: '続けられました',
       date: '今日',
       id: 'execution-1',
+      iconImageUrl: 'https://example.com/icons/executor.webp',
       minutes: 25,
       routineId: 'routine-1',
       total: 2,
@@ -61,6 +62,7 @@ describe('RoutineDetailPage', () => {
     renderPage(service);
 
     expect(await screen.findByRole('heading', { name: 'テストルーティン' })).toBeInTheDocument();
+    expect(screen.getByAltText('')).toHaveAttribute('src', 'https://example.com/icons/owner.webp');
     expect(screen.getByRole('link', { name: 'ルーティン作者' })).toHaveAttribute('href', '/accounts/10000000-0000-4000-8000-000000000002');
     expect(screen.getByRole('link', { name: 'ルーティン作者' })).toHaveClass('routine-detail-author__link');
     expect(screen.queryByText('ルーティンの詳しい説明です。')).not.toBeInTheDocument();
