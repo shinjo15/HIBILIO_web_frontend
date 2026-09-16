@@ -13,6 +13,8 @@ export function useAccountRegistration(onRegistered: () => void, isSocialRegistr
   const [emailAddress, setEmailAddress] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [favoriteTagIdentifiers, setFavoriteTagIdentifiers] = useState<string[]>([]);
+  const [headerImage, setHeaderImage] = useState<File | null>(null);
+  const [iconImage, setIconImage] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passcode, setPasscode] = useState('');
   const [pickupTags, setPickupTags] = useState<PickupTag[]>([]);
@@ -57,7 +59,7 @@ export function useAccountRegistration(onRegistered: () => void, isSocialRegistr
     setErrorMessage(null);
     setIsSubmitting(true);
     try {
-      await createAccount({ accountBio, accountName, favoriteTagIdentifiers, socialLinks });
+      await createAccount({ accountBio, accountName, favoriteTagIdentifiers, headerImage, iconImage, socialLinks });
       onRegistered();
     } catch (error) {
       setErrorMessage(error instanceof AuthenticationApiError ? error.message : messages.auth.accountRegistrationFailed);
@@ -82,5 +84,5 @@ export function useAccountRegistration(onRegistered: () => void, isSocialRegistr
   function returnToProfile(): void { setErrorMessage(null); setStep('profile'); }
   function returnToSocialLinks(): void { setErrorMessage(null); setStep('social'); }
 
-  return { accountBio, accountName, addSocialLink, continueToSocialLinks, continueToTags, emailAddress, errorMessage, favoriteTagIdentifiers, isSubmitting, passcode, pickupTags, removeSocialLink, returnToEmailAddress, returnToProfile, returnToSocialLinks, setAccountBio, setAccountName, setEmailAddress, setPasscode, setUserHandle, socialLinks, step, submitEmailAddress, submitFavoriteTags, submitPasscode, tagLoadError, toggleFavoriteTag, userHandle };
+  return { accountBio, accountName, addSocialLink, continueToSocialLinks, continueToTags, emailAddress, errorMessage, favoriteTagIdentifiers, headerImage, iconImage, isSubmitting, passcode, pickupTags, removeSocialLink, returnToEmailAddress, returnToProfile, returnToSocialLinks, setAccountBio, setAccountName, setEmailAddress, setHeaderImage, setIconImage, setPasscode, setUserHandle, socialLinks, step, submitEmailAddress, submitFavoriteTags, submitPasscode, tagLoadError, toggleFavoriteTag, userHandle };
 }

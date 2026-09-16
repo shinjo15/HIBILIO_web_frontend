@@ -76,6 +76,23 @@ describe('ProfileEditPage', () => {
     expect(await screen.findByText('/account')).toBeInTheDocument();
   });
 
+  it('選択したアイコン・ヘッダー画像をプレビューし、保存対象へ含める', async () => {
+    const user = userEvent.setup();
+    const save = vi.fn().mockResolvedValue(undefined);
+    const icon = new File(['icon'], 'icon.png', { type: 'image/png' });
+    const header = new File(['header'], 'header.webp', { type: 'image/webp' });
+    renderPage({ ...service, save });
+
+    await screen.findByDisplayValue('ログインアカウント');
+    await user.upload(screen.getByLabelText('ヘッダーを変更'), header);
+    await user.upload(screen.getByLabelText('アイコンを変更'), icon);
+
+    expect(screen.getByLabelText('ヘッダーを変更').closest('.profile-edit__header-image')).toHaveStyle({ backgroundImage: expect.stringContaining('blob:') });
+    expect(screen.getByLabelText('アイコンを変更').closest('.profile-edit__avatar')).toHaveStyle({ backgroundImage: expect.stringContaining('blob:') });
+    await user.click(screen.getAllByRole('button', { name: '保存' })[0]);
+    expect(save).toHaveBeenCalledWith({ ...editableProfile, headerImage: header, iconImage: icon });
+  });
+
   it('保存が401なら認証状態を削除してログインへ遷移する', async () => {
     const user = userEvent.setup();
     markAuthenticated();
