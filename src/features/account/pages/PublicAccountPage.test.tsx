@@ -1,10 +1,11 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PublicAccountPage } from './PublicAccountPage';
 import { createPublicAccountService, type PublicAccountService } from '../services/publicAccountService';
 import type { AccountBlockService } from '../services/accountBlockService';
+import type { AccountService } from '../services/accountService';
 import { AccountFollowError, AccountFollowUnauthorizedError, type AccountFollowService } from '../services/accountFollowService';
 import { isAuthenticated, markAuthenticated } from '../../auth/services/authSession';
 
@@ -16,11 +17,11 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function renderPage(service: PublicAccountService, path = '/accounts/account-1', blockService?: AccountBlockService, followService?: AccountFollowService) {
+function renderPage(service: PublicAccountService, path = '/accounts/account-1', blockService?: AccountBlockService, followService?: AccountFollowService, currentAccountService: Pick<AccountService, 'getProfile'> = { getProfile: async () => null }) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route element={<PublicAccountPage blockService={blockService} followService={followService} service={service} />} path="/accounts/:accountId" />
+        <Route element={<PublicAccountPage blockService={blockService} currentAccountService={currentAccountService} followService={followService} service={service} />} path="/accounts/:accountId" />
         <Route element={<Location />} path="/login" />
       </Routes>
     </MemoryRouter>,
@@ -49,6 +50,30 @@ describe('PublicAccountPage', () => {
     expect(screen.getByText('朝活')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /example/ })).toHaveAttribute('href', 'https://x.com/example');
     expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['0投稿', '-いいね', '0実行履歴']);
+  });
+
+  it('ログイン中の自分の公開プロフィールではフォロー・ブロック操作を表示しない', async () => {
+    const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '自分', favorite_tags: [], social_links: [] }) });
+    const currentAccountService: Pick<AccountService, 'getProfile'> = {
+      getProfile: async () => ({ accountIdentifier: 'account-1', bio: null, favoriteTags: [], initial: '自', name: '自分', socialLinks: [] }),
+    };
+
+    renderPage(service, '/accounts/account-1', undefined, undefined, currentAccountService);
+
+    expect(await screen.findByRole('heading', { name: '自分' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'フォロー' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ブロック' })).not.toBeInTheDocument();
+  });
+
+  it('ログイン中アカウントの取得に失敗してもフォロー・ブロック操作を表示しない', async () => {
+    const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '自分', favorite_tags: [], social_links: [] }) });
+    const currentAccountService: Pick<AccountService, 'getProfile'> = { getProfile: async () => { throw new Error('network failure'); } };
+
+    renderPage(service, '/accounts/account-1', undefined, undefined, currentAccountService);
+
+    await screen.findByRole('heading', { name: '自分' });
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'フォロー' })).not.toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: 'ブロック' })).not.toBeInTheDocument();
   });
 
   it('公開投稿のページを末尾へ追加する', async () => {
