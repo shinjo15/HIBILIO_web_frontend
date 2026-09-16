@@ -1,3 +1,27 @@
+.report-dialog .MuiDialogTitle-root,
+.report-dialog .MuiDialogContent-root,
+.report-dialog .MuiDialogActions-root,
+.report-dialog .MuiButtonBase-root,
+.report-dialog .MuiFormLabel-root,
+.report-dialog .MuiInputBase-root,
+.report-dialog .MuiFormHelperText-root {
+  font-family: Inter, sans-serif;
+}
+
+.report-dialog .MuiDialogTitle-root {
+  font-size: 18px;
+  font-weight: 600;
+  padding: 16px 16px 8px;
+}
+
+.report-dialog .MuiDialogContent-root {
+  padding: 8px 16px 12px;
+}
+
+.report-dialog .MuiDialogActions-root {
+  padding: 8px 16px 12px;
+}
+
 .report-dialog__description {
   color: var(--hibilio-color-muted-text);
   font-size: 14px;
