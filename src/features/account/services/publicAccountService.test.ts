@@ -53,13 +53,13 @@ describe('createPublicAccountService', () => {
       tags: [],
     };
     const execution = {
-      executedActionCount: 2,
-      postedAt: '2026-09-03T12:00:00+00:00',
-      routineExecutionIdentifier: 'execution-1',
-      routineExecutionMemo: '集中できました',
-      routineIdentifier: 'routine-1',
-      routineName: '朝の集中ルーティン',
-      supportCount: 3,
+      executed_action_count: 2,
+      posted_at: '2026-09-03T12:00:00+00:00',
+      routine_execution_identifier: 'execution-1',
+      routine_execution_memo: '集中できました',
+      routine_identifier: 'routine-1',
+      routine_name: '朝の集中ルーティン',
+      support_count: 3,
     };
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ items: [post], total: 3 })))
