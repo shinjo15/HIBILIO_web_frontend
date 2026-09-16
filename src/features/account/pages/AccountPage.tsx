@@ -1,6 +1,8 @@
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { IconButton, Menu, MenuItem } from '@mui/material';
+import { IconButton, ListItemIcon, Menu, MenuItem } from '@mui/material';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type {
@@ -312,7 +314,7 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
             ))}
           </div>
         </section>
-        {!isOwnAccount && <><Menu anchorEl={actionMenuAnchor} id="account-action-menu" onClose={() => setActionMenuAnchor(null)} open={actionMenuAnchor !== null}><MenuItem disabled={isBlocking || isBlocked} onClick={() => { setActionMenuAnchor(null); void blockAccount(); }}>{isBlocking ? messages.publicAccount.blocking : isBlocked ? messages.publicAccount.blocked : messages.report.accountMenuBlock}</MenuItem><MenuItem onClick={() => { setActionMenuAnchor(null); setIsReportDialogOpen(true); }}>{messages.report.accountMenuReport}</MenuItem></Menu><ReportDialog onClose={() => setIsReportDialogOpen(false)} onUnauthorized={() => { clearAuthenticated(); navigate('/login'); }} open={isReportDialogOpen} service={reportService} targetAccountIdentifier={profile.accountIdentifier} /></>}
+        {!isOwnAccount && <><Menu anchorEl={actionMenuAnchor} id="account-action-menu" onClose={() => setActionMenuAnchor(null)} open={actionMenuAnchor !== null}><MenuItem disabled={isBlocking || isBlocked} onClick={() => { setActionMenuAnchor(null); void blockAccount(); }}><ListItemIcon><BlockOutlinedIcon fontSize="small" /></ListItemIcon>{isBlocking ? messages.publicAccount.blocking : isBlocked ? messages.publicAccount.blocked : messages.report.accountMenuBlock}</MenuItem><MenuItem onClick={() => { setActionMenuAnchor(null); setIsReportDialogOpen(true); }}><ListItemIcon><FlagOutlinedIcon fontSize="small" /></ListItemIcon>{messages.report.accountMenuReport}</MenuItem></Menu><ReportDialog onClose={() => setIsReportDialogOpen(false)} onUnauthorized={() => { clearAuthenticated(); navigate('/login'); }} open={isReportDialogOpen} service={reportService} targetAccountIdentifier={profile.accountIdentifier} /></>}
 
         {activeTab === 'posts' && <AccountPostsList canReport={(routine) => isOwnAccount ? profile.accountIdentifier !== routine.accountId : currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId)} error={postsList.error} likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} onLike={toggleLike} onReport={setReportingRoutine} posts={posts} retry={postsList.retry} sentinelRef={postsList.sentinelRef} />}
         {activeTab === 'likes' && <AccountLikesList canReport={(routine) => isOwnAccount ? profile.accountIdentifier !== routine.accountId : currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId)} error={likesList.error} likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} likes={likes} onLike={toggleLike} onReport={setReportingRoutine} retry={likesList.retry} sentinelRef={likesList.sentinelRef} status={likesList.total === null && !likesList.error ? 'loading' : likesList.error && likes.length === 0 ? 'error' : 'loaded'} />}

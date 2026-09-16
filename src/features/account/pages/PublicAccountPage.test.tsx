@@ -127,7 +127,7 @@ describe('PublicAccountPage', () => {
     await screen.findByRole('heading', { name: '公開アカウント' });
 
     await user.click(screen.getByRole('button', { name: 'アカウントのメニュー' }));
-    await user.click(screen.getByRole('menuitem', { name: 'このアカウントをブロック' }));
+    await user.click(screen.getByRole('menuitem', { name: 'ブロック' }));
 
     expect(blockService.create).toHaveBeenCalledWith('account-1');
     await user.click(screen.getByRole('button', { name: 'アカウントのメニュー' }));
@@ -141,7 +141,7 @@ describe('PublicAccountPage', () => {
     await screen.findByRole('heading', { name: '公開アカウント' });
 
     await user.click(screen.getByRole('button', { name: 'アカウントのメニュー' }));
-    await user.click(screen.getByRole('menuitem', { name: 'このアカウントを通報' }));
+    await user.click(screen.getByRole('menuitem', { name: '通報' }));
 
     expect(screen.getByRole('heading', { name: 'このアカウントを通報' })).toBeInTheDocument();
   });
