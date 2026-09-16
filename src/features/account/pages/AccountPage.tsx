@@ -20,7 +20,7 @@ import messages from '../../../shared/message/message.json';
 import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
 import '../account.css';
 
-type AccountPageProps = { blockService?: AccountBlockService; followService?: AccountFollowService; isOwnAccount?: boolean; likeService?: RoutineLikeService; notFoundMessage?: string; onBack?: () => void; service?: AccountService };
+type AccountPageProps = { blockService?: AccountBlockService; followService?: AccountFollowService; isOwnAccount?: boolean; likeService?: RoutineLikeService; notFoundMessage?: string; onBack?: () => void; service?: AccountService; showPublicActions?: boolean };
 
 const tabs: Array<{ label: string; value: AccountTab }> = [
   { label: messages.account.tabs.posts, value: 'posts' },
@@ -29,7 +29,7 @@ const tabs: Array<{ label: string; value: AccountTab }> = [
   { label: messages.account.tabs.blockedAccounts, value: 'blockedAccounts' },
 ];
 
-export function AccountPage({ blockService = accountBlockService, followService = accountFollowService, isOwnAccount = true, likeService = routineLikeService, notFoundMessage, onBack, service = accountService }: AccountPageProps) {
+export function AccountPage({ blockService = accountBlockService, followService = accountFollowService, isOwnAccount = true, likeService = routineLikeService, notFoundMessage, onBack, service = accountService, showPublicActions = true }: AccountPageProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [blockedAccounts, setBlockedAccounts] = useState<AccountRelation[]>([]);
@@ -269,7 +269,7 @@ export function AccountPage({ blockService = accountBlockService, followService 
           <div className="account-profile__body">
             <div className="account-profile__actions">
               {isOwnAccount && <button className="account-page__edit" onClick={() => navigate('/account/edit')} type="button">{messages.account.edit}</button>}
-              {!isOwnAccount && <><button aria-label={isFollowing ? messages.publicAccount.following : isFollowed ? messages.publicAccount.followed : messages.publicAccount.follow} className={isFollowed ? 'account-page__follow account-page__follow--followed' : 'account-page__follow'} disabled={isFollowing || isFollowed} onClick={() => void followAccount()} type="button"><FollowIcon />{isFollowing ? messages.publicAccount.following : isFollowed ? messages.publicAccount.followed : messages.publicAccount.follow}</button><button aria-label={isBlocking ? messages.publicAccount.blocking : isBlocked ? messages.publicAccount.blocked : messages.publicAccount.block} className={isBlocked ? 'account-page__block account-page__block--blocked' : 'account-page__block'} disabled={isBlocking || isBlocked} onClick={() => void blockAccount()} type="button"><BlockIcon />{isBlocking ? messages.publicAccount.blocking : isBlocked ? messages.publicAccount.blocked : messages.publicAccount.block}</button></>}
+              {!isOwnAccount && showPublicActions && <><button aria-label={isFollowing ? messages.publicAccount.following : isFollowed ? messages.publicAccount.followed : messages.publicAccount.follow} className={isFollowed ? 'account-page__follow account-page__follow--followed' : 'account-page__follow'} disabled={isFollowing || isFollowed} onClick={() => void followAccount()} type="button"><FollowIcon />{isFollowing ? messages.publicAccount.following : isFollowed ? messages.publicAccount.followed : messages.publicAccount.follow}</button><button aria-label={isBlocking ? messages.publicAccount.blocking : isBlocked ? messages.publicAccount.blocked : messages.publicAccount.block} className={isBlocked ? 'account-page__block account-page__block--blocked' : 'account-page__block'} disabled={isBlocking || isBlocked} onClick={() => void blockAccount()} type="button"><BlockIcon />{isBlocking ? messages.publicAccount.blocking : isBlocked ? messages.publicAccount.blocked : messages.publicAccount.block}</button></>}
             </div>
             <div className="account-profile__details">
               <h1 className="account-profile__name">{profile.name}</h1>
