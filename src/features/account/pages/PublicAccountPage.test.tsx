@@ -45,7 +45,8 @@ describe('PublicAccountPage', () => {
     expect(backButton).toBeInTheDocument();
     expect(backButton.closest('header')).toHaveClass('account-page__header--public');
     expect(screen.getByRole('button', { name: 'フォロー' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'ブロック' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ブロック' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'アカウントのメニュー' })).toBeInTheDocument();
     expect(screen.getByText('朝の習慣を続けています。')).toBeInTheDocument();
     expect(screen.getByText('朝活')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /example/ })).toHaveAttribute('href', 'https://x.com/example');
@@ -62,7 +63,7 @@ describe('PublicAccountPage', () => {
 
     expect(await screen.findByRole('heading', { name: '自分' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'フォロー' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'ブロック' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'アカウントのメニュー' })).not.toBeInTheDocument();
   });
 
   it('ログイン中アカウントの取得に失敗してもフォロー・ブロック操作を表示しない', async () => {
@@ -73,7 +74,7 @@ describe('PublicAccountPage', () => {
 
     await screen.findByRole('heading', { name: '自分' });
     await waitFor(() => expect(screen.queryByRole('button', { name: 'フォロー' })).not.toBeInTheDocument());
-    expect(screen.queryByRole('button', { name: 'ブロック' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'アカウントのメニュー' })).not.toBeInTheDocument();
   });
 
   it('公開投稿のページを末尾へ追加する', async () => {
@@ -125,12 +126,24 @@ describe('PublicAccountPage', () => {
     renderPage(service, '/accounts/account-1', blockService);
     await screen.findByRole('heading', { name: '公開アカウント' });
 
-    await user.click(screen.getByRole('button', { name: 'ブロック' }));
+    await user.click(screen.getByRole('button', { name: 'アカウントのメニュー' }));
+    await user.click(screen.getByRole('menuitem', { name: 'ブロック' }));
 
     expect(blockService.create).toHaveBeenCalledWith('account-1');
-    const blockButton = screen.getByRole('button', { name: 'ブロック済み' });
-    expect(blockButton).toHaveClass('account-page__block--blocked');
-    expect(blockButton).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'アカウントのメニュー' }));
+    expect(screen.getByRole('menuitem', { name: 'ブロック済み' })).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('三点メニューからアカウント通報フォームを開く', async () => {
+    const user = userEvent.setup();
+    const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '公開アカウント', favorite_tags: [], social_links: [] }) });
+    renderPage(service);
+    await screen.findByRole('heading', { name: '公開アカウント' });
+
+    await user.click(screen.getByRole('button', { name: 'アカウントのメニュー' }));
+    await user.click(screen.getByRole('menuitem', { name: '通報' }));
+
+    expect(screen.getByRole('heading', { name: 'このアカウントを通報' })).toBeInTheDocument();
   });
 
   it('フォロー成功時に対象アカウントをフォロー中として表示する', async () => {

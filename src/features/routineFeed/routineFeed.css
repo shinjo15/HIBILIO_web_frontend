@@ -265,11 +265,32 @@
   gap: 2px;
 }
 
+.routine-feed-page .routine-card__metadata-top {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+}
+
+.routine-feed-page .MuiIconButton-root.routine-card__more {
+  color: var(--hibilio-color-muted-text);
+  margin: -6px -8px -6px 0;
+}
+
+.routine-feed-page .MuiIconButton-root.routine-card__more:hover {
+  background: transparent;
+  color: var(--hibilio-color-on-background);
+}
+
 .routine-feed-page .routine-card__duration {
   align-items: center;
   display: flex;
   flex-direction: row;
   gap: 4px;
+}
+
+.routine-feed-page .routine-card__execution-duration {
+  margin-bottom: 8px;
 }
 
 .routine-card__metadata-text {

@@ -1,18 +1,22 @@
-import { Box, Paper, Stack, Typography } from '@mui/material';
-import type { ReactNode } from 'react';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { Box, IconButton, Menu, MenuItem, Paper, Stack, Typography } from '@mui/material';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import messages from '../../../shared/message/message.json';
 import { formatDuration, formatPostedAt, type Routine } from '../domain/routine';
 import { AccountAvatar } from '../../../shared/components/AccountImage';
 
+
 type RoutineCardProps = {
   likeAnimation?: 'like' | 'unlike' | null;
   isLiking?: boolean;
   onLike?: (postIdentifier: string) => void;
+  onReport?: (routine: Routine) => void;
   routine: Routine;
 };
 
-export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, routine }: RoutineCardProps) {
+export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, onReport, routine }: RoutineCardProps) {
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const avatarClasses: Record<string, string> = {
     H: 'routine-card__avatar--h',
     N: 'routine-card__avatar--n',
@@ -41,16 +45,14 @@ export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, ro
               <Typography className="routine-card__handle"><Link className="routine-card__author-link" to={`/accounts/${routine.accountId}`}>{routine.authorName}</Link></Typography>
             </Stack>
             <Stack className="routine-card__metadata">
-              <Typography className="routine-card__metadata-text">{formatPostedAt(routine.createdAt)}</Typography>
-              {routine.durationMinutes !== null && (
-                <Stack className="routine-card__duration">
-                  <ClockIcon />
-                  <Typography className="routine-card__metadata-text">{formatDuration(routine.durationMinutes)}</Typography>
-                </Stack>
-              )}
+              <Stack className="routine-card__metadata-top">
+                <Typography className="routine-card__metadata-text">{formatPostedAt(routine.createdAt)}</Typography>
+                {onReport !== undefined && <IconButton aria-controls={menuAnchor !== null ? `routine-report-menu-${routine.id}` : undefined} aria-expanded={menuAnchor !== null} aria-haspopup="menu" aria-label={messages.report.postMenu} className="routine-card__more" onClick={(event) => { event.stopPropagation(); setMenuAnchor(event.currentTarget); }} size="small"><MoreVertIcon /></IconButton>}
+              </Stack>
             </Stack>
           </Stack>
 
+          {routine.durationMinutes !== null && <Stack className="routine-card__duration routine-card__execution-duration"><ClockIcon /><Typography className="routine-card__metadata-text">{formatDuration(routine.durationMinutes)}</Typography></Stack>}
           <Typography component="h2" className="routine-card__title">
             <Link className="routine-card__detail-link" to={`/routines/${routine.routineId}`}>{routine.title}</Link>
           </Typography>
@@ -75,6 +77,7 @@ export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, ro
             <ActionItem icon={<ShuffleIcon />} value={routine.customizations} />
           </Stack>
       </Box>
+      <Menu anchorEl={menuAnchor} id={`routine-report-menu-${routine.id}`} onClose={() => setMenuAnchor(null)} open={menuAnchor !== null}><MenuItem onClick={(event) => { event.stopPropagation(); setMenuAnchor(null); onReport?.(routine); }}>{messages.report.postMenuReport}</MenuItem></Menu>
     </Paper>
   );
 }

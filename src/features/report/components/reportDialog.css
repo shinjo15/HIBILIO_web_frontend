@@ -1,0 +1,42 @@
+.report-dialog .MuiDialogTitle-root,
+.report-dialog .MuiDialogContent-root,
+.report-dialog .MuiDialogActions-root,
+.report-dialog .MuiButtonBase-root,
+.report-dialog .MuiFormLabel-root,
+.report-dialog .MuiInputBase-root,
+.report-dialog .MuiFormHelperText-root {
+  font-family: Inter, sans-serif;
+}
+
+.report-dialog .MuiDialogTitle-root {
+  font-size: 18px;
+  font-weight: 600;
+  padding: 16px 16px 8px;
+}
+
+.report-dialog .MuiDialogContent-root {
+  padding: 8px 16px 12px;
+}
+
+.report-dialog .MuiDialogActions-root {
+  padding: 8px 16px 12px;
+}
+
+.report-dialog__description {
+  color: var(--hibilio-color-muted-text);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.report-dialog__error {
+  color: var(--hibilio-color-primary);
+  font-size: 14px;
+  margin: 8px 0 0;
+}
+
+.report-dialog__success {
+  color: var(--hibilio-color-on-background);
+  line-height: 1.5;
+  margin: 8px 0;
+}
