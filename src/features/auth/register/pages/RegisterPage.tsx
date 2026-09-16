@@ -2,7 +2,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { Alert, Button, IconButton } from '@mui/material';
 import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
 import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { HibilioMark } from '../../../../shared/brand/HibilioMark';
 import messages from '../../../../shared/message/message.json';
 import { useAccountRegistration } from '../hooks/useAccountRegistration';
@@ -10,8 +10,10 @@ import { registrationSocialPlatforms, type RegistrationSocialPlatform } from '..
 import './register.css';
 
 export function RegisterPage() {
+  const location = useLocation();
   const navigate = useNavigate();
-  const registration = useAccountRegistration(() => navigate('/login'));
+  const isSocialRegistration = new URLSearchParams(location.search).get('social_registration') === '1';
+  const registration = useAccountRegistration(() => navigate('/login'), isSocialRegistration);
   const [linkValue, setLinkValue] = useState('');
   const passcodeInputReferences = useRef<Array<HTMLInputElement | null>>([]);
   const [selectedSocialPlatform, setSelectedSocialPlatform] = useState<RegistrationSocialPlatform | null>(null);
@@ -82,6 +84,10 @@ export function RegisterPage() {
     }
 
     if (registration.step === 'profile') {
+      if (isSocialRegistration) {
+        navigate('/login');
+        return;
+      }
       registration.returnToEmailAddress();
       return;
     }

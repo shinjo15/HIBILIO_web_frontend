@@ -7,7 +7,7 @@ import { getPickupTags, type PickupTag } from '../services/pickupTagService';
 type RegistrationStep = 'email' | 'passcode' | 'profile' | 'social' | 'tags';
 type RegistrationSocialLink = CreateAccountInput['socialLinks'][number];
 
-export function useAccountRegistration(onRegistered: () => void) {
+export function useAccountRegistration(onRegistered: () => void, isSocialRegistration = false) {
   const [accountBio, setAccountBio] = useState('');
   const [accountName, setAccountName] = useState('');
   const [emailAddress, setEmailAddress] = useState('');
@@ -17,7 +17,7 @@ export function useAccountRegistration(onRegistered: () => void) {
   const [passcode, setPasscode] = useState('');
   const [pickupTags, setPickupTags] = useState<PickupTag[]>([]);
   const [socialLinks, setSocialLinks] = useState<RegistrationSocialLink[]>([]);
-  const [step, setStep] = useState<RegistrationStep>('email');
+  const [step, setStep] = useState<RegistrationStep>(isSocialRegistration ? 'profile' : 'email');
   const [tagLoadError, setTagLoadError] = useState(false);
   const [userHandle, setUserHandle] = useState('');
 

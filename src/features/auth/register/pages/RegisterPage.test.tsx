@@ -22,6 +22,14 @@ afterEach(() => {
 });
 
 describe('RegisterPage', () => {
+  it('ソーシャル新規登録ではプロフィール設定から開始する', () => {
+    render(<MemoryRouter initialEntries={['/sign-up?social_registration=1']}><RegisterPage /></MemoryRouter>);
+
+    expect(screen.getByRole('heading', { name: 'プロフィール設定' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('メールアドレス')).not.toBeInTheDocument();
+    expect(screen.queryByText('パスコードを送信')).not.toBeInTheDocument();
+  });
+
   it('メールアドレス入力からモック準拠のパスコード確認画面へ進む', async () => {
     const user = userEvent.setup();
 
