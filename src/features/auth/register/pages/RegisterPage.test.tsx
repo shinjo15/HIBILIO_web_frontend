@@ -87,6 +87,48 @@ describe('RegisterPage', () => {
     }));
   });
 
+  it('プロフィール設定で選択した2つの画像をネストしたプロフィール項目とともにmultipartで作成する', async () => {
+    const user = userEvent.setup();
+    const fetchMock = csrfAwareFetch(201);
+    vi.stubGlobal('fetch', fetchMock);
+    const icon = new File(['icon'], 'icon.png', { type: 'image/png' });
+    const header = new File(['header'], 'header.webp', { type: 'image/webp' });
+
+    render(<MemoryRouter><RegisterPage /></MemoryRouter>);
+
+    await user.type(screen.getByLabelText('メールアドレス'), 'new-member@example.com');
+    await user.click(screen.getByRole('button', { name: 'パスコードを送信' }));
+    await user.type(screen.getByLabelText('パスコード 1桁目'), '123456');
+    await user.click(screen.getByRole('button', { name: '確認して次へ' }));
+    await user.type(screen.getByLabelText('アカウント名'), '山田 由紀');
+    await user.type(screen.getByLabelText('ユーザーID（@ハンドル）'), 'yuki_sleep');
+    await user.upload(screen.getByLabelText('アイコン画像'), icon);
+    await user.upload(screen.getByLabelText('ヘッダー画像'), header);
+    await user.click(screen.getByRole('button', { name: '次へ' }));
+    await user.click(await screen.findByRole('button', { name: 'X (Twitter)' }));
+    await user.type(screen.getByLabelText('X (Twitter)のリンク'), 'hibilio');
+    await user.click(screen.getByRole('button', { name: '追加' }));
+    await user.click(screen.getByRole('button', { name: '次へ' }));
+    await user.click(screen.getByRole('button', { name: '朝活' }));
+    await user.click(screen.getByRole('button', { name: 'HIBILIOをはじめる' }));
+
+    const accountRequest = (fetchMock.mock.calls as unknown as Array<[string, RequestInit]>).find(([path]) => path === '/api/accounts')?.[1];
+    expect(accountRequest).toEqual(expect.objectContaining({
+      body: expect.any(FormData),
+      credentials: 'include',
+      headers: { 'X-CSRF-TOKEN': 'csrf-token' },
+      method: 'POST',
+    }));
+    const body = (accountRequest as RequestInit).body as FormData;
+    expect(body.get('icon_image')).toBe(icon);
+    expect(body.get('header_image')).toBe(header);
+    expect(body.get('account_name')).toBe('山田 由紀');
+    expect(body.get('account_bio')).toBe('');
+    expect(body.get('social_links[0][social_type]')).toBe('x');
+    expect(body.get('social_links[0][social_url]')).toBe('https://x.com/hibilio');
+    expect(body.get('favorite_tag_identifiers[0]')).toBe('20000000-0000-4000-8000-000000000001');
+  });
+
   it('ソーシャルリンクを追加してアカウント作成payloadへ送信する', async () => {
     const user = userEvent.setup();
     const fetchMock = csrfAwareFetch(201);

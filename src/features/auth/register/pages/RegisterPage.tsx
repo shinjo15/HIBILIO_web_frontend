@@ -146,6 +146,8 @@ export function RegisterPage() {
           </>}
 
           {registration.step === 'profile' && <>
+            <label className="hibilio-register__field"><span>アイコン画像</span><input accept="image/png,image/jpeg,image/webp" aria-label="アイコン画像" onChange={(event) => registration.setIconImage(event.target.files?.[0] ?? null)} type="file" /></label>
+            <label className="hibilio-register__field"><span>ヘッダー画像</span><input accept="image/png,image/jpeg,image/webp" aria-label="ヘッダー画像" onChange={(event) => registration.setHeaderImage(event.target.files?.[0] ?? null)} type="file" /></label>
             <div className="hibilio-register__avatar" aria-hidden="true"><span>{registration.accountName === '' ? '?' : registration.accountName.slice(0, 1).toUpperCase()}</span><i>＋</i></div>
             <label className="hibilio-register__field"><span>{messages.auth.accountName}</span><input autoComplete="name" maxLength={50} onChange={(event) => registration.setAccountName(event.target.value)} placeholder={messages.auth.accountNamePlaceholder} value={registration.accountName} /></label>
             <label className="hibilio-register__field"><span>{messages.auth.userHandle}</span><span className="hibilio-register__handle-input"><b>@</b><input aria-label={messages.auth.userHandle} maxLength={20} onChange={(event) => registration.setUserHandle(event.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase())} placeholder={messages.auth.userHandlePlaceholder} value={registration.userHandle} /></span><small>{messages.auth.userHandleHint}</small></label>
