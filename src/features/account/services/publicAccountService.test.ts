@@ -9,6 +9,8 @@ describe('createPublicAccountService', () => {
       account_bio: null,
       account_identifier: '11111111-1111-4111-8111-111111111111',
       account_name: '公開アカウント',
+      header_image_url: 'https://example.com/headers/public.webp',
+      icon_image_url: 'https://example.com/icons/public.webp',
       favorite_tags: [{ tag_identifier: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', tag_name: '朝活' }],
       social_links: [{ social_type: 'x', social_url: 'https://x.com/example' }],
     })));
@@ -19,7 +21,9 @@ describe('createPublicAccountService', () => {
       accountIdentifier: '11111111-1111-4111-8111-111111111111',
       bio: null,
       favoriteTags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '朝活' }],
+      headerImageUrl: 'https://example.com/headers/public.webp',
       initial: '公',
+      iconImageUrl: 'https://example.com/icons/public.webp',
       name: '公開アカウント',
       socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/example' }],
     });

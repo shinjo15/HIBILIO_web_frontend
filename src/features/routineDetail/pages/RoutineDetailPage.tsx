@@ -8,6 +8,7 @@ import {
 } from '../services/routineDetailService';
 import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
 import messages from '../../../shared/message/message.json';
+import { AccountAvatar } from '../../../shared/components/AccountImage';
 import '../routineDetail.css';
 
 type RoutineDetailPageProps = { service?: RoutineDetailService };
@@ -110,7 +111,7 @@ function RoutineDetailContent({ routine, service }: { routine: RoutineDetailView
         <div className="routine-detail-content">
           <div className="routine-detail-summary">
             <div className="routine-detail-author">
-              <Avatar initial={routine.author.initial} />
+              <Avatar iconImageUrl={routine.author.iconImageUrl} initial={routine.author.initial} />
               <div>
                 <p className="routine-detail-author__name"><Link className="routine-detail-author__link" to={`/accounts/${routine.author.accountId}`}>{routine.author.name}</Link></p>
                 {routine.author.handle !== '' && <p className="routine-detail-author__handle">@{routine.author.handle}</p>}
@@ -253,7 +254,7 @@ function RoutineDetailContent({ routine, service }: { routine: RoutineDetailView
                   return (
                     <article className="routine-detail-post" key={post.id}>
                       <div className="routine-detail-post__author">
-                        <Avatar initial={post.avatar} />
+                        <Avatar iconImageUrl={post.iconImageUrl} initial={post.avatar} />
                         <div>
                           <p>{post.userName}</p>
                           <span>{post.date}</span>
@@ -287,7 +288,7 @@ function RoutineDetailContent({ routine, service }: { routine: RoutineDetailView
                 {customizationsList.error && customizationsList.items.length > 0 && <DetailListError retry={customizationsList.retry} />}
                 {customizationsList.items.map((customization) => (
                   <article className="routine-detail-customization" key={customization.id}>
-                    <p className="routine-detail-customization__author">{messages.routineDetail.customizationVersion} — {customization.authorName}</p>
+                    <p className="routine-detail-customization__author"><Avatar iconImageUrl={customization.iconImageUrl} initial={customization.authorName.slice(0, 1).toUpperCase()} />{messages.routineDetail.customizationVersion} — {customization.authorName}</p>
                     <h2><Link to={`/routines/${customization.id}`}>{customization.title}</Link></h2>
                     {customization.description !== '' && <p>{customization.description}</p>}
                   </article>
@@ -322,7 +323,7 @@ function DetailListError({ retry }: { retry: () => void }) {
   return <p className="routine-detail-empty routine-detail-empty--error">{messages.routineDetail.error} <button onClick={retry} type="button">再試行</button></p>;
 }
 
-function Avatar({ initial }: { initial: string }) {
+function Avatar({ iconImageUrl, initial }: { iconImageUrl: string | null; initial: string }) {
   const avatarClasses: Record<string, string> = {
     H: 'routine-detail-avatar--h',
     N: 'routine-detail-avatar--n',
@@ -331,7 +332,7 @@ function Avatar({ initial }: { initial: string }) {
     Y: 'routine-detail-avatar--y',
   };
 
-  return <span aria-hidden="true" className={`routine-detail-avatar ${avatarClasses[initial] ?? 'routine-detail-avatar--default'}`}>{initial}</span>;
+  return <AccountAvatar className={`routine-detail-avatar ${avatarClasses[initial] ?? 'routine-detail-avatar--default'}`} iconImageUrl={iconImageUrl} initial={initial} />;
 }
 
 function BackIcon() {

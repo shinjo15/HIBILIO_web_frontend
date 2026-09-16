@@ -13,6 +13,7 @@ export const routineSchema = z.object({
   durationMinutes: z.number().int().positive().nullable(),
   executions: z.number().int().nonnegative(),
   id: z.string().min(1),
+  iconImageUrl: z.string().url().nullable().optional(),
   liked: z.boolean(),
   likes: z.number().int().nonnegative(),
   routineId: z.string().min(1),
@@ -29,6 +30,7 @@ export type RoutineFeedTab = 'following' | 'recommended' | 'popular';
 export const followingAccountSchema = z.object({
   accountIdentifier: z.string().min(1),
   bio: z.string().nullable(),
+  iconImageUrl: z.string().url().nullable().optional(),
   name: z.string().min(1),
 });
 

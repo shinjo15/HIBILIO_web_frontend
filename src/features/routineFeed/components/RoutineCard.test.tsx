@@ -13,6 +13,7 @@ const routine: Routine = {
   durationMinutes: 25,
   executions: 12,
   id: 'post-1',
+  iconImageUrl: 'https://example.com/icons/tanaka.webp',
   liked: false,
   likes: 14,
   routineId: 'routine-1',
@@ -27,6 +28,8 @@ describe('RoutineCard', () => {
     const onCardClick = vi.fn();
     const user = userEvent.setup();
     render(<MemoryRouter><div onClick={onCardClick}><RoutineCard onLike={onLike} routine={routine} /></div></MemoryRouter>);
+
+    expect(screen.getByAltText('')).toHaveAttribute('src', 'https://example.com/icons/tanaka.webp');
 
     await user.click(screen.getByRole('button', { name: 'いいねする' }));
 

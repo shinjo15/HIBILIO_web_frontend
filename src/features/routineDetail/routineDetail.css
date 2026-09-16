@@ -88,6 +88,8 @@
   height: 32px;
   justify-content: center;
   line-height: 16px;
+  overflow: hidden;
+  position: relative;
   width: 32px;
 }
 
@@ -522,7 +524,12 @@
   text-decoration: underline;
 }
 
-.routine-detail-customization__author { margin-bottom: 4px; }
+.routine-detail-customization__author {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
 
 .routine-detail-empty,
 .routine-detail-state {

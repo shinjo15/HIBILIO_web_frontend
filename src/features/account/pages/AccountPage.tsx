@@ -13,6 +13,7 @@ import { registrationSocialPlatforms } from '../../auth/register/services/regist
 import { clearAuthenticated } from '../../auth/services/authSession';
 import { AccountLikesList, AccountPostsList } from '../components/AccountRoutineLists';
 import { AccountRelationList } from '../../../shared/components/AccountRelationList';
+import { AccountAvatar, AccountHeaderImage } from '../../../shared/components/AccountImage';
 import { routineLikeService, RoutineLikeUnauthorizedError, type RoutineLikeService } from '../../routineFeed/services/routineLikeService';
 import { accountBlockService, AccountBlockError, AccountBlockUnauthorizedError, type AccountBlockService } from '../services/accountBlockService';
 import { accountFollowService, AccountFollowError, AccountFollowUnauthorizedError, type AccountFollowService } from '../services/accountFollowService';
@@ -264,7 +265,8 @@ export function AccountPage({ blockService = accountBlockService, followService 
       <div className="account-page__content">
         <section className="account-profile">
           <div className="account-profile__banner">
-            <span aria-hidden="true" className="account-profile__avatar">{profile.initial}</span>
+            <AccountHeaderImage headerImageUrl={profile.headerImageUrl ?? null} />
+            <AccountAvatar className="account-profile__avatar" iconImageUrl={profile.iconImageUrl ?? null} initial={profile.initial} />
           </div>
           <div className="account-profile__body">
             <div className="account-profile__actions">

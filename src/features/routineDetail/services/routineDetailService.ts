@@ -236,6 +236,7 @@ export function createRoutineDetailService(adapter: RoutineDetailAdapter): Routi
         authorName: customization.account_name,
         description: customization.routine_memo ?? '',
         id: customization.routine_identifier,
+        iconImageUrl: customization.icon_image_url ?? null,
         title: customization.routine_name,
       })),
       total: response.total,
@@ -251,6 +252,7 @@ export function createRoutineDetailService(adapter: RoutineDetailAdapter): Routi
         comment: post.routine_execution_memo ?? undefined,
         date: formatPostedAt(post.posted_at),
         id: post.routine_execution_identifier,
+        iconImageUrl: post.icon_image_url ?? null,
         minutes: undefined,
         total: totalActions,
         userHandle: '',
@@ -271,6 +273,7 @@ export function createRoutineDetailService(adapter: RoutineDetailAdapter): Routi
 const routineDetailsResponseSchema = z.object({
   account_identifier: z.string().uuid(),
   account_name: z.string().min(1),
+  icon_image_url: z.string().url().nullish(),
   customization_count: z.number().int().nonnegative(),
   execution_count: z.number().int().nonnegative(),
   like_count: z.number().int().nonnegative(),
@@ -289,6 +292,7 @@ const customizedRoutinesResponseSchema = z.object({
   items: z.array(z.object({
     account_identifier: z.string().uuid(),
     account_name: z.string().min(1),
+    icon_image_url: z.string().url().nullish(),
     customization_count: z.number().int().nonnegative(),
     execution_count: z.number().int().nonnegative(),
     like_count: z.number().int().nonnegative(),
@@ -304,6 +308,7 @@ const routineExecutionPostsResponseSchema = z.object({
   items: z.array(z.object({
     account_identifier: z.string().uuid(),
     account_name: z.string().min(1),
+    icon_image_url: z.string().url().nullish(),
     executed_action_count: z.number().int().nonnegative(),
     posted_at: z.string().datetime({ offset: true }),
     routine_execution_identifier: z.string().uuid(),
@@ -333,13 +338,14 @@ export const apiRoutineDetailAdapter: RoutineDetailAdapter = {
       executionPostsResponse.json().then((body) => routineExecutionPostsResponseSchema.parse(body)),
     ]);
     return {
-      author: { accountId: detail.account_identifier, handle: '', name: detail.account_name },
+      author: { accountId: detail.account_identifier, handle: '', iconImageUrl: detail.icon_image_url, name: detail.account_name },
       customizations: detail.customization_count,
       customizationsTotal: customizations.total,
       customizationsList: customizations.items.map((customization) => ({
         authorName: customization.account_name,
         description: customization.routine_memo ?? '',
         id: customization.routine_identifier,
+        iconImageUrl: customization.icon_image_url,
         routineId,
         title: customization.routine_name,
       })),
@@ -353,6 +359,7 @@ export const apiRoutineDetailAdapter: RoutineDetailAdapter = {
         comment: post.routine_execution_memo ?? undefined,
         date: formatPostedAt(post.posted_at),
         id: post.routine_execution_identifier,
+        iconImageUrl: post.icon_image_url,
         routineId,
         total: detail.routine_actions.length,
         userHandle: '',

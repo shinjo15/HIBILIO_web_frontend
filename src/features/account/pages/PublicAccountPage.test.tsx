@@ -9,7 +9,7 @@ import type { AccountService } from '../services/accountService';
 import { AccountFollowError, AccountFollowUnauthorizedError, type AccountFollowService } from '../services/accountFollowService';
 import { isAuthenticated, markAuthenticated } from '../../auth/services/authSession';
 
-const publicPost = { accountId: 'account-1', authorName: '公開アカウント', createdAt: '2026-09-03T12:00:00.000Z', customizations: 0, durationMinutes: 20, executions: 1, id: 'post-1', liked: false, likes: 2, routineId: 'routine-1', steps: [{ action: '集中', durationMinutes: 20 }], supports: 0, tags: [], title: '公開1' };
+const publicPost = { accountId: 'account-1', authorName: '公開アカウント', createdAt: '2026-09-03T12:00:00.000Z', customizations: 0, durationMinutes: 20, executions: 1, iconImageUrl: 'https://example.com/icons/public-post-author.webp', id: 'post-1', liked: false, likes: 2, routineId: 'routine-1', steps: [{ action: '集中', durationMinutes: 20 }], supports: 0, tags: [], title: '公開1' };
 
 afterEach(() => {
   cleanup();
@@ -104,6 +104,7 @@ describe('PublicAccountPage', () => {
     renderPage(service);
 
     await screen.findByRole('heading', { name: '公開1' });
+    expect(document.querySelector('.routine-card__avatar .account-avatar__image')).toHaveAttribute('src', 'https://example.com/icons/public-post-author.webp');
     notifyIntersection?.();
     expect(await screen.findByRole('heading', { name: '公開2' })).toBeInTheDocument();
     expect(listPostsPage).toHaveBeenNthCalledWith(1, 'account-1', 1);

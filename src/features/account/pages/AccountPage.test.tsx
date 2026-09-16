@@ -7,14 +7,14 @@ import { AccountUnauthorizedError, type AccountService } from '../services/accou
 import { AccountBlockUnauthorizedError, type AccountBlockService } from '../services/accountBlockService';
 import { isAuthenticated, markAuthenticated } from '../../auth/services/authSession';
 
-const firstPost = { accountId: '11111111-1111-4111-8111-111111111111', authorName: '山田 由紀', createdAt: '2026-09-03T12:00:00.000Z', customizations: 1, durationMinutes: 30, executions: 3, id: 'post-1', liked: false, likes: 2, routineId: 'routine-1', steps: [{ action: '集中', durationMinutes: 30 }], supports: 4, tags: ['睡眠'], title: '朝の集中ルーティン' };
-const likedPost = { accountId: '11111111-1111-4111-1111-111111111111', authorName: '田中 陽介', createdAt: '2026-09-03T12:00:00.000Z', customizations: 1, durationMinutes: 20, executions: 3, id: 'post-2', liked: true, likes: 2, routineId: 'routine-2', steps: [{ action: '読書', durationMinutes: 20 }], supports: 4, tags: ['読書'], title: '夜の読書ルーティン' };
+const firstPost = { accountId: '11111111-1111-4111-8111-111111111111', authorName: '山田 由紀', createdAt: '2026-09-03T12:00:00.000Z', customizations: 1, durationMinutes: 30, executions: 3, iconImageUrl: 'https://example.com/icons/post-author.webp', id: 'post-1', liked: false, likes: 2, routineId: 'routine-1', steps: [{ action: '集中', durationMinutes: 30 }], supports: 4, tags: ['睡眠'], title: '朝の集中ルーティン' };
+const likedPost = { accountId: '11111111-1111-4111-1111-111111111111', authorName: '田中 陽介', createdAt: '2026-09-03T12:00:00.000Z', customizations: 1, durationMinutes: 20, executions: 3, iconImageUrl: 'https://example.com/icons/liked-author.webp', id: 'post-2', liked: true, likes: 2, routineId: 'routine-2', steps: [{ action: '読書', durationMinutes: 20 }], supports: 4, tags: ['読書'], title: '夜の読書ルーティン' };
 
 const service: AccountService = {
   getExecutionHistory: async (executionId) => executionId === 'execution-1'
     ? { achievedActions: 2, completedActionIndexes: [0, 1], completed: true, executedAtLabel: '今日', id: 'execution-1', minutes: 30, routineId: 'routine-1', routineTitle: '朝の集中ルーティン', totalActions: 2 }
     : null,
-  getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: '毎日続けることが目標。', favoriteTags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '睡眠' }], initial: '山', name: '山田 由紀', socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/yuki_sleep' }] }),
+  getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: '毎日続けることが目標。', favoriteTags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '睡眠' }], headerImageUrl: 'https://example.com/headers/yamada.webp', initial: '山', iconImageUrl: 'https://example.com/icons/yamada.webp', name: '山田 由紀', socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/yuki_sleep' }] }),
   listExecutionHistories: async () => [{ executedActionCount: 2, id: 'execution-1', memo: '集中できました', postedAt: '2026-09-03T12:00:00+00:00', routineId: 'routine-1', routineTitle: '朝の集中ルーティン', supportCount: 3 }],
   listBlockedAccounts: async () => [],
   listLikes: async () => [likedPost],
@@ -75,6 +75,8 @@ describe('AccountPage', () => {
 
     expect(screen.getByText('アカウント情報を読み込んでいます…')).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: '山田 由紀' })).toBeInTheDocument();
+    expect(document.querySelector('.account-avatar__image')).toHaveAttribute('src', 'https://example.com/icons/yamada.webp');
+    expect(document.querySelector('.routine-card__avatar .account-avatar__image')).toHaveAttribute('src', 'https://example.com/icons/post-author.webp');
     expect(screen.getByRole('button', { name: '編集' })).toBeInTheDocument();
     expect(screen.queryByText('11111111-1111-4111-8111-111111111111')).not.toBeInTheDocument();
     expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['1投稿', '1いいね', '1実行履歴', '0ブロック中']);
@@ -159,6 +161,7 @@ describe('AccountPage', () => {
     await user.click(screen.getByRole('tab', { name: /いいね/ }));
     expect(await screen.findByText('夜の読書ルーティン')).toBeInTheDocument();
     expect(screen.getByText('田中 陽介')).toBeInTheDocument();
+    expect(document.querySelector('.routine-card__avatar .account-avatar__image')).toHaveAttribute('src', 'https://example.com/icons/liked-author.webp');
 
     await user.click(screen.getByRole('link', { name: '夜の読書ルーティン' }));
     expect(screen.getByText('/routines/routine-2')).toBeInTheDocument();
@@ -185,7 +188,7 @@ describe('AccountPage', () => {
 
   it('ブロック中のアカウントを即時に一覧から削除する', async () => {
     const user = userEvent.setup();
-    const blockedAccount = { accountIdentifier: '22222222-2222-4222-8222-222222222222', bio: 'ブロック中です', name: 'ブロック中のアカウント' };
+    const blockedAccount = { accountIdentifier: '22222222-2222-4222-8222-222222222222', bio: 'ブロック中です', iconImageUrl: 'https://example.com/icons/blocked-account.webp', name: 'ブロック中のアカウント' };
     let resolveRemove: () => void = () => {};
     const blockService: AccountBlockService = {
       create: vi.fn(),
@@ -203,6 +206,7 @@ describe('AccountPage', () => {
     const blockedAccountLink = screen.getByRole('link', { name: 'ブロック中のアカウント' });
     expect(blockedAccountLink).toHaveClass('account-relation-card');
     expect(blockedAccountLink.closest('.account-relation-card-with-action')).toContainElement(unblockButton);
+    expect(blockedAccountLink.querySelector('.account-avatar__image')).toHaveAttribute('src', 'https://example.com/icons/blocked-account.webp');
 
     await user.click(unblockButton);
 

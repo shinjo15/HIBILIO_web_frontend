@@ -8,6 +8,8 @@ const profileEditResponseSchema = z.object({
   account_bio: z.string().nullable(),
   account_identifier: z.string().min(1),
   account_name: z.string().min(1),
+  header_image_url: z.string().url().nullish().transform((url) => url ?? null),
+  icon_image_url: z.string().url().nullish().transform((url) => url ?? null),
   favorite_tags: z.array(z.object({
     tag_identifier: z.string().min(1),
     tag_name: z.string().min(1),
@@ -31,7 +33,9 @@ export type EditableProfile = {
   bio: string;
   favoriteTags: Array<{ identifier: string; label: string }>;
   headerImage: File | null;
+  headerImageUrl?: string | null;
   iconImage: File | null;
+  iconImageUrl?: string | null;
   name: string;
   socialLinks: Array<{ socialType: string; socialUrl: string }>;
   uiMode: 'dark' | 'light' | 'system';
@@ -140,7 +144,9 @@ export function createProfileEditService(adapter: ProfileEditAdapter = profileEd
         bio: profile.account_bio ?? '',
         favoriteTags: profile.favorite_tags.map((tag) => ({ identifier: tag.tag_identifier, label: tag.tag_name })),
         headerImage: null,
+        headerImageUrl: profile.header_image_url,
         iconImage: null,
+        iconImageUrl: profile.icon_image_url,
         name: profile.account_name,
         socialLinks: profile.social_links.map((link) => ({ socialType: link.social_type, socialUrl: link.social_url })),
         uiMode: profile.ui_mode,

@@ -19,7 +19,9 @@ const editableProfile = {
   bio: 'APIから読み込んだ自己紹介',
   favoriteTags: [{ identifier: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', label: '朝活' }],
   headerImage: null,
+  headerImageUrl: 'https://example.com/headers/account.webp',
   iconImage: null,
+  iconImageUrl: 'https://example.com/icons/account.webp',
   name: 'ログインアカウント',
   socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/example' }],
   uiMode: 'system' as const,
@@ -43,6 +45,8 @@ describe('ProfileEditPage', () => {
     renderPage(service);
 
     expect(await screen.findByDisplayValue('ログインアカウント')).toBeInTheDocument();
+    expect(screen.getByLabelText('ヘッダーを変更').closest('.profile-edit__header-image')?.querySelector('img')).toHaveAttribute('src', 'https://example.com/headers/account.webp');
+    expect(screen.getByLabelText('アイコンを変更').closest('.profile-edit__avatar')?.querySelector('img')).toHaveAttribute('src', 'https://example.com/icons/account.webp');
     expect(screen.getByDisplayValue('APIから読み込んだ自己紹介')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '朝活削除' })).toBeInTheDocument();
     expect(screen.queryByText('yuki_sleep')).not.toBeInTheDocument();
@@ -87,8 +91,8 @@ describe('ProfileEditPage', () => {
     await user.upload(screen.getByLabelText('ヘッダーを変更'), header);
     await user.upload(screen.getByLabelText('アイコンを変更'), icon);
 
-    expect(screen.getByLabelText('ヘッダーを変更').closest('.profile-edit__header-image')).toHaveStyle({ backgroundImage: expect.stringContaining('blob:') });
-    expect(screen.getByLabelText('アイコンを変更').closest('.profile-edit__avatar')).toHaveStyle({ backgroundImage: expect.stringContaining('blob:') });
+    expect(screen.getByLabelText('ヘッダーを変更').closest('.profile-edit__header-image')?.querySelector('img')).toHaveAttribute('src', expect.stringContaining('blob:'));
+    expect(screen.getByLabelText('アイコンを変更').closest('.profile-edit__avatar')?.querySelector('img')).toHaveAttribute('src', expect.stringContaining('blob:'));
     await user.click(screen.getAllByRole('button', { name: '保存' })[0]);
     expect(save).toHaveBeenCalledWith({ ...editableProfile, headerImage: header, iconImage: icon });
   });
