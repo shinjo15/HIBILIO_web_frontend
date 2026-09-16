@@ -244,8 +244,27 @@
   font-size: 14px;
 }
 
-.account-profile__social-icon--x {
+.account-profile__social-icon--x,
+.account-profile__social-icon--tiktok,
+.account-profile__social-icon--threads,
+.account-profile__social-icon--bereal {
   color: var(--hibilio-color-social-black);
+}
+
+.account-profile__social-icon--instagram {
+  color: var(--hibilio-color-social-instagram);
+}
+
+.account-profile__social-icon--youtube {
+  color: var(--hibilio-color-social-youtube);
+}
+
+.account-profile__social-icon--twitch {
+  color: var(--hibilio-color-social-twitch);
+}
+
+.account-profile__social-icon--discord {
+  color: var(--hibilio-color-social-discord);
 }
 
 .account-profile__favorite-tag {
