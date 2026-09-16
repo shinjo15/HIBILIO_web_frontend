@@ -72,6 +72,7 @@
     "userHandleRequired": "ユーザーIDを入力してください。"
   },
   "routineFeed": {
+    "advertisement": "広告",
     "search": "ルーティンを検索",
     "tabs": {
       "ariaLabel": "ルーティンの並び替え",

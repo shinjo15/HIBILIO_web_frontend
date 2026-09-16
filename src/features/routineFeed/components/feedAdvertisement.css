@@ -1,0 +1,20 @@
+.routine-feed-advertisement {
+  background: var(--hibilio-color-card);
+  border: 1px solid var(--hibilio-color-border);
+  border-radius: 12px;
+  min-height: 120px;
+  overflow: hidden;
+  padding: 16px;
+  position: relative;
+}
+
+.routine-feed-advertisement__label {
+  color: var(--hibilio-color-muted-text);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.routine-feed-advertisement .adsbygoogle {
+  display: block;
+  min-height: 80px;
+}
