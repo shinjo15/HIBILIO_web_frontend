@@ -40,6 +40,8 @@
 
 .profile-edit__header-image {
   background: linear-gradient(135deg, var(--hibilio-color-primary), color-mix(in srgb, var(--hibilio-color-primary) 65%, var(--hibilio-color-on-background)) 55%, var(--hibilio-color-on-background));
+  background-position: center;
+  background-size: cover;
   height: 112px;
   margin-inline: -20px;
   position: relative;
@@ -70,6 +72,8 @@
 .profile-edit__avatar {
   align-items: center;
   background: var(--hibilio-color-profile-avatar);
+  background-position: center;
+  background-size: cover;
   border: 4px solid var(--hibilio-color-card);
   border-radius: 50%;
   color: var(--hibilio-color-on-primary);

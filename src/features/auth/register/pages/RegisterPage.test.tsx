@@ -104,6 +104,10 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText('ユーザーID（@ハンドル）'), 'yuki_sleep');
     await user.upload(screen.getByLabelText('アイコン画像'), icon);
     await user.upload(screen.getByLabelText('ヘッダー画像'), header);
+
+    expect(screen.getByLabelText('アイコン画像').closest('.hibilio-register__avatar')).toHaveStyle({ backgroundImage: expect.stringContaining('blob:') });
+    expect(screen.getByLabelText('ヘッダー画像').closest('.hibilio-register__image-preview')).toHaveStyle({ backgroundImage: expect.stringContaining('blob:') });
+
     await user.click(screen.getByRole('button', { name: '次へ' }));
     await user.click(await screen.findByRole('button', { name: 'X (Twitter)' }));
     await user.type(screen.getByLabelText('X (Twitter)のリンク'), 'hibilio');

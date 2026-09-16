@@ -1,7 +1,7 @@
 import CloseIcon from '@mui/icons-material/Close';
 import { Alert, Button, IconButton } from '@mui/material';
 import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { HibilioMark } from '../../../../shared/brand/HibilioMark';
 import messages from '../../../../shared/message/message.json';
@@ -14,11 +14,28 @@ export function RegisterPage() {
   const navigate = useNavigate();
   const isSocialRegistration = new URLSearchParams(location.search).get('social_registration') === '1';
   const registration = useAccountRegistration(() => navigate('/login'), isSocialRegistration);
+  const [headerPreviewUrl, setHeaderPreviewUrl] = useState<string | null>(null);
+  const [iconPreviewUrl, setIconPreviewUrl] = useState<string | null>(null);
   const [linkValue, setLinkValue] = useState('');
   const passcodeInputReferences = useRef<Array<HTMLInputElement | null>>([]);
   const [selectedSocialPlatform, setSelectedSocialPlatform] = useState<RegistrationSocialPlatform | null>(null);
   const passcodeDigits = Array.from({ length: 6 }, (_, index) => registration.passcode[index] ?? '');
   const stepIndex = registration.step === 'email' ? 0 : registration.step === 'passcode' ? 1 : registration.step === 'profile' ? 2 : registration.step === 'social' ? 3 : 4;
+
+  useEffect(() => () => {
+    if (headerPreviewUrl !== null) URL.revokeObjectURL(headerPreviewUrl);
+    if (iconPreviewUrl !== null) URL.revokeObjectURL(iconPreviewUrl);
+  }, [headerPreviewUrl, iconPreviewUrl]);
+
+  function selectImage(type: 'header' | 'icon', file: File | null) {
+    if (type === 'header') {
+      registration.setHeaderImage(file);
+      setHeaderPreviewUrl(file === null ? null : URL.createObjectURL(file));
+      return;
+    }
+    registration.setIconImage(file);
+    setIconPreviewUrl(file === null ? null : URL.createObjectURL(file));
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -146,9 +163,8 @@ export function RegisterPage() {
           </>}
 
           {registration.step === 'profile' && <>
-            <label className="hibilio-register__field"><span>アイコン画像</span><input accept="image/png,image/jpeg,image/webp" aria-label="アイコン画像" onChange={(event) => registration.setIconImage(event.target.files?.[0] ?? null)} type="file" /></label>
-            <label className="hibilio-register__field"><span>ヘッダー画像</span><input accept="image/png,image/jpeg,image/webp" aria-label="ヘッダー画像" onChange={(event) => registration.setHeaderImage(event.target.files?.[0] ?? null)} type="file" /></label>
-            <div className="hibilio-register__avatar" aria-hidden="true"><span>{registration.accountName === '' ? '?' : registration.accountName.slice(0, 1).toUpperCase()}</span><i>＋</i></div>
+            <div className="hibilio-register__image-preview" style={headerPreviewUrl === null ? undefined : { backgroundImage: `url(${headerPreviewUrl})` }}><label><span>ヘッダー画像を変更</span><input accept="image/png,image/jpeg,image/webp" aria-label="ヘッダー画像" onChange={(event) => selectImage('header', event.target.files?.[0] ?? null)} type="file" /></label></div>
+            <div className="hibilio-register__avatar" style={iconPreviewUrl === null ? undefined : { backgroundImage: `url(${iconPreviewUrl})` }}><span>{iconPreviewUrl === null && (registration.accountName === '' ? '?' : registration.accountName.slice(0, 1).toUpperCase())}</span><label><span>アイコン画像を変更</span><input accept="image/png,image/jpeg,image/webp" aria-label="アイコン画像" onChange={(event) => selectImage('icon', event.target.files?.[0] ?? null)} type="file" /></label></div>
             <label className="hibilio-register__field"><span>{messages.auth.accountName}</span><input autoComplete="name" maxLength={50} onChange={(event) => registration.setAccountName(event.target.value)} placeholder={messages.auth.accountNamePlaceholder} value={registration.accountName} /></label>
             <label className="hibilio-register__field"><span>{messages.auth.userHandle}</span><span className="hibilio-register__handle-input"><b>@</b><input aria-label={messages.auth.userHandle} maxLength={20} onChange={(event) => registration.setUserHandle(event.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase())} placeholder={messages.auth.userHandlePlaceholder} value={registration.userHandle} /></span><small>{messages.auth.userHandleHint}</small></label>
             <label className="hibilio-register__field"><span>{messages.auth.profileBio}</span><textarea maxLength={300} onChange={(event) => registration.setAccountBio(event.target.value)} placeholder={messages.auth.profileBioPlaceholder} rows={3} value={registration.accountBio} /></label>

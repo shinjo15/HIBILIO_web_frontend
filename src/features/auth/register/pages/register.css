@@ -259,6 +259,37 @@
   width: 80px;
 }
 
+.hibilio-register__image-preview {
+  background-color: var(--hibilio-color-muted);
+  background-position: center;
+  background-size: cover;
+  border-radius: 12px;
+  height: 112px;
+  overflow: hidden;
+  position: relative;
+}
+
+.hibilio-register__image-preview label,
+.hibilio-register__avatar label {
+  align-items: center;
+  background: color-mix(in srgb, var(--hibilio-color-on-background) 58%, transparent);
+  color: var(--hibilio-color-on-primary);
+  cursor: pointer;
+  display: flex;
+  font-size: 12px;
+  inset: 0;
+  justify-content: center;
+  position: absolute;
+}
+
+.hibilio-register__image-preview input,
+.hibilio-register__avatar input {
+  height: 1px;
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+}
+
 .hibilio-register__avatar i {
   align-items: center;
   background: var(--hibilio-color-primary);
