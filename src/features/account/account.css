@@ -195,6 +195,10 @@
   color: var(--hibilio-color-on-background);
 }
 
+.account-action-menu__icon.MuiListItemIcon-root {
+  min-width: 24px;
+}
+
 .account-page__block-error {
   color: var(--hibilio-color-primary);
   font-size: 12px;
