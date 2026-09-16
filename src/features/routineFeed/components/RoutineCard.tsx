@@ -45,8 +45,10 @@ export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, on
               <Typography className="routine-card__handle"><Link className="routine-card__author-link" to={`/accounts/${routine.accountId}`}>{routine.authorName}</Link></Typography>
             </Stack>
             <Stack className="routine-card__metadata">
-              {onReport !== undefined && <IconButton aria-controls={menuAnchor !== null ? `routine-report-menu-${routine.id}` : undefined} aria-expanded={menuAnchor !== null} aria-haspopup="menu" aria-label={messages.report.postMenu} className="routine-card__more" onClick={(event) => { event.stopPropagation(); setMenuAnchor(event.currentTarget); }} size="small"><MoreVertIcon /></IconButton>}
-              <Typography className="routine-card__metadata-text">{formatPostedAt(routine.createdAt)}</Typography>
+              <Stack className="routine-card__metadata-top">
+                <Typography className="routine-card__metadata-text">{formatPostedAt(routine.createdAt)}</Typography>
+                {onReport !== undefined && <IconButton aria-controls={menuAnchor !== null ? `routine-report-menu-${routine.id}` : undefined} aria-expanded={menuAnchor !== null} aria-haspopup="menu" aria-label={messages.report.postMenu} className="routine-card__more" onClick={(event) => { event.stopPropagation(); setMenuAnchor(event.currentTarget); }} size="small"><MoreVertIcon /></IconButton>}
+              </Stack>
               {routine.durationMinutes !== null && (
                 <Stack className="routine-card__duration">
                   <ClockIcon />
