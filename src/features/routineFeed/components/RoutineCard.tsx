@@ -49,15 +49,10 @@ export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, on
                 <Typography className="routine-card__metadata-text">{formatPostedAt(routine.createdAt)}</Typography>
                 {onReport !== undefined && <IconButton aria-controls={menuAnchor !== null ? `routine-report-menu-${routine.id}` : undefined} aria-expanded={menuAnchor !== null} aria-haspopup="menu" aria-label={messages.report.postMenu} className="routine-card__more" onClick={(event) => { event.stopPropagation(); setMenuAnchor(event.currentTarget); }} size="small"><MoreVertIcon /></IconButton>}
               </Stack>
-              {routine.durationMinutes !== null && (
-                <Stack className="routine-card__duration">
-                  <ClockIcon />
-                  <Typography className="routine-card__metadata-text">{formatDuration(routine.durationMinutes)}</Typography>
-                </Stack>
-              )}
             </Stack>
           </Stack>
 
+          {routine.durationMinutes !== null && <Stack className="routine-card__duration routine-card__execution-duration"><ClockIcon /><Typography className="routine-card__metadata-text">{formatDuration(routine.durationMinutes)}</Typography></Stack>}
           <Typography component="h2" className="routine-card__title">
             <Link className="routine-card__detail-link" to={`/routines/${routine.routineId}`}>{routine.title}</Link>
           </Typography>

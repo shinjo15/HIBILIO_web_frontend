@@ -289,6 +289,10 @@
   gap: 4px;
 }
 
+.routine-feed-page .routine-card__execution-duration {
+  margin-bottom: 8px;
+}
+
 .routine-card__metadata-text {
   white-space: nowrap;
 }
