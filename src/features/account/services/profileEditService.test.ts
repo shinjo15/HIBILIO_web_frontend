@@ -61,27 +61,35 @@ describe('createProfileEditService', () => {
     });
   });
 
-  it('選択した画像がある場合、JSON保存後に選択済みファイルだけをmultipart PATCHする', async () => {
+  it('選択した画像がある場合、JSON保存後に_method=PATCH付きmultipart POSTで選択済みファイルだけを送る', async () => {
     const icon = new File(['icon'], 'icon.png', { type: 'image/png' });
     const header = new File(['header'], 'header.webp', { type: 'image/webp' });
-    const patch = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
-    const service = createProfileEditService({
-      get: async () => apiProfile,
-      getCsrfToken: vi.fn().mockResolvedValue({ csrf_token: 'csrf-token' }),
-      getTagCandidates: async () => ({ tags: [] }),
-      patch,
-    });
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' })))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' })))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
 
-    await service.save({ ...editableProfile, iconImage: icon, headerImage: header });
+    await createProfileEditService().save({ ...editableProfile, iconImage: icon, headerImage: header });
 
-    expect(patch).toHaveBeenNthCalledWith(1, expect.any(String), {
-      'Content-Type': 'application/json',
-      'X-CSRF-TOKEN': 'csrf-token',
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/my/account', {
+      body: expect.any(String),
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': 'csrf-token' },
+      method: 'PATCH',
     });
-    const imageBody = patch.mock.calls[1][0] as FormData;
+    const imageRequest = fetchMock.mock.calls[3][1] as RequestInit;
+    const imageBody = imageRequest.body as FormData;
     expect(imageBody.get('icon_image')).toBe(icon);
     expect(imageBody.get('header_image')).toBe(header);
-    expect(patch).toHaveBeenNthCalledWith(2, imageBody, { 'X-CSRF-TOKEN': 'csrf-token' });
+    expect(imageBody.get('_method')).toBe('PATCH');
+    expect(fetchMock).toHaveBeenNthCalledWith(4, '/api/my/account', {
+      body: imageBody,
+      credentials: 'include',
+      headers: { 'X-CSRF-TOKEN': 'csrf-token' },
+      method: 'POST',
+    });
   });
 
   it('タグ候補をGET /api/tagsから識別子付きで取得する', async () => {

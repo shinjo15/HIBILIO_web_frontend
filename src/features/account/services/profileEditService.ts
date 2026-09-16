@@ -46,7 +46,7 @@ export type ProfileEditAdapter = {
   get: () => Promise<unknown>;
   getCsrfToken: () => Promise<unknown>;
   getTagCandidates: () => Promise<unknown>;
-  patch: (body: BodyInit, headers: HeadersInit) => Promise<Response>;
+  patch: (body: BodyInit, headers: HeadersInit, method?: 'PATCH' | 'POST') => Promise<Response>;
 };
 
 export class ProfileEditUnauthorizedError extends Error {
@@ -88,11 +88,11 @@ const profileEditApiAdapter: ProfileEditAdapter = {
     await ensureSuccessful(response, 'fetch tag candidates');
     return response.json();
   },
-  patch: async (body, headers) => fetch('/api/my/account', {
+  patch: async (body, headers, method = 'PATCH') => fetch('/api/my/account', {
     body,
     credentials: 'include',
     headers,
-    method: 'PATCH',
+    method,
   }),
 };
 
@@ -114,6 +114,7 @@ function toImagePayload(profile: EditableProfile): FormData | null {
   const body = new FormData();
   if (profile.iconImage !== null) body.append('icon_image', profile.iconImage);
   if (profile.headerImage !== null) body.append('header_image', profile.headerImage);
+  body.append('_method', 'PATCH');
   return body;
 }
 
@@ -126,8 +127,8 @@ export function createProfileEditService(adapter: ProfileEditAdapter = profileEd
     };
   }
 
-  async function patch(body: BodyInit, operation: string, contentType?: string): Promise<void> {
-    await ensureSuccessful(await adapter.patch(body, await csrfHeaders(contentType)), operation);
+  async function patch(body: BodyInit, operation: string, contentType?: string, method?: 'PATCH' | 'POST'): Promise<void> {
+    await ensureSuccessful(await adapter.patch(body, await csrfHeaders(contentType), method), operation);
   }
 
   return {
@@ -152,7 +153,7 @@ export function createProfileEditService(adapter: ProfileEditAdapter = profileEd
     save: async (profile) => {
       await patch(toProfilePayload(profile), 'save editable profile', 'application/json');
       const imagePayload = toImagePayload(profile);
-      if (imagePayload !== null) await patch(imagePayload, 'upload profile images');
+      if (imagePayload !== null) await patch(imagePayload, 'upload profile images', undefined, 'POST');
     },
   };
 }
