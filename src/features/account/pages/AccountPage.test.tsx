@@ -12,7 +12,7 @@ const likedPost = { accountId: '11111111-1111-4111-1111-111111111111', authorNam
 
 const service: AccountService = {
   getExecutionHistory: async (executionId) => executionId === 'execution-1'
-    ? { achievedActions: 2, completedActionIndexes: [0, 1], completed: true, executedAtLabel: '今日', id: 'execution-1', minutes: 30, routineId: 'routine-1', routineTitle: '朝の集中ルーティン', totalActions: 2 }
+    ? { actions: [], executedAt: '2026-09-03T12:00:00+00:00', id: 'execution-1', memo: null, postedAt: '2026-09-03T12:00:00+00:00', routineId: 'routine-1', routineMemo: null, routineTitle: '朝の集中ルーティン', supportCount: 3, tags: [] }
     : null,
   getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: '毎日続けることが目標。', favoriteTags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '睡眠' }], headerImageUrl: 'https://example.com/headers/yamada.webp', initial: '山', iconImageUrl: 'https://example.com/icons/yamada.webp', name: '山田 由紀', socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/yuki_sleep' }] }),
   listExecutionHistories: async () => [{ executedActionCount: 2, id: 'execution-1', memo: '集中できました', postedAt: '2026-09-03T12:00:00+00:00', routineId: 'routine-1', routineTitle: '朝の集中ルーティン', supportCount: 3 }],
@@ -259,6 +259,17 @@ describe('AccountPage', () => {
     expect(screen.getByText('2')).toBeInTheDocument();
     expect(screen.getByText('応援')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
+  });
+
+  it('実行履歴を選択すると対応する実行詳細画面へ遷移する', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole('heading', { name: '山田 由紀' });
+
+    await user.click(screen.getByRole('tab', { name: /実行履歴/ }));
+    await user.click(screen.getByRole('button', { name: '朝の集中ルーティン' }));
+
+    expect(screen.getByText('/routines/routine-1/executions/execution-1')).toBeInTheDocument();
   });
 
   it('プロフィール取得エラーを表示する', async () => {

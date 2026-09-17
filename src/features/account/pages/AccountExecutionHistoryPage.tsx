@@ -1,47 +1,42 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import messages from '../../../shared/message/message.json';
+import { RoutineExecutionComment } from '../../routineExecution/components/RoutineExecutionComment';
 import { RoutineExecutionHeader } from '../../routineExecution/components/RoutineExecutionHeader';
 import { RoutineExecutionStepList } from '../../routineExecution/components/RoutineExecutionStepList';
-import type { RoutineExecutionViewModel } from '../../routineExecution/domain/routineExecution';
-import { routineExecutionService, type RoutineExecutionService } from '../../routineExecution/services/routineExecutionService';
 import type { AccountExecutionHistory } from '../domain/account';
 import { accountService, type AccountService } from '../services/accountService';
 import '../../routineExecution/routineExecution.css';
 
 type AccountExecutionHistoryPageProps = {
   accountService?: AccountService;
-  routineExecutionService?: RoutineExecutionService;
 };
 
 export function AccountExecutionHistoryPage({
   accountService: historyService = accountService,
-  routineExecutionService: executionService = routineExecutionService,
 }: AccountExecutionHistoryPageProps) {
   const navigate = useNavigate();
   const { executionId = '', routineId = '' } = useParams<{ executionId: string; routineId: string }>();
   const [history, setHistory] = useState<AccountExecutionHistory | null>(null);
-  const [steps, setSteps] = useState<RoutineExecutionViewModel['steps'] | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([historyService.getExecutionHistory(executionId), executionService.get(routineId)])
-      .then(([loadedHistory, routine]) => {
+    historyService.getExecutionHistory(executionId)
+      .then((loadedHistory) => {
         if (cancelled) {
           return;
         }
 
-        if (!loadedHistory || !routine || loadedHistory.routineId !== routineId) {
+        if (!loadedHistory || loadedHistory.routineId !== routineId) {
           setHistory(null);
-          setSteps(null);
           return;
         }
 
         setHistory(loadedHistory);
-        setSteps(routine.steps);
       })
       .catch(() => {
         if (!cancelled) {
@@ -55,31 +50,30 @@ export function AccountExecutionHistoryPage({
       });
 
     return () => { cancelled = true; };
-  }, [executionId, historyService, routineId, executionService]);
+  }, [executionId, historyService, routineId]);
 
   if (isLoading) {
     return <ExecutionHistoryState message={messages.account.loading} />;
   }
 
-  if (hasError || !history || !steps) {
+  if (hasError || !history) {
     return <ExecutionHistoryState message={hasError ? messages.account.error : messages.account.executionHistoryNotFound} />;
   }
 
-  const checked = steps.map((_, index) => history.completedActionIndexes.includes(index));
+  const steps = history.actions.map((action) => ({ action: action.name, duration: action.minutes === null ? undefined : `${action.minutes}${messages.account.minuteUnit}` }));
 
   return (
     <section className="routine-execution-page">
       <RoutineExecutionHeader
-        achieved={history.achievedActions}
-        label={messages.account.tabs.executionHistory}
-        onBack={() => navigate('/account')}
-        phase="running"
+        achieved={steps.length}
+        onBack={() => navigate(-1)}
         title={history.routineTitle}
-        total={history.totalActions}
+        total={steps.length}
       />
       <main className="routine-execution-scroll">
-        <p className="routine-execution-instruction">{messages.account.executionHistoryDescription}</p>
-        <RoutineExecutionStepList checked={checked} onToggle={() => undefined} readOnly steps={steps} />
+        <p className="routine-execution-instruction">{messages.routineExecution.readyDescription}</p>
+        <RoutineExecutionStepList checked={steps.map(() => true)} onToggle={() => undefined} readOnly steps={steps} />
+        <RoutineExecutionComment memo={history.memo ?? ''} onChange={() => undefined} readOnly />
       </main>
     </section>
   );

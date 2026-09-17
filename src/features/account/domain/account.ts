@@ -28,15 +28,21 @@ export const accountPostSchema = z.object({
 });
 
 export const accountExecutionHistorySchema = z.object({
-  achievedActions: z.number().int().nonnegative(),
-  completedActionIndexes: z.array(z.number().int().nonnegative()),
-  completed: z.boolean(),
-  executedAtLabel: z.string().min(1),
+  actions: z.array(z.object({
+    id: z.string().min(1),
+    memo: z.string().nullable(),
+    minutes: z.number().int().nonnegative().nullable(),
+    name: z.string().min(1),
+  })),
+  executedAt: z.string().datetime({ offset: true }),
   id: z.string().min(1),
-  minutes: z.number().int().nonnegative(),
+  memo: z.string().nullable(),
+  postedAt: z.string().datetime({ offset: true }),
   routineId: z.string().min(1),
+  routineMemo: z.string().nullable(),
   routineTitle: z.string().min(1),
-  totalActions: z.number().int().positive(),
+  supportCount: z.number().int().nonnegative(),
+  tags: z.array(z.object({ id: z.string().min(1), name: z.string().min(1) })),
 });
 
 export const likedRoutineSchema = z.object({

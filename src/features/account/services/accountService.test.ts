@@ -43,6 +43,48 @@ describe('createAccountService', () => {
     await expect(service.getProfile()).rejects.toMatchObject({ name: 'AccountUnauthorizedError' });
   });
 
+  it('GET /api/routine-executions/{id} の契約を実行詳細表示モデルへ変換する', async () => {
+    const executionIdentifier = '22222222-2222-4222-8222-222222222222';
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      account_identifier: '11111111-1111-4111-8111-111111111111',
+      account_name: 'ログインアカウント',
+      executed_at: '2026-09-03T12:00:00+00:00',
+      icon_image_url: 'https://example.com/icons/account.webp',
+      posted_at: '2026-09-03T12:30:00+00:00',
+      routine_execution_actions: [{
+        action_memo: '背筋を伸ばす',
+        action_minutes: 5,
+        action_name: 'ストレッチ',
+        routine_action_identifier: '33333333-3333-4333-8333-333333333333',
+      }],
+      routine_execution_identifier: executionIdentifier,
+      routine_execution_memo: '集中できました',
+      routine_identifier: '44444444-4444-4444-8444-444444444444',
+      routine_memo: '朝の習慣',
+      routine_name: '朝の集中ルーティン',
+      support_count: 3,
+      tags: [{ tag_identifier: '55555555-5555-4555-8555-555555555555', tag_name: '朝活' }],
+    })));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createAccountService().getExecutionHistory(executionIdentifier)).resolves.toMatchObject({
+      actions: [{ id: '33333333-3333-4333-8333-333333333333', minutes: 5, name: 'ストレッチ' }],
+      executedAt: '2026-09-03T12:00:00+00:00',
+      id: executionIdentifier,
+      routineId: '44444444-4444-4444-8444-444444444444',
+      routineTitle: '朝の集中ルーティン',
+      supportCount: 3,
+      tags: [{ id: '55555555-5555-4555-8555-555555555555', name: '朝活' }],
+    });
+    expect(fetchMock).toHaveBeenCalledWith(`/api/routine-executions/${executionIdentifier}`, { credentials: 'include', method: 'GET' });
+  });
+
+  it('実行詳細 API が404なら null を返す', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 404 })));
+
+    await expect(createAccountService().getExecutionHistory('22222222-2222-4222-8222-222222222222')).resolves.toBeNull();
+  });
+
   it('GET /api/my/posts の契約を投稿表示モデルへ変換する', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       items: [{
