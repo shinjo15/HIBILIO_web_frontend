@@ -318,7 +318,7 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
 
         {activeTab === 'posts' && <AccountPostsList canReport={(routine) => isOwnAccount ? profile.accountIdentifier !== routine.accountId : currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId)} error={postsList.error} likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} onLike={toggleLike} onReport={setReportingRoutine} posts={posts} retry={postsList.retry} sentinelRef={postsList.sentinelRef} />}
         {activeTab === 'likes' && <AccountLikesList canReport={(routine) => isOwnAccount ? profile.accountIdentifier !== routine.accountId : currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId)} error={likesList.error} likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} likes={likes} onLike={toggleLike} onReport={setReportingRoutine} retry={likesList.retry} sentinelRef={likesList.sentinelRef} status={likesList.total === null && !likesList.error ? 'loading' : likesList.error && likes.length === 0 ? 'error' : 'loaded'} />}
-        {activeTab === 'executionHistory' && <ExecutionHistoryList error={executionHistoriesList.error} histories={executionHistories} retry={executionHistoriesList.retry} sentinelRef={executionHistoriesList.sentinelRef} />}
+        {activeTab === 'executionHistory' && <ExecutionHistoryList error={executionHistoriesList.error} histories={executionHistories} onSelect={(history) => navigate(`/routines/${history.routineId}/executions/${history.id}`)} retry={executionHistoriesList.retry} sentinelRef={executionHistoriesList.sentinelRef} />}
         {activeTab === 'blockedAccounts' && <AccountRelationListState accounts={blockedAccounts} action={(account) => <button className="account-relation-card-with-action__button" disabled={unblockingAccountIdentifier === account.accountIdentifier} onClick={(event) => { event.stopPropagation(); void removeBlock(account); }} type="button"><BlockIcon />{unblockingAccountIdentifier === account.accountIdentifier ? messages.account.unblocking : messages.account.unblock}</button>} actionError={unblockError ? messages.account.unblockError : null} emptyMessage={messages.account.blockedAccountsEmpty} errorMessage={messages.account.blockedAccountsError} loadingMessage={messages.account.blockedAccountsLoading} status={blockedAccountsStatus} />}
         {reportingRoutine !== null && <ReportDialog onClose={() => setReportingRoutine(null)} onUnauthorized={() => { clearAuthenticated(); navigate('/login'); }} open service={reportService} targetAccountIdentifier={reportingRoutine.accountId} targetPostIdentifier={reportingRoutine.id} />}
       </div>
@@ -334,7 +334,7 @@ function BlockIcon() {
   return <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="m4.93 4.93 14.14 14.14" /></svg>;
 }
 
-function ExecutionHistoryList({ error, histories, retry, sentinelRef }: { error: boolean; histories: AccountExecutionSummary[]; retry: () => void; sentinelRef: (element: Element | null) => void | (() => void) }) {
+function ExecutionHistoryList({ error, histories, onSelect, retry, sentinelRef }: { error: boolean; histories: AccountExecutionSummary[]; onSelect: (history: AccountExecutionSummary) => void; retry: () => void; sentinelRef: (element: Element | null) => void | (() => void) }) {
   if (error && histories.length === 0) return <p className="account-page__state account-page__state--error">{messages.account.error} <button onClick={retry} type="button">再試行</button></p>;
   if (histories.length === 0) {
     return <p className="account-page__state">{messages.account.executionHistoryEmpty}</p>;
@@ -342,7 +342,7 @@ function ExecutionHistoryList({ error, histories, retry, sentinelRef }: { error:
 
   return <div className="account-page__list" role="tabpanel">{histories.map((history) => {
     return (
-      <article className="account-page__card" key={history.id}>
+      <button aria-label={history.routineTitle} className="account-page__card" key={history.id} onClick={() => onSelect(history)} type="button">
         <div className="account-page__card-body">
           <div className="account-page__card-header">
             <h2 className="account-page__card-title">{history.routineTitle}</h2>
@@ -354,7 +354,7 @@ function ExecutionHistoryList({ error, histories, retry, sentinelRef }: { error:
           <span>{messages.account.achieved} <strong>{history.executedActionCount}</strong></span>
           <span>{messages.account.support} <strong>{history.supportCount}</strong></span>
         </div>
-      </article>
+      </button>
     );
   })}{error && <p className="account-page__state account-page__state--error">{messages.account.error} <button onClick={retry} type="button">再試行</button></p>}<div aria-label="さらに読み込む" ref={sentinelRef} /></div>;
 }

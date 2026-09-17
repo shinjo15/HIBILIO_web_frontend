@@ -4,6 +4,7 @@ import { parseAccountRoutineExecutionsPage } from './accountRoutineExecutions';
 import type { Routine } from '../../routineFeed/domain/routine';
 import type { PageResult } from '../../../shared/hooks/useInfiniteList';
 import {
+  accountExecutionHistorySchema,
   accountProfileSchema,
   accountRelationSchema,
   type AccountExecutionHistory,
@@ -37,8 +38,26 @@ const accountRelationListResponseSchema = z.object({
   })),
 });
 
+const accountExecutionHistoryResponseSchema = z.object({
+  executed_at: z.string().datetime({ offset: true }),
+  posted_at: z.string().datetime({ offset: true }),
+  routine_execution_actions: z.array(z.object({
+    action_memo: z.string().nullable(),
+    action_minutes: z.number().int().nonnegative().nullable(),
+    action_name: z.string().min(1),
+    routine_action_identifier: z.string().min(1),
+  })),
+  routine_execution_identifier: z.string().min(1),
+  routine_execution_memo: z.string().nullable(),
+  routine_identifier: z.string().min(1),
+  routine_memo: z.string().nullable(),
+  routine_name: z.string().min(1),
+  support_count: z.number().int().nonnegative(),
+  tags: z.array(z.object({ tag_identifier: z.string().min(1), tag_name: z.string().min(1) })),
+});
 
 type AccountExecutionAdapter = {
+  getExecutionHistory: (executionId: string) => Promise<unknown | null>;
   listExecutionHistories: (page?: number) => Promise<unknown>;
 };
 
@@ -80,6 +99,12 @@ export type AccountService = {
 };
 
 const accountExecutionApiAdapter: AccountExecutionAdapter = {
+  getExecutionHistory: async (executionId) => {
+    const response = await fetch(`/api/routine-executions/${executionId}`, { credentials: 'include', method: 'GET' });
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`Failed to fetch routine execution details: ${response.status}`);
+    return response.json();
+  },
   listExecutionHistories: async (page = 1) => {
     const response = await fetch(`/api/my/routine-executions?page=${page}&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' });
     if (response.status === 401) throw new AccountUnauthorizedError('Routine executions require authentication');
@@ -175,7 +200,28 @@ export function createAccountService(
   const listPostsPage = async (page: number) => parseAccountPostsPage(await postsAdapter.listPosts(page));
 
   return {
-    getExecutionHistory: async () => null,
+    getExecutionHistory: async (executionId) => {
+      const response = await executionAdapter.getExecutionHistory(executionId);
+      if (response === null) return null;
+      const history = accountExecutionHistoryResponseSchema.parse(response);
+      return accountExecutionHistorySchema.parse({
+        actions: history.routine_execution_actions.map((action) => ({
+          id: action.routine_action_identifier,
+          memo: action.action_memo,
+          minutes: action.action_minutes,
+          name: action.action_name,
+        })),
+        executedAt: history.executed_at,
+        id: history.routine_execution_identifier,
+        memo: history.routine_execution_memo,
+        postedAt: history.posted_at,
+        routineId: history.routine_identifier,
+        routineMemo: history.routine_memo,
+        routineTitle: history.routine_name,
+        supportCount: history.support_count,
+        tags: history.tags.map((tag) => ({ id: tag.tag_identifier, name: tag.tag_name })),
+      });
+    },
     getProfile: async () => {
       const profile = getMyAccountResponseSchema.parse(await profileAdapter.getProfile());
       return accountProfileSchema.parse({

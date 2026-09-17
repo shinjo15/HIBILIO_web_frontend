@@ -5,7 +5,7 @@ type RoutineExecutionStepListProps = {
   checked: boolean[];
   onToggle: (index: number) => void;
   readOnly?: boolean;
-  steps: RoutineExecutionStepViewModel[];
+  steps: Array<RoutineExecutionStepViewModel & { memo?: string | null }>;
 };
 
 export function RoutineExecutionStepList({ checked, onToggle, readOnly = false, steps }: RoutineExecutionStepListProps) {
@@ -25,6 +25,7 @@ export function RoutineExecutionStepList({ checked, onToggle, readOnly = false, 
             <span className="routine-execution-step__title">
               <span>{step.action}</span>
             </span>
+            {step.memo !== undefined && step.memo !== null && <span className="routine-execution-step__memo">{step.memo}</span>}
             {step.duration && <span className="routine-execution-step__duration">{step.duration}</span>}
           </span>
           <span className="sr-only">{checked[index] ? messages.routineExecution.stepCompleted : messages.routineExecution.stepIncomplete}</span>
