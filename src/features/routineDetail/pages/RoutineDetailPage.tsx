@@ -253,17 +253,19 @@ function RoutineDetailContent({ routine, service }: { routine: RoutineDetailView
                   const supported = supportedPosts[post.id] ?? false;
                   return (
                     <article className="routine-detail-post" key={post.id}>
-                      <div className="routine-detail-post__author">
-                        <Avatar iconImageUrl={post.iconImageUrl} initial={post.avatar} />
-                        <div>
-                          <p>{post.userName}</p>
-                          <span>{post.date}</span>
+                      <Link className="routine-detail-post__content" to={`/routines/${routine.id}/executions/${post.id}`}>
+                        <div className="routine-detail-post__author">
+                          <Avatar iconImageUrl={post.iconImageUrl} initial={post.avatar} />
+                          <div>
+                            <p>{post.userName}</p>
+                            <span>{post.date}</span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="routine-detail-post__metrics">
-                        <span>{messages.routineDetail.achieved} <strong>{post.achieved} / {post.total} {messages.routineDetail.itemUnit}</strong></span>
-                      </div>
-                      {post.comment && <p className="routine-detail-post__comment">「{post.comment}」</p>}
+                        <div className="routine-detail-post__metrics">
+                          <span>{messages.routineDetail.achieved} <strong>{post.achieved} / {post.total} {messages.routineDetail.itemUnit}</strong></span>
+                        </div>
+                        {post.comment && <p className="routine-detail-post__comment">「{post.comment}」</p>}
+                      </Link>
                       <button
                         aria-label={`${supported ? messages.routineDetail.supported : messages.routineDetail.support} ${post.userName}`}
                         className={supported ? 'routine-detail-support routine-detail-support--supported' : 'routine-detail-support'}
