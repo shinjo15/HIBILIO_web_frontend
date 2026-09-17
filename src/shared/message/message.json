@@ -193,15 +193,6 @@
     "duration": "所要時間",
     "edit": "編集",
     "error": "アカウント情報を読み込めませんでした。時間をおいて再試行してください。",
-    "executionDetail": {
-      "actions": "実行した内容",
-      "executedAt": "実行日時",
-      "executedActionCount": "実行済み {count}項目",
-      "memo": "実行メモ",
-      "postedAt": "投稿日時",
-      "supportCount": "応援",
-      "tags": "タグ"
-    },
     "executionHistoryEmpty": "実行履歴はまだありません",
     "executionHistoryDescription": "完了したステップを確認できます。",
     "executionHistoryNotFound": "実行履歴が見つかりませんでした。",

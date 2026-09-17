@@ -2,18 +2,15 @@ import messages from '../../../shared/message/message.json';
 
 
 type RoutineExecutionHeaderProps = {
-  achieved?: number;
+  achieved: number;
   label?: string;
   onBack: () => void;
   phase?: string;
-  progressText?: string;
   title: string;
-  total?: number;
+  total: number;
 };
 
-export function RoutineExecutionHeader({ achieved, label = messages.routineExecution.runningLabel, onBack, progressText, title, total }: RoutineExecutionHeaderProps) {
-  const defaultProgress = achieved !== undefined && total !== undefined ? `${achieved}/${total} ${messages.routineExecution.completedUnit}` : '';
-
+export function RoutineExecutionHeader({ achieved, label = messages.routineExecution.runningLabel, onBack, title, total }: RoutineExecutionHeaderProps) {
   return (
     <header className="routine-execution-header">
       <button aria-label={messages.routineExecution.cancel} className="routine-execution-header__back" onClick={onBack} type="button">
@@ -23,7 +20,7 @@ export function RoutineExecutionHeader({ achieved, label = messages.routineExecu
         <p>{label}</p>
         <h1>{title}</h1>
       </div>
-      <span className="routine-execution-header__progress">{progressText ?? defaultProgress}</span>
+      <span className="routine-execution-header__progress">{achieved}/{total} {messages.routineExecution.completedUnit}</span>
     </header>
   );
 }

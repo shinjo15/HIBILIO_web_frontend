@@ -52,12 +52,29 @@ describe('AccountExecutionHistoryPage', () => {
     expect(completedStep).toBeDisabled();
     expect(completedSecondStep).toHaveAttribute('aria-pressed', 'true');
     expect(completedSecondStep).toBeDisabled();
-    expect(screen.getByText('実行済み 2項目')).toBeInTheDocument();
-    expect(screen.getByText('朝の習慣')).toBeInTheDocument();
-    expect(screen.getByText('集中できました')).toBeInTheDocument();
-    expect(screen.getByText('朝活')).toBeInTheDocument();
-    expect(screen.getByText('コップを用意する')).toBeInTheDocument();
-    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('実行中')).toBeInTheDocument();
+    expect(screen.getByText('2/2 完了')).toBeInTheDocument();
+    expect(screen.getByText('チェックを入れながら進めてください。')).toBeInTheDocument();
+    expect(screen.getByLabelText('ひとこと（任意）')).toHaveValue('集中できました');
+    expect(screen.getByLabelText('ひとこと（任意）')).toHaveAttribute('readonly');
+    expect(screen.queryByRole('button', { name: '実行結果を投稿する' })).not.toBeInTheDocument();
+    expect(screen.queryByText('実行日時')).not.toBeInTheDocument();
+    expect(screen.queryByText('朝の習慣')).not.toBeInTheDocument();
+  });
+
+  it('実行メモがない場合も読み取り専用のひとこと入力欄を表示する', async () => {
+    render(
+      <MemoryRouter initialEntries={['/routines/routine-1/executions/execution-1']}>
+        <Routes>
+          <Route element={<AccountExecutionHistoryPage accountService={{ ...accountService, getExecutionHistory: async () => ({ ...(await accountService.getExecutionHistory('execution-1'))!, memo: null }) }} />} path="/routines/:routineId/executions/:executionId" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const memo = await screen.findByLabelText('ひとこと（任意）');
+    expect(memo).toHaveValue('');
+    expect(memo).toHaveAttribute('readonly');
+    expect(screen.queryByRole('button', { name: '実行結果を投稿する' })).not.toBeInTheDocument();
   });
 
   it('戻る操作で直前の画面へ戻る', async () => {
@@ -71,7 +88,7 @@ describe('AccountExecutionHistoryPage', () => {
       </MemoryRouter>,
     );
 
-    await screen.findByText('集中できました');
+    await screen.findByLabelText('ひとこと（任意）');
     await user.click(screen.getByRole('button', { name: '実行をキャンセルする' }));
 
     expect(screen.getByText('/previous')).toBeInTheDocument();
