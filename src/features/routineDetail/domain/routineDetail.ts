@@ -20,6 +20,7 @@ export const executionPostDtoSchema = z.object({
   iconImageUrl: z.string().url().nullish(),
   minutes: z.number().int().positive().optional(),
   routineId: z.string().min(1),
+  supported: z.boolean().optional(),
   total: z.number().int().positive(),
   userHandle: z.string(),
   userName: z.string().min(1),
@@ -76,6 +77,7 @@ export type RoutineDetailViewModel = {
     id: string;
     iconImageUrl: string | null;
     minutes?: number;
+    supported?: boolean;
     total: number;
     userHandle: string;
     userName: string;
@@ -127,6 +129,7 @@ export function toRoutineDetailViewModel(input: unknown): RoutineDetailViewModel
       id: post.id,
       iconImageUrl: post.iconImageUrl ?? null,
       minutes: post.minutes,
+      supported: post.supported,
       total: post.total,
       userHandle: post.userHandle,
       userName: post.userName,

@@ -74,10 +74,12 @@ export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, on
           </Stack>
 
           <Stack className="routine-card__actions">
-            <button aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass} disabled={isLiking || onLike === undefined} onClick={(event) => { event.stopPropagation(); onLike?.(routine.id); }} type="button">
-              <HeartIcon filled={routine.liked} />
-              <Typography component="span" className="routine-card__action-value">{routine.likes}</Typography>
-            </button>
+            {routine.postCategory === 'action'
+              ? <ActionItem icon={<SupportIcon filled={routine.supported ?? false} />} label={routine.supported ? messages.routineDetail.supported : messages.routineDetail.support} />
+              : <button aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass} disabled={isLiking || onLike === undefined} onClick={(event) => { event.stopPropagation(); onLike?.(routine.id); }} type="button">
+                <HeartIcon filled={routine.liked} />
+                <Typography component="span" className="routine-card__action-value">{routine.likes}</Typography>
+              </button>}
             <ActionItem icon={<RunIcon />} value={routine.executions} />
             <ActionItem icon={<ShuffleIcon />} value={routine.customizations} />
           </Stack>
@@ -87,11 +89,11 @@ export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, on
   );
 }
 
-function ActionItem({ icon, value }: { icon: ReactNode; value: number }) {
+function ActionItem({ icon, label, value }: { icon: ReactNode; label?: string; value?: number }) {
   return (
-    <Box className="routine-card__action">
+    <Box aria-label={label} className="routine-card__action">
       {icon}
-      <Typography component="span" className="routine-card__action-value">{value}</Typography>
+      {value !== undefined && <Typography component="span" className="routine-card__action-value">{value}</Typography>}
     </Box>
   );
 }
@@ -102,6 +104,10 @@ function HeartIcon({ filled }: { filled: boolean }) {
       <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
     </svg>
   );
+}
+
+function SupportIcon({ filled }: { filled: boolean }) {
+  return <svg aria-hidden="true" fill={filled ? 'currentColor' : 'none'} height="16" viewBox="0 0 24 24" width="16"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2H14Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" /><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
 }
 
 function ClockIcon() {

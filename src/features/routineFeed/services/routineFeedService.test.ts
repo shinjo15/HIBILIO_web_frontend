@@ -45,9 +45,11 @@ describe('routineFeedService', () => {
       iconImageUrl: 'https://example.com/icons/tanaka.webp',
       liked: true,
       likes: 14,
+      postCategory: 'routine',
       routineId: 'routine-1',
       routineExecutionId: null,
       steps: [{ action: '水を飲む', durationMinutes: 10 }],
+      supported: undefined,
       supports: 4,
       tags: ['朝活'],
       title: '朝の集中ルーティン',
@@ -56,10 +58,12 @@ describe('routineFeedService', () => {
 
   it('フォロー中の実行投稿では post ID と別の実行 ID を保持する', async () => {
     const routineExecutionIdentifier = '20000000-0000-4000-8000-000000000001';
+    const { liked: removedLiked, ...routinePost } = response.posts[0];
+    expect(removedLiked).toBe(true);
     const service = createRoutineFeedService({
       list: async () => ({
         ...response,
-        posts: [{ ...response.posts[0], routine_execution_identifier: routineExecutionIdentifier }],
+        posts: [{ ...routinePost, post_category: 'action' as const, routine_execution_identifier: routineExecutionIdentifier, supported: true }],
       }),
       listFollowingAccounts: async () => ({ following_accounts: [] }),
     });
@@ -67,6 +71,7 @@ describe('routineFeedService', () => {
     await expect(service.list('following')).resolves.toMatchObject([{
       id: 'post-1',
       routineExecutionId: routineExecutionIdentifier,
+      supported: true,
     }]);
   });
 

@@ -55,7 +55,7 @@ function renderPage(service: RoutineDetailService, path = '/routines/routine-1')
 }
 
 describe('RoutineDetailPage', () => {
-  it('概要・ステップの開閉と、いいね・応援の画面内操作を提供する', async () => {
+  it('概要・ステップの開閉を提供する', async () => {
     const user = userEvent.setup();
     const service = createRoutineDetailService({ get: async () => detail });
 
@@ -78,12 +78,24 @@ describe('RoutineDetailPage', () => {
     await user.click(screen.getByRole('button', { name: 'メモ' }));
     expect(screen.getByText('開始前に深呼吸します。')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'いいね' }));
-    expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toBeInTheDocument();
-    expect(screen.getByText('5')).toBeInTheDocument();
+  });
 
-    await user.click(screen.getByRole('button', { name: '応援する 実行した人' }));
-    expect(screen.getByRole('button', { name: '応援済み 実行した人' })).toBeInTheDocument();
+  it('APIから受け取った liked を初期のいいね済み表示へ反映する', async () => {
+    const service = createRoutineDetailService({ get: async () => ({ ...detail, liked: true }) });
+
+    renderPage(service);
+
+    expect(await screen.findByRole('button', { name: 'いいねを取り消す' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toHaveClass('routine-detail-like--liked');
+  });
+
+  it('APIから受け取った supported を初期の応援済み表示へ反映する', async () => {
+    const service = createRoutineDetailService({ get: async () => ({ ...detail, executionPosts: [{ ...detail.executionPosts[0], supported: true }] }) });
+
+    renderPage(service);
+
+    expect(await screen.findByRole('button', { name: '応援済み 実行した人' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '応援済み 実行した人' })).toHaveTextContent('3');
   });
 
   it('実行投稿とカスタマイズのタブを切り替え、空状態を表示する', async () => {

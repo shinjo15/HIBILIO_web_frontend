@@ -59,10 +59,7 @@ export function RoutineDetailPage({ service = routineDetailService }: RoutineDet
 
 function RoutineDetailContent({ routine, service }: { routine: RoutineDetailViewModel; service: RoutineDetailService }) {
   const navigate = useNavigate();
-  const [liked, setLiked] = useState(routine.liked);
-  const [likeCount, setLikeCount] = useState(routine.likes);
   const [activeTab, setActiveTab] = useState<DetailTab>('executionPosts');
-  const [supportedPosts, setSupportedPosts] = useState<Record<string, boolean>>({});
   const [openStepMemos, setOpenStepMemos] = useState<Record<number, boolean>>({});
   const [stepsOpen, setStepsOpen] = useState(true);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
@@ -86,15 +83,6 @@ function RoutineDetailContent({ routine, service }: { routine: RoutineDetailView
   }, [routine, service]);
   const executionPostsList = useInfiniteList({ fetchPage: fetchExecutionPostsPage, key: `routine-execution-posts-${routine.id}`, preserveWhenDisabled: true });
   const customizationsList = useInfiniteList({ fetchPage: fetchCustomizationsPage, key: `routine-customizations-${routine.id}`, preserveWhenDisabled: true });
-
-  function toggleLike() {
-    setLiked((current) => !current);
-    setLikeCount((current) => liked ? current - 1 : current + 1);
-  }
-
-  function toggleSupport(postId: string) {
-    setSupportedPosts((current) => ({ ...current, [postId]: !current[postId] }));
-  }
 
   return (
     <section className="routine-detail-page">
@@ -193,14 +181,14 @@ function RoutineDetailContent({ routine, service }: { routine: RoutineDetailView
 
           <div className="routine-detail-actions">
             <button
-              aria-label={liked ? messages.routineDetail.unlike : messages.routineDetail.like}
-              className={liked ? 'routine-detail-like routine-detail-like--liked' : 'routine-detail-like'}
-              onClick={toggleLike}
+              aria-label={routine.liked ? messages.routineDetail.unlike : messages.routineDetail.like}
+              className={routine.liked ? 'routine-detail-like routine-detail-like--liked' : 'routine-detail-like'}
+              disabled
               type="button"
             >
-              <HeartIcon filled={liked} />
-              <span>{liked ? messages.routineDetail.liked : messages.routineDetail.like}</span>
-              <strong>{likeCount}</strong>
+              <HeartIcon filled={routine.liked} />
+              <span>{routine.liked ? messages.routineDetail.liked : messages.routineDetail.like}</span>
+              <strong>{routine.likes}</strong>
             </button>
             <div className="routine-detail-primary-actions">
               <button
@@ -250,7 +238,7 @@ function RoutineDetailContent({ routine, service }: { routine: RoutineDetailView
                 {!executionPostsList.error && executionPostsList.items.length === 0 && <DetailEmptyState message={messages.routineDetail.executionPostsEmpty} />}
                 {executionPostsList.error && executionPostsList.items.length > 0 && <DetailListError retry={executionPostsList.retry} />}
                 {executionPostsList.items.map((post) => {
-                  const supported = supportedPosts[post.id] ?? false;
+                  const supported = post.supported ?? false;
                   return (
                     <article className="routine-detail-post" key={post.id}>
                       <Link className="routine-detail-post__content" to={`/routines/${routine.id}/executions/${post.id}`}>
@@ -269,12 +257,12 @@ function RoutineDetailContent({ routine, service }: { routine: RoutineDetailView
                       <button
                         aria-label={`${supported ? messages.routineDetail.supported : messages.routineDetail.support} ${post.userName}`}
                         className={supported ? 'routine-detail-support routine-detail-support--supported' : 'routine-detail-support'}
-                        onClick={() => toggleSupport(post.id)}
+                        disabled
                         type="button"
                       >
                         <SupportIcon filled={supported} />
                         <span>{supported ? messages.routineDetail.supported : messages.routineDetail.support}</span>
-                        <strong>{post.cheers + (supported ? 1 : 0)}</strong>
+                        <strong>{post.cheers}</strong>
                       </button>
                     </article>
                   );
