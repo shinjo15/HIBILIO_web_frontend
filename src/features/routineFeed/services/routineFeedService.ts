@@ -22,6 +22,7 @@ const routineFeedResponseSchema = z.object({
       routine_action_identifier: z.string().min(1),
     })),
     routine_execution_minutes: z.number().int().positive().nullable(),
+    routine_execution_identifier: z.string().uuid().nullable().optional(),
     routine_identifier: z.string().min(1),
     routine_name: z.string().min(1),
     tags: z.array(z.object({
@@ -114,6 +115,7 @@ function toRoutine(post: RoutineFeedResponse['posts'][number]): Routine {
     liked: post.liked,
     likes: post.post_like_count,
     routineId: post.routine_identifier,
+    routineExecutionId: post.routine_execution_identifier ?? null,
     steps: post.routine_actions.map((action) => ({
       action: action.action_name,
       durationMinutes: action.action_minutes,

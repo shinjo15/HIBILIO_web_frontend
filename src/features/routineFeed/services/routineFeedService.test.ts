@@ -20,6 +20,7 @@ const response = {
       routine_action_identifier: 'action-1',
     }],
     routine_execution_minutes: 25,
+    routine_execution_identifier: null,
     routine_identifier: 'routine-1',
     routine_name: '朝の集中ルーティン',
     tags: [{ tag_identifier: 'tag-1', tag_name: '朝活' }],
@@ -45,10 +46,27 @@ describe('routineFeedService', () => {
       liked: true,
       likes: 14,
       routineId: 'routine-1',
+      routineExecutionId: null,
       steps: [{ action: '水を飲む', durationMinutes: 10 }],
       supports: 4,
       tags: ['朝活'],
       title: '朝の集中ルーティン',
+    }]);
+  });
+
+  it('フォロー中の実行投稿では post ID と別の実行 ID を保持する', async () => {
+    const routineExecutionIdentifier = '20000000-0000-4000-8000-000000000001';
+    const service = createRoutineFeedService({
+      list: async () => ({
+        ...response,
+        posts: [{ ...response.posts[0], routine_execution_identifier: routineExecutionIdentifier }],
+      }),
+      listFollowingAccounts: async () => ({ following_accounts: [] }),
+    });
+
+    await expect(service.list('following')).resolves.toMatchObject([{
+      id: 'post-1',
+      routineExecutionId: routineExecutionIdentifier,
     }]);
   });
 

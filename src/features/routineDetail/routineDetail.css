@@ -460,6 +460,17 @@
   padding: 16px;
 }
 
+.routine-detail-post__content {
+  color: inherit;
+  display: block;
+  text-decoration: none;
+}
+
+.routine-detail-post__content:hover,
+.routine-detail-post__content:focus-visible {
+  color: inherit;
+}
+
 .routine-detail-post__author { margin-bottom: 8px; }
 
 .routine-detail-post__metrics {

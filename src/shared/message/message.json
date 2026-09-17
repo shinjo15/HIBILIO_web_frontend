@@ -86,6 +86,7 @@
     "emptyTitle": "ルーティンが見つかりません",
     "emptyDescription": "条件に合うルーティンがまだありません。",
     "error": "ルーティンを読み込めませんでした。時間をおいて再試行してください。",
+    "executionDetail": "実行詳細を見る",
     "followingAccountsEmptyDescription": "フォローしたアカウントがここに表示されます。",
     "followingAccountsEmptyTitle": "フォロー中のアカウントはいません",
     "followingAccountsError": "フォロー中のアカウントを読み込めませんでした。時間をおいて再試行してください。",

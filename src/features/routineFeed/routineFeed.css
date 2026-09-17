@@ -315,6 +315,19 @@
   text-decoration: underline;
 }
 
+.routine-card__execution-detail-link {
+  color: var(--hibilio-color-muted-text);
+  display: inline-block;
+  font-size: 13px;
+  margin: 0 0 10px;
+  text-decoration: underline;
+}
+
+.routine-card__execution-detail-link:hover,
+.routine-card__execution-detail-link:focus-visible {
+  color: var(--hibilio-color-primary);
+}
+
 .routine-feed-page .routine-card__tags {
   display: flex;
   flex-direction: row;

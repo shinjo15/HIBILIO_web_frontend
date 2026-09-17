@@ -17,6 +17,7 @@ export const routineSchema = z.object({
   liked: z.boolean(),
   likes: z.number().int().nonnegative(),
   routineId: z.string().min(1),
+  routineExecutionId: z.string().uuid().nullable().optional(),
   steps: z.array(routineStepSchema),
   supports: z.number().int().nonnegative().optional(),
   tags: z.array(z.string().min(1)),

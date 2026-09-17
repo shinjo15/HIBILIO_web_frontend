@@ -100,6 +100,14 @@ describe('RoutineDetailPage', () => {
     expect(screen.getByText('まだカスタマイズはありません')).toBeInTheDocument();
   });
 
+  it('実行投稿から対応する実行詳細へリンクする', async () => {
+    const service = createRoutineDetailService({ get: async () => detail });
+
+    renderPage(service);
+
+    expect(await screen.findByRole('link', { name: /実行した人/ })).toHaveAttribute('href', '/routines/routine-1/executions/execution-1');
+  });
+
   it('実行投稿とカスタマイズをそれぞれ末尾へ追加し、total到達後は取得しない', async () => {
     const user = userEvent.setup();
     const intersectionNotifiers: Array<() => void> = [];
