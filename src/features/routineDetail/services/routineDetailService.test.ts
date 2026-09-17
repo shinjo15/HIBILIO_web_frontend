@@ -41,6 +41,7 @@ describe('routineDetailService', () => {
       customization_count: 1,
       execution_count: 3,
       like_count: 2,
+      liked: true,
       routine_actions: [{
         action_memo: null,
         action_minutes: 10,
@@ -74,6 +75,7 @@ describe('routineDetailService', () => {
           routine_execution_identifier: '70000000-0000-4000-8000-000000000001',
           routine_execution_memo: '実行メモです。',
           support_count: 2,
+          supported: true,
         }],
         total: 1,
       }), { status: 200 }));
@@ -83,8 +85,9 @@ describe('routineDetailService', () => {
       author: { accountId: '10000000-0000-4000-8000-000000000002', name: '春野あかり' },
       customizationsList: [{ authorName: '美香', id: '30000000-0000-4000-8000-000000000004' }],
       duration: '10分',
-      executionPosts: [{ achieved: 1, cheers: 2, comment: '実行メモです。', id: '70000000-0000-4000-8000-000000000001', total: 1, userName: '実行した人' }],
+      executionPosts: [{ achieved: 1, cheers: 2, comment: '実行メモです。', id: '70000000-0000-4000-8000-000000000001', supported: true, total: 1, userName: '実行した人' }],
       executions: 3,
+      liked: true,
       likes: 2,
       steps: [{ action: '水を飲む', duration: '10分', id: '40000000-0000-4000-8000-000000000001' }],
       title: '朝のルーティン',
@@ -143,6 +146,7 @@ describe('routineDetailService', () => {
           routine_execution_identifier: '70000000-0000-4000-8000-000000000001',
           routine_execution_memo: '実行メモです。',
           support_count: 2,
+          supported: false,
         }],
         total: 4,
       })));

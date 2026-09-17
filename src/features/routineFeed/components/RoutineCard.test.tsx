@@ -39,6 +39,13 @@ describe('RoutineCard', () => {
     expect(onCardClick).not.toHaveBeenCalled();
   });
 
+  it('実行投稿は応援済み状態を表示し、返されていない応援数を表示しない', () => {
+    render(<MemoryRouter><RoutineCard routine={{ ...routine, postCategory: 'action', supported: true }} /></MemoryRouter>);
+
+    expect(screen.getByLabelText('応援済み')).toHaveTextContent('');
+    expect(screen.queryByRole('button', { name: 'いいねする' })).not.toBeInTheDocument();
+  });
+
   it('三点メニューから投稿通報フォームを開く', async () => {
     const user = userEvent.setup();
     const onReport = vi.fn();
