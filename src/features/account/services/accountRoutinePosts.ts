@@ -8,6 +8,7 @@ const routinePostResponseSchema = z.object({
   icon_image_url: z.string().url().nullish().transform((url) => url ?? null),
   customization_count: z.number().int().nonnegative(),
   execution_count: z.number().int().nonnegative(),
+  liked: z.boolean(),
   post_identifier: z.string().min(1),
   post_like_count: z.number().int().nonnegative(),
   post_support_count: z.number().int().nonnegative(),
@@ -38,7 +39,7 @@ const accountLikedRoutinePostsResponseSchema = z.object({
   total: z.number().int().nonnegative(),
 });
 
-function toRoutine(post: z.infer<typeof routinePostResponseSchema>, liked: boolean): Routine {
+function toRoutine(post: z.infer<typeof routinePostResponseSchema>): Routine {
   return routineSchema.parse({
     accountId: post.account_identifier,
     authorName: post.account_name,
@@ -48,7 +49,7 @@ function toRoutine(post: z.infer<typeof routinePostResponseSchema>, liked: boole
     executions: post.execution_count,
     id: post.post_identifier,
     iconImageUrl: post.icon_image_url,
-    liked,
+    liked: post.liked,
     likes: post.post_like_count,
     routineId: post.routine_identifier,
     steps: post.routine_actions.map((action) => ({ action: action.action_name, durationMinutes: action.action_minutes })),
@@ -68,10 +69,10 @@ export function parseLikedRoutines(response: unknown): Routine[] {
 
 export function parseAccountPostsPage(response: unknown): PageResult<Routine> {
   const parsed = accountRoutinePostsResponseSchema.parse(response);
-  return { items: parsed.items.map((post) => toRoutine(post, false)), total: parsed.total };
+  return { items: parsed.items.map(toRoutine), total: parsed.total };
 }
 
 export function parseLikedRoutinesPage(response: unknown): PageResult<Routine> {
   const parsed = accountLikedRoutinePostsResponseSchema.parse(response);
-  return { items: parsed.items.map((post) => toRoutine(post, true)), total: parsed.total };
+  return { items: parsed.items.map(toRoutine), total: parsed.total };
 }

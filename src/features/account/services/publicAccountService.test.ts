@@ -42,6 +42,7 @@ describe('createPublicAccountService', () => {
       account_name: '投稿者',
       customization_count: 1,
       execution_count: 3,
+      liked: false,
       post_identifier: 'post-1',
       post_like_count: 2,
       post_support_count: 4,
@@ -63,7 +64,7 @@ describe('createPublicAccountService', () => {
     };
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ items: [post], total: 3 })))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [{ ...post, liked_at: '2026-09-04T12:00:00+00:00' }], total: 4 })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [{ ...post, liked: true, liked_at: '2026-09-04T12:00:00+00:00' }], total: 4 })))
       .mockResolvedValueOnce(new Response(JSON.stringify({ items: [execution], total: 5 })));
     vi.stubGlobal('fetch', fetchMock);
     const service = createPublicAccountService();
