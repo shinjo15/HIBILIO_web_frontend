@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/refs */
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ExecutionHistoryCard } from '../../../shared/components/ExecutionHistoryCard';
 import type { RoutineDetailViewModel } from '../domain/routineDetail';
 import {
   routineDetailService,
@@ -237,36 +238,7 @@ function RoutineDetailContent({ routine, service }: { routine: RoutineDetailView
                 {executionPostsList.error && executionPostsList.items.length === 0 && <DetailListError retry={executionPostsList.retry} />}
                 {!executionPostsList.error && executionPostsList.items.length === 0 && <DetailEmptyState message={messages.routineDetail.executionPostsEmpty} />}
                 {executionPostsList.error && executionPostsList.items.length > 0 && <DetailListError retry={executionPostsList.retry} />}
-                {executionPostsList.items.map((post) => {
-                  const supported = post.supported ?? false;
-                  return (
-                    <article className="routine-detail-post" key={post.id}>
-                      <Link className="routine-detail-post__content" to={`/routines/${routine.id}/executions/${post.id}`}>
-                        <div className="routine-detail-post__author">
-                          <Avatar iconImageUrl={post.iconImageUrl} initial={post.avatar} />
-                          <div>
-                            <p>{post.userName}</p>
-                            <span>{post.date}</span>
-                          </div>
-                        </div>
-                        <div className="routine-detail-post__metrics">
-                          <span>{messages.routineDetail.achieved} <strong>{post.achieved} / {post.total} {messages.routineDetail.itemUnit}</strong></span>
-                        </div>
-                        {post.comment && <p className="routine-detail-post__comment">「{post.comment}」</p>}
-                      </Link>
-                      <button
-                        aria-label={`${supported ? messages.routineDetail.supported : messages.routineDetail.support} ${post.userName}`}
-                        className={supported ? 'routine-detail-support routine-detail-support--supported' : 'routine-detail-support'}
-                        disabled
-                        type="button"
-                      >
-                        <SupportIcon filled={supported} />
-                        <span>{supported ? messages.routineDetail.supported : messages.routineDetail.support}</span>
-                        <strong>{post.cheers}</strong>
-                      </button>
-                    </article>
-                  );
-                })}
+                {executionPostsList.items.map((post) => <ExecutionHistoryCard dateLabel={post.date} execution={{ executedActionCount: post.achieved, id: post.id, memo: post.comment ?? null, postedAt: post.date, routineId: routine.id, routineTitle: routine.title, supportCount: post.cheers }} key={post.id} onSelect={(execution) => navigate(`/routines/${execution.routineId}/executions/${execution.id}`)} />)}
                 {executionPostsList.items.length > 0 && <div aria-label="さらに読み込む" ref={executionPostsList.sentinelRef} />}
               </div>
             )}
@@ -337,9 +309,6 @@ function HeartIcon({ filled }: { filled: boolean }) {
   return <svg aria-hidden="true" className="routine-detail-icon" fill={filled ? 'currentColor' : 'none'} viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z" /></svg>;
 }
 
-function SupportIcon({ filled }: { filled: boolean }) {
-  return <svg aria-hidden="true" className="routine-detail-small-icon" fill={filled ? 'currentColor' : 'none'} viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2H14Z" /><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" /></svg>;
-}
 
 function RunIcon() {
   return <svg aria-hidden="true" className="routine-detail-small-icon" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" /></svg>;

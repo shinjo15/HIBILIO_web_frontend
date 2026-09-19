@@ -63,14 +63,17 @@ describe('routineFeedService', () => {
     const service = createRoutineFeedService({
       list: async () => ({
         ...response,
-        posts: [{ ...routinePost, post_category: 'action' as const, routine_execution_identifier: routineExecutionIdentifier, supported: true }],
+        posts: [{ ...routinePost, executed_action_count: 2, post_category: 'action' as const, routine_execution_identifier: routineExecutionIdentifier, routine_execution_memo: '集中できました', support_count: 3, supported: true }],
       }),
       listFollowingAccounts: async () => ({ following_accounts: [] }),
     });
 
     await expect(service.list('following')).resolves.toMatchObject([{
       id: 'post-1',
+      executedActionCount: 2,
+      executionMemo: '集中できました',
       routineExecutionId: routineExecutionIdentifier,
+      supportCount: 3,
       supported: true,
     }]);
   });
