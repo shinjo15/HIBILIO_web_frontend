@@ -17,6 +17,7 @@ import { registrationSocialPlatforms } from '../../auth/register/services/regist
 import { clearAuthenticated } from '../../auth/services/authSession';
 import { AccountLikesList, AccountPostsList } from '../components/AccountRoutineLists';
 import { AccountRelationList } from '../../../shared/components/AccountRelationList';
+import { ExecutionHistoryCard } from '../../../shared/components/ExecutionHistoryCard';
 import { AccountAvatar, AccountHeaderImage } from '../../../shared/components/AccountImage';
 import { routineLikeService, RoutineLikeUnauthorizedError, type RoutineLikeService } from '../../routineFeed/services/routineLikeService';
 import { accountBlockService, AccountBlockError, AccountBlockUnauthorizedError, type AccountBlockService } from '../services/accountBlockService';
@@ -340,23 +341,7 @@ function ExecutionHistoryList({ error, histories, onSelect, retry, sentinelRef }
     return <p className="account-page__state">{messages.account.executionHistoryEmpty}</p>;
   }
 
-  return <div className="account-page__list" role="tabpanel">{histories.map((history) => {
-    return (
-      <button aria-label={history.routineTitle} className="account-page__card" key={history.id} onClick={() => onSelect(history)} type="button">
-        <div className="account-page__card-body">
-          <div className="account-page__card-header">
-            <h2 className="account-page__card-title">{history.routineTitle}</h2>
-            <span className="account-page__card-date">{new Date(history.postedAt).toLocaleDateString('ja-JP')}</span>
-          </div>
-          {history.memo !== null && <p className="account-profile__handle">{history.memo}</p>}
-        </div>
-        <div className="account-page__card-metrics">
-          <span>{messages.account.achieved} <strong>{history.executedActionCount}</strong></span>
-          <span>{messages.account.support} <strong>{history.supportCount}</strong></span>
-        </div>
-      </button>
-    );
-  })}{error && <p className="account-page__state account-page__state--error">{messages.account.error} <button onClick={retry} type="button">再試行</button></p>}<div aria-label="さらに読み込む" ref={sentinelRef} /></div>;
+  return <div className="account-page__list" role="tabpanel">{histories.map((history) => <ExecutionHistoryCard execution={history} key={history.id} onSelect={onSelect} />)}{error && <p className="account-page__state account-page__state--error">{messages.account.error} <button onClick={retry} type="button">再試行</button></p>}<div aria-label="さらに読み込む" ref={sentinelRef} /></div>;
 }
 
 function AccountRelationListState({ accounts, action, actionError, emptyMessage, errorMessage, loadingMessage, status }: { accounts: AccountRelation[]; action: (account: AccountRelation) => ReactNode; actionError: string | null; emptyMessage: string; errorMessage: string; loadingMessage: string; status: 'idle' | 'loading' | 'loaded' | 'error' }) {

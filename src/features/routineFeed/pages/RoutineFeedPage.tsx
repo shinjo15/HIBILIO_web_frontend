@@ -15,6 +15,7 @@ import { routineLikeService, RoutineLikeUnauthorizedError, type RoutineLikeServi
 import { clearAuthenticated, isAuthenticated as hasAuthenticatedSession } from '../../auth/services/authSession';
 import { AccountUnauthorizedError, accountService } from '../../account/services/accountService';
 import { AccountRelationList } from '../../../shared/components/AccountRelationList';
+import { ExecutionHistoryCard } from '../../../shared/components/ExecutionHistoryCard';
 import { HibilioMark } from '../../../shared/brand/HibilioMark';
 import messages from '../../../shared/message/message.json';
 import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
@@ -198,7 +199,9 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
         {!routineList.isInitialLoading && activeTab !== 'followingAccounts' && routines.length > 0 && (
           <Stack className="routine-feed-list">
             {likeError && <Alert severity="error">{messages.routineFeed.likeError}</Alert>}
-            {routines.map((routine, index) => <div key={routine.id}><RoutineCard isLiking={likingPostIdentifier === routine.id} likeAnimation={likeAnimation?.postIdentifier === routine.id ? likeAnimation.type : null} onLike={toggleLike} onReport={!authenticated || currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId) ? setReportingRoutine : undefined} routine={routine} showExecutionDetail={activeTab === 'following'} />{shouldInsertFeedAdvertisement(index, true) && <FeedAdvertisement />}</div>)}
+            {routines.map((routine, index) => <div key={routine.id}>{isExecutionPost(routine)
+              ? <ExecutionHistoryCard execution={{ executedActionCount: routine.executedActionCount, id: routine.routineExecutionId, memo: routine.executionMemo, postedAt: routine.createdAt, routineId: routine.routineId, routineTitle: routine.title, supportCount: routine.supportCount }} onSelect={(execution) => navigate(`/routines/${execution.routineId}/executions/${execution.id}`)} />
+              : <RoutineCard isLiking={likingPostIdentifier === routine.id} likeAnimation={likeAnimation?.postIdentifier === routine.id ? likeAnimation.type : null} onLike={toggleLike} onReport={!authenticated || currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId) ? setReportingRoutine : undefined} routine={routine} />}{shouldInsertFeedAdvertisement(index, true) && <FeedAdvertisement />}</div>)}
             <Box aria-label="さらに読み込む" ref={routineList.sentinelRef} />
             <Box className="routine-feed-list__spacer" />
           </Stack>
@@ -208,4 +211,13 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
       </Box>
     </Box>
   );
+}
+
+function isExecutionPost(routine: Routine): routine is Routine & { executedActionCount: number; executionMemo: string | null; routineExecutionId: string; supportCount: number } {
+  return routine.postCategory === 'action'
+    && routine.routineExecutionId !== null
+    && routine.routineExecutionId !== undefined
+    && routine.executedActionCount !== undefined
+    && routine.executionMemo !== undefined
+    && routine.supportCount !== undefined;
 }
