@@ -26,7 +26,7 @@ const routine: Routine = {
 };
 
 const routinePage2: Routine = { ...routine, id: 'post-2', title: '夜の読書ルーティン' };
-const executionRoutine: Routine = { ...routine, id: 'post-2', routineExecutionId: '20000000-0000-4000-8000-000000000001' };
+const executionRoutine: Routine = { ...routine, id: 'post-2', postCategory: 'action', routineExecutionId: '20000000-0000-4000-8000-000000000001' };
 
 afterEach(() => {
   cleanup();
@@ -184,7 +184,7 @@ describe('RoutineFeedPage', () => {
     expect(screen.getByRole('link', { name: '田中 花子' })).toHaveAttribute('href', '/accounts/22222222-2222-4222-8222-222222222222');
   });
 
-  it('フォロー中の実行投稿だけを実行詳細へリンクする', async () => {
+  it('フォロー中の実行投稿を専用カードで表示し、タイトルから実行詳細へリンクする', async () => {
     const list = vi.fn().mockImplementation(async (tab: string) => tab === 'following' ? [executionRoutine] : [routine]);
     const user = userEvent.setup();
     renderPage({ list });
@@ -193,7 +193,8 @@ describe('RoutineFeedPage', () => {
     expect(screen.getByRole('link', { name: '朝の集中ルーティン' })).toHaveAttribute('href', '/routines/routine-1');
 
     await user.click(screen.getByRole('tab', { name: 'フォロー中' }));
-    expect(await screen.findByRole('link', { name: '朝の集中ルーティン' })).toHaveAttribute('href', '/routines/routine-1');
+    expect(await screen.findByRole('article')).toHaveClass('execution-post-card');
+    expect(screen.getByRole('link', { name: '朝の集中ルーティン' })).toHaveAttribute('href', '/routines/routine-1/executions/20000000-0000-4000-8000-000000000001');
     expect(screen.getByRole('link', { name: '実行詳細を見る' })).toHaveAttribute('href', '/routines/routine-1/executions/20000000-0000-4000-8000-000000000001');
   });
 });

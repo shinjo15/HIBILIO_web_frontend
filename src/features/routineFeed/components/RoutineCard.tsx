@@ -13,10 +13,9 @@ type RoutineCardProps = {
   onLike?: (postIdentifier: string) => void;
   onReport?: (routine: Routine) => void;
   routine: Routine;
-  showExecutionDetail?: boolean;
 };
 
-export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, onReport, routine, showExecutionDetail = false }: RoutineCardProps) {
+export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, onReport, routine }: RoutineCardProps) {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const avatarClasses: Record<string, string> = {
     H: 'routine-card__avatar--h',
@@ -33,9 +32,6 @@ export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, on
     likeAnimation === 'like' && 'routine-card__like--like-animation',
     likeAnimation === 'unlike' && 'routine-card__like--unlike-animation',
   ].filter(Boolean).join(' ');
-  const executionDetailPath = showExecutionDetail && routine.routineExecutionId !== null && routine.routineExecutionId !== undefined
-    ? `/routines/${routine.routineId}/executions/${routine.routineExecutionId}`
-    : null;
 
   return (
     <Paper
@@ -60,7 +56,6 @@ export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, on
           <Typography component="h2" className="routine-card__title">
             <Link className="routine-card__detail-link" to={`/routines/${routine.routineId}`}>{routine.title}</Link>
           </Typography>
-          {executionDetailPath !== null && <Link className="routine-card__execution-detail-link" to={executionDetailPath}>{messages.routineFeed.executionDetail}</Link>}
           <Stack className="routine-card__tags">
             {routine.tags.slice(0, 3).map((tag) => <Box component="span" className="routine-card__tag" key={tag}>{tag}</Box>)}
           </Stack>

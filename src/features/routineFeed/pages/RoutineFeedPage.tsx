@@ -5,6 +5,7 @@ import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import { Alert, Box, Button, CircularProgress, IconButton, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ExecutionPostCard } from '../components/ExecutionPostCard';
 import { RoutineCard } from '../components/RoutineCard';
 import { FeedAdvertisement } from '../components/feedAdvertisement';
 import { shouldInsertFeedAdvertisement } from '../components/feedAdvertisementPlacement';
@@ -198,7 +199,9 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
         {!routineList.isInitialLoading && activeTab !== 'followingAccounts' && routines.length > 0 && (
           <Stack className="routine-feed-list">
             {likeError && <Alert severity="error">{messages.routineFeed.likeError}</Alert>}
-            {routines.map((routine, index) => <div key={routine.id}><RoutineCard isLiking={likingPostIdentifier === routine.id} likeAnimation={likeAnimation?.postIdentifier === routine.id ? likeAnimation.type : null} onLike={toggleLike} onReport={!authenticated || currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId) ? setReportingRoutine : undefined} routine={routine} showExecutionDetail={activeTab === 'following'} />{shouldInsertFeedAdvertisement(index, true) && <FeedAdvertisement />}</div>)}
+            {routines.map((routine, index) => <div key={routine.id}>{isExecutionPost(routine)
+              ? <ExecutionPostCard onReport={!authenticated || currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId) ? setReportingRoutine : undefined} post={routine} />
+              : <RoutineCard isLiking={likingPostIdentifier === routine.id} likeAnimation={likeAnimation?.postIdentifier === routine.id ? likeAnimation.type : null} onLike={toggleLike} onReport={!authenticated || currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId) ? setReportingRoutine : undefined} routine={routine} />}{shouldInsertFeedAdvertisement(index, true) && <FeedAdvertisement />}</div>)}
             <Box aria-label="さらに読み込む" ref={routineList.sentinelRef} />
             <Box className="routine-feed-list__spacer" />
           </Stack>
@@ -208,4 +211,8 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
       </Box>
     </Box>
   );
+}
+
+function isExecutionPost(routine: Routine): routine is Routine & { routineExecutionId: string } {
+  return routine.postCategory === 'action' && routine.routineExecutionId !== null && routine.routineExecutionId !== undefined;
 }
