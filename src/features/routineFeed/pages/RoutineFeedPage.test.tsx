@@ -194,6 +194,7 @@ describe('RoutineFeedPage', () => {
 
     await user.click(screen.getByRole('tab', { name: 'フォロー中' }));
     const executionCard = await screen.findByRole('button', { name: '朝の集中ルーティン' });
+    expect(executionCard.closest('.routine-feed-execution-post')).toBeInTheDocument();
     expect(executionCard).toHaveClass('account-page__card');
     expect(screen.getByText('集中できました')).toBeInTheDocument();
     expect(screen.getByText('達成項目数')).toHaveTextContent('1');

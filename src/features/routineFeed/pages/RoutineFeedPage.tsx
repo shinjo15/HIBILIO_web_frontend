@@ -199,7 +199,7 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
         {!routineList.isInitialLoading && activeTab !== 'followingAccounts' && routines.length > 0 && (
           <Stack className="routine-feed-list">
             {likeError && <Alert severity="error">{messages.routineFeed.likeError}</Alert>}
-            {routines.map((routine, index) => <div key={routine.id}>{isExecutionPost(routine)
+            {routines.map((routine, index) => <div className={isExecutionPost(routine) ? 'routine-feed-execution-post' : undefined} key={routine.id}>{isExecutionPost(routine)
               ? <ExecutionHistoryCard execution={{ executedActionCount: routine.executedActionCount, id: routine.routineExecutionId, memo: routine.executionMemo, postedAt: routine.createdAt, routineId: routine.routineId, routineTitle: routine.title, supportCount: routine.supportCount }} onSelect={(execution) => navigate(`/routines/${execution.routineId}/executions/${execution.id}`)} />
               : <RoutineCard isLiking={likingPostIdentifier === routine.id} likeAnimation={likeAnimation?.postIdentifier === routine.id ? likeAnimation.type : null} onLike={toggleLike} onReport={!authenticated || currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId) ? setReportingRoutine : undefined} routine={routine} />}{shouldInsertFeedAdvertisement(index, true) && <FeedAdvertisement />}</div>)}
             <Box aria-label="さらに読み込む" ref={routineList.sentinelRef} />
