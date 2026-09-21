@@ -82,7 +82,7 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
     return { items, total: items.length };
   }, [service]);
   const postsList = useInfiniteList({ enabled: activeTab === 'posts', fetchPage: fetchPostsPage, key: 'account-posts', onError: handleListError, preserveWhenDisabled: true });
-  const likesList = useInfiniteList({ enabled: isOwnAccount || activeTab === 'likes', fetchPage: fetchLikesPage, key: 'account-likes', onError: handleListError, preserveWhenDisabled: true });
+  const likesList = useInfiniteList({ enabled: true, fetchPage: fetchLikesPage, key: 'account-likes', onError: handleListError, preserveWhenDisabled: true });
   const executionHistoriesList = useInfiniteList({ enabled: true, fetchPage: fetchExecutionHistoriesPage, key: 'account-execution-history', onError: handleListError, preserveWhenDisabled: true });
   const posts = postsList.items;
   const likes = likesList.items;
