@@ -11,6 +11,7 @@ describe('createPublicAccountService', () => {
       account_name: '公開アカウント',
       header_image_url: 'https://example.com/headers/public.webp',
       icon_image_url: 'https://example.com/icons/public.webp',
+      visibility: 'public',
       favorite_tags: [{ tag_identifier: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', tag_name: '朝活' }],
       social_links: [{ social_type: 'x', social_url: 'https://x.com/example' }],
     })));
@@ -34,6 +35,19 @@ describe('createPublicAccountService', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 404 })));
 
     await expect(createPublicAccountService().get('missing-account')).resolves.toBeNull();
+  });
+
+  it('鍵アカウントの詳細レスポンスは表示モデルに変換せず null を返す', async () => {
+    const service = createPublicAccountService({ get: async () => ({
+      account_bio: '非公開の自己紹介',
+      account_identifier: 'private-account',
+      account_name: '鍵アカウント',
+      favorite_tags: [],
+      social_links: [],
+      visibility: 'private',
+    }) });
+
+    await expect(service.get('private-account')).resolves.toBeNull();
   });
 
   it('公開投稿・いいね・実行履歴のページ結果を返す', async () => {

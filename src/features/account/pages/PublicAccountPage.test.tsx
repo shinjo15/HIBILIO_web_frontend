@@ -119,6 +119,25 @@ describe('PublicAccountPage', () => {
     expect(screen.getByRole('button', { name: '戻る' })).toBeInTheDocument();
   });
 
+  it('鍵アカウントでは詳細UIを表示せず、アカウントが見つからない状態を表示する', async () => {
+    const service = createPublicAccountService({ get: async () => ({
+      account_bio: '非公開の自己紹介',
+      account_identifier: 'account-1',
+      account_name: '鍵アカウント',
+      favorite_tags: [],
+      social_links: [],
+      visibility: 'private',
+    }) });
+
+    renderPage(service);
+
+    expect(await screen.findByText('アカウントが見つかりませんでした。')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '鍵アカウント' })).not.toBeInTheDocument();
+    expect(screen.queryByText('非公開の自己紹介')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'フォロー' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+  });
+
   it('ブロック成功時に対象アカウントをブロック済みとして表示する', async () => {
     const user = userEvent.setup();
     const blockService: AccountBlockService = { create: vi.fn().mockResolvedValue(undefined), remove: vi.fn().mockResolvedValue(undefined) };
