@@ -26,7 +26,7 @@ const routine: Routine = {
 };
 
 const routinePage2: Routine = { ...routine, id: 'post-2', title: '夜の読書ルーティン' };
-const executionRoutine: Routine = { ...routine, executedActionCount: 1, executionMemo: '集中できました', id: 'post-2', postCategory: 'action', routineExecutionId: '20000000-0000-4000-8000-000000000001', supportCount: 3 };
+const executionRoutine: Routine = { ...routine, executedActionCount: 1, executionMemo: '集中できました', iconImageUrl: 'https://example.com/icons/tanaka.webp', id: 'post-2', postCategory: 'action', routineExecutionId: '20000000-0000-4000-8000-000000000001', supportCount: 3 };
 
 afterEach(() => {
   cleanup();
@@ -196,6 +196,8 @@ describe('RoutineFeedPage', () => {
     const executionCard = await screen.findByRole('button', { name: '朝の集中ルーティン' });
     expect(executionCard.closest('.routine-feed-execution-post')).toBeInTheDocument();
     expect(executionCard).toHaveClass('account-page__card');
+    expect(screen.getByText('田中 陽介')).toBeInTheDocument();
+    expect(executionCard.querySelector('.account-avatar__image')).toHaveAttribute('src', 'https://example.com/icons/tanaka.webp');
     expect(screen.getByText('集中できました')).toBeInTheDocument();
     expect(screen.getByText('達成項目数')).toHaveTextContent('1');
     expect(screen.getByText('応援')).toHaveTextContent('3');
