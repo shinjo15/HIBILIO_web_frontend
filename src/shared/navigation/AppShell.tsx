@@ -111,61 +111,65 @@ export function AppShell() {
         }}
         variant="permanent"
       >
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2.5, py: 3 }}>
-          <Box sx={{ alignItems: 'center', display: 'flex', gap: 1 }}>
-            <HibilioMark />
-            <Typography component="p" sx={{ fontFamily: 'Fraunces, serif', fontSize: 20, fontWeight: 600, letterSpacing: '0.04em' }}>
-              {messages.app.name}
+        <Box component="nav" sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2.5, py: 3 }}>
+            <Box sx={{ alignItems: 'center', display: 'flex', gap: 1 }}>
+              <HibilioMark />
+              <Typography component="p" sx={{ fontFamily: 'Fraunces, serif', fontSize: 20, fontWeight: 600, letterSpacing: '0.04em' }}>
+                {messages.app.name}
+              </Typography>
+            </Box>
+            <Typography color="text.secondary" sx={{ fontSize: 12, mt: 0.5 }}>
+              {messages.app.tagline}
             </Typography>
           </Box>
-          <Typography color="text.secondary" sx={{ fontSize: 12, mt: 0.5 }}>
-            {messages.app.tagline}
-          </Typography>
-        </Box>
 
-        <List aria-label={messages.navigation.ariaLabel} sx={{ p: 1.5 }}>
-          {navigationItems.map((item) => (
+          <List aria-label={messages.navigation.ariaLabel} sx={{ p: 1.5 }}>
+            {navigationItems.map((item) => (
+              <ListItemButton
+                component={RouterLink}
+                key={item.path}
+                selected={activePath === item.path}
+                sx={{
+                  borderRadius: 2 / 3,
+                  color: 'text.secondary',
+                  gap: 1,
+                  mb: 0.5,
+                  px: 1.25,
+                  py: 1,
+                  '&.Mui-selected': { backgroundColor: 'var(--hibilio-color-muted)', color: 'primary.main' },
+                  '&.Mui-selected:hover': { backgroundColor: 'var(--hibilio-color-muted)' },
+                  '&:hover': { backgroundColor: 'var(--hibilio-color-muted)', color: 'text.primary' },
+                }}
+                to={protectedPath(item.path)}
+              >
+                <ListItemIcon sx={{ color: 'inherit', minWidth: 28 }}>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontSize: 14, fontWeight: 500 } } }} />
+              </ListItemButton>
+            ))}
+          </List>
+
+          <List sx={{ mt: 'auto', p: 1.5 }}>
             <ListItemButton
               component={RouterLink}
-              key={item.path}
-              selected={activePath === item.path}
+              selected={activePath === '/routines/new'}
               sx={{
+                backgroundColor: 'primary.main',
                 borderRadius: 2 / 3,
-                color: 'text.secondary',
+                color: 'primary.contrastText',
                 gap: 1,
-                mb: 0.5,
                 px: 1.25,
                 py: 1,
-                '&.Mui-selected': { backgroundColor: 'var(--hibilio-color-muted)', color: 'primary.main' },
-                '&.Mui-selected:hover': { backgroundColor: 'var(--hibilio-color-muted)' },
-                '&:hover': { backgroundColor: 'var(--hibilio-color-muted)', color: 'text.primary' },
+                '&.Mui-selected': { backgroundColor: 'primary.main' },
+                '&:hover': { backgroundColor: 'primary.main', opacity: 0.9 },
               }}
-              to={protectedPath(item.path)}
+              to={protectedPath('/routines/new')}
             >
-              <ListItemIcon sx={{ color: 'inherit', minWidth: 28 }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontSize: 14, fontWeight: 500 } } }} />
+              <ListItemIcon sx={{ color: 'inherit', minWidth: 28 }}><AddIcon fontSize="small" /></ListItemIcon>
+              <ListItemText primary={messages.navigation.createRoutine} slotProps={{ primary: { sx: { fontSize: 14, fontWeight: 500 } } }} />
             </ListItemButton>
-          ))}
-          <ListItemButton
-            component={RouterLink}
-            selected={activePath === '/routines/new'}
-            sx={{
-              backgroundColor: 'primary.main',
-              borderRadius: 2 / 3,
-              color: 'primary.contrastText',
-              gap: 1,
-              mt: 2,
-              px: 1.25,
-              py: 1,
-              '&.Mui-selected': { backgroundColor: 'primary.main' },
-              '&:hover': { backgroundColor: 'primary.main', opacity: 0.9 },
-            }}
-            to={protectedPath('/routines/new')}
-          >
-            <ListItemIcon sx={{ color: 'inherit', minWidth: 28 }}><AddIcon fontSize="small" /></ListItemIcon>
-            <ListItemText primary={messages.navigation.createRoutine} slotProps={{ primary: { sx: { fontSize: 14, fontWeight: 500 } } }} />
-          </ListItemButton>
-        </List>
+          </List>
+        </Box>
       </Drawer>
 
       <Box component="main" sx={{ flexGrow: 1, minWidth: 0, pb: { lg: 0, xs: 8 } }}>
