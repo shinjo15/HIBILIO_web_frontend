@@ -50,7 +50,31 @@ describe('PublicAccountPage', () => {
     expect(screen.getByText('朝の習慣を続けています。')).toBeInTheDocument();
     expect(screen.getByText('朝活')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /example/ })).toHaveAttribute('href', 'https://x.com/example');
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['0投稿', '-いいね', '0実行履歴']);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['0投稿', '0いいね', '0実行履歴']);
+  });
+
+  it('初期表示でいいね一覧を取得し、API totalと現在の閲覧者基準の liked を表示する', async () => {
+    const user = userEvent.setup();
+    const likedByAccountOwner = { ...publicPost, liked: false, title: '公開アカウントがいいねした投稿' };
+    const listLikesPage = vi.fn().mockResolvedValue({ items: [likedByAccountOwner], total: 4 });
+    const service: PublicAccountService = {
+      get: async () => ({ accountIdentifier: 'account-1', bio: null, favoriteTags: [], initial: '公', name: '公開アカウント', socialLinks: [] }),
+      listExecutionHistories: async () => [],
+      listLikes: async () => [],
+      listLikesPage,
+      listPosts: async () => [],
+    };
+
+    renderPage(service);
+
+    await screen.findByRole('heading', { name: '公開アカウント' });
+    await waitFor(() => expect(listLikesPage).toHaveBeenCalledWith('account-1', 1));
+    expect(screen.getByRole('tab', { name: '4いいね' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: '4いいね' }));
+
+    expect(await screen.findByRole('heading', { name: '公開アカウントがいいねした投稿' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'いいねする' })).toBeInTheDocument();
   });
 
   it('ログイン中の自分の公開プロフィールではフォロー・ブロック操作を表示しない', async () => {
