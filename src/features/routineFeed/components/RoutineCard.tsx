@@ -13,10 +13,9 @@ type RoutineCardProps = {
   onLike?: (postIdentifier: string) => void;
   onReport?: (routine: Routine) => void;
   routine: Routine;
-  showExecutionDetail?: boolean;
 };
 
-export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, onReport, routine, showExecutionDetail = false }: RoutineCardProps) {
+export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, onReport, routine }: RoutineCardProps) {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const avatarClasses: Record<string, string> = {
     H: 'routine-card__avatar--h',
@@ -33,9 +32,6 @@ export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, on
     likeAnimation === 'like' && 'routine-card__like--like-animation',
     likeAnimation === 'unlike' && 'routine-card__like--unlike-animation',
   ].filter(Boolean).join(' ');
-  const executionDetailPath = showExecutionDetail && routine.routineExecutionId !== null && routine.routineExecutionId !== undefined
-    ? `/routines/${routine.routineId}/executions/${routine.routineExecutionId}`
-    : null;
 
   return (
     <Paper
@@ -60,7 +56,7 @@ export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, on
           <Typography component="h2" className="routine-card__title">
             <Link className="routine-card__detail-link" to={`/routines/${routine.routineId}`}>{routine.title}</Link>
           </Typography>
-          {executionDetailPath !== null && <Link className="routine-card__execution-detail-link" to={executionDetailPath}>{messages.routineFeed.executionDetail}</Link>}
+
           <Stack className="routine-card__tags">
             {routine.tags.slice(0, 3).map((tag) => <Box component="span" className="routine-card__tag" key={tag}>{tag}</Box>)}
           </Stack>
@@ -74,12 +70,10 @@ export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, on
           </Stack>
 
           <Stack className="routine-card__actions">
-            {routine.postCategory === 'action'
-              ? <ActionItem icon={<SupportIcon filled={routine.supported ?? false} />} label={routine.supported ? messages.routineDetail.supported : messages.routineDetail.support} />
-              : <button aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass} disabled={isLiking || onLike === undefined} onClick={(event) => { event.stopPropagation(); onLike?.(routine.id); }} type="button">
-                <HeartIcon filled={routine.liked} />
-                <Typography component="span" className="routine-card__action-value">{routine.likes}</Typography>
-              </button>}
+            <button aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass} disabled={isLiking || onLike === undefined} onClick={(event) => { event.stopPropagation(); onLike?.(routine.id); }} type="button">
+              <HeartIcon filled={routine.liked} />
+              <Typography component="span" className="routine-card__action-value">{routine.likes}</Typography>
+            </button>
             <ActionItem icon={<RunIcon />} value={routine.executions} />
             <ActionItem icon={<ShuffleIcon />} value={routine.customizations} />
           </Stack>
@@ -106,9 +100,6 @@ function HeartIcon({ filled }: { filled: boolean }) {
   );
 }
 
-function SupportIcon({ filled }: { filled: boolean }) {
-  return <svg aria-hidden="true" fill={filled ? 'currentColor' : 'none'} height="16" viewBox="0 0 24 24" width="16"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2H14Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" /><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
-}
 
 function ClockIcon() {
   return (

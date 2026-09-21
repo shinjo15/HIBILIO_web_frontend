@@ -26,7 +26,7 @@ const routine: Routine = {
 };
 
 const routinePage2: Routine = { ...routine, id: 'post-2', title: '夜の読書ルーティン' };
-const executionRoutine: Routine = { ...routine, id: 'post-2', routineExecutionId: '20000000-0000-4000-8000-000000000001' };
+const executionRoutine: Routine = { ...routine, executedActionCount: 1, executionMemo: '集中できました', iconImageUrl: 'https://example.com/icons/tanaka.webp', id: 'post-2', postCategory: 'action', routineExecutionId: '20000000-0000-4000-8000-000000000001', supportCount: 3 };
 
 afterEach(() => {
   cleanup();
@@ -34,7 +34,7 @@ afterEach(() => {
 });
 
 function renderPage(service: Pick<RoutineFeedService, 'list'> & Partial<Pick<RoutineFeedService, 'listFollowingAccounts' | 'listPage'>>, likeService?: RoutineLikeService) {
-  return render(<MemoryRouter><RoutineFeedPage isAuthenticated likeService={likeService} service={{ listFollowingAccounts: async () => [], ...service }} /></MemoryRouter>);
+  return render(<MemoryRouter><RoutineFeedPage isAuthenticated likeService={likeService} service={{ listFollowingAccounts: async () => [], ...service }} /><LocationProbe /></MemoryRouter>);
 }
 
 function LocationProbe() {
@@ -184,7 +184,7 @@ describe('RoutineFeedPage', () => {
     expect(screen.getByRole('link', { name: '田中 花子' })).toHaveAttribute('href', '/accounts/22222222-2222-4222-8222-222222222222');
   });
 
-  it('フォロー中の実行投稿だけを実行詳細へリンクする', async () => {
+  it('フォロー中の実行投稿を実行履歴カードで表示し、選択時に実行詳細へ遷移する', async () => {
     const list = vi.fn().mockImplementation(async (tab: string) => tab === 'following' ? [executionRoutine] : [routine]);
     const user = userEvent.setup();
     renderPage({ list });
@@ -193,7 +193,18 @@ describe('RoutineFeedPage', () => {
     expect(screen.getByRole('link', { name: '朝の集中ルーティン' })).toHaveAttribute('href', '/routines/routine-1');
 
     await user.click(screen.getByRole('tab', { name: 'フォロー中' }));
-    expect(await screen.findByRole('link', { name: '朝の集中ルーティン' })).toHaveAttribute('href', '/routines/routine-1');
-    expect(screen.getByRole('link', { name: '実行詳細を見る' })).toHaveAttribute('href', '/routines/routine-1/executions/20000000-0000-4000-8000-000000000001');
+    const executionCard = await screen.findByRole('button', { name: '朝の集中ルーティン' });
+    expect(executionCard.closest('.routine-feed-execution-post')).toBeInTheDocument();
+    expect(executionCard).toHaveClass('account-page__card');
+    expect(executionCard.querySelector('.routine-card__author')).toHaveTextContent('田中 陽介');
+    expect(executionCard.querySelector('.routine-card__avatar')).toContainElement(executionCard.querySelector('.account-avatar__image'));
+    expect(executionCard.querySelector('.account-avatar__image')).toHaveAttribute('src', 'https://example.com/icons/tanaka.webp');
+    expect(screen.getByText('集中できました')).toBeInTheDocument();
+    expect(screen.getByText('達成項目数')).toHaveTextContent('1');
+    expect(screen.getByText('応援')).toHaveTextContent('3');
+
+    await user.click(executionCard);
+
+    expect(screen.getByText('/routines/routine-1/executions/20000000-0000-4000-8000-000000000001')).toBeInTheDocument();
   });
 });

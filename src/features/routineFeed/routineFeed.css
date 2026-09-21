@@ -169,6 +169,11 @@
   height: 16px;
 }
 
+.routine-feed-execution-post,
+.routine-feed-execution-post .account-page__card {
+  width: 100%;
+}
+
 .routine-feed-page .MuiPaper-root.routine-card {
   background-color: var(--hibilio-color-card);
   border: 1px solid var(--hibilio-color-border);
