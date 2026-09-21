@@ -103,7 +103,7 @@ export function ProfileEditPage({ service = profileEditService }: ProfileEditPag
   }
 
   return <main className="profile-edit">
-    <header className="profile-edit__header"><Button aria-label={messages.profileEdit.back} onClick={() => navigate('/account')} type="button" variant="text">←</Button><h1>{messages.profileEdit.title}</h1><Button disabled={isSaving} onClick={() => void save()} type="button" variant="text">{messages.profileEdit.save}</Button></header>
+    <header className="profile-edit__header"><Button aria-label={messages.profileEdit.back} onClick={() => navigate('/account')} type="button" variant="text">←</Button><h1>{messages.profileEdit.title}</h1></header>
     <section className="profile-edit__content">
       {error !== null && <Alert severity="error">{error}</Alert>}
       <div className="profile-edit__header-image"><AccountHeaderImage headerImageUrl={headerPreviewUrl ?? editingProfile.headerImageUrl ?? null} /><label><span>{messages.profileEdit.changeHeader}</span><input accept="image/png,image/jpeg,image/webp" onChange={(event) => selectImage('header', event.target.files?.[0] ?? null)} type="file" /></label></div>
