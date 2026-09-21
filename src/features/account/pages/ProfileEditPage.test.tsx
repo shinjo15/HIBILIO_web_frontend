@@ -51,6 +51,7 @@ describe('ProfileEditPage', () => {
     expect(screen.getByRole('button', { name: '朝活削除' })).toBeInTheDocument();
     expect(screen.queryByText('yuki_sleep')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('ユーザーID')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: '保存' })).toHaveLength(1);
   });
 
   it('プロフィール取得が401なら認証状態を削除してログインへ遷移する', async () => {
@@ -74,7 +75,7 @@ describe('ProfileEditPage', () => {
     renderPage({ ...service, save });
 
     await screen.findByDisplayValue('ログインアカウント');
-    await user.click(screen.getAllByRole('button', { name: '保存' })[0]);
+    await user.click(screen.getByRole('button', { name: '保存' }));
 
     expect(save).toHaveBeenCalledWith(editableProfile);
     expect(await screen.findByText('/account')).toBeInTheDocument();
@@ -93,7 +94,7 @@ describe('ProfileEditPage', () => {
 
     expect(screen.getByLabelText('ヘッダーを変更').closest('.profile-edit__header-image')?.querySelector('img')).toHaveAttribute('src', expect.stringContaining('blob:'));
     expect(screen.getByLabelText('アイコンを変更').closest('.profile-edit__avatar')?.querySelector('img')).toHaveAttribute('src', expect.stringContaining('blob:'));
-    await user.click(screen.getAllByRole('button', { name: '保存' })[0]);
+    await user.click(screen.getByRole('button', { name: '保存' }));
     expect(save).toHaveBeenCalledWith({ ...editableProfile, headerImage: header, iconImage: icon });
   });
 
@@ -103,7 +104,7 @@ describe('ProfileEditPage', () => {
     renderPage({ ...service, save: async () => { throw new ProfileEditUnauthorizedError(); } });
 
     await screen.findByDisplayValue('ログインアカウント');
-    await user.click(screen.getAllByRole('button', { name: '保存' })[0]);
+    await user.click(screen.getByRole('button', { name: '保存' }));
 
     await waitFor(() => expect(screen.getByText('/login')).toBeInTheDocument());
     expect(isAuthenticated()).toBe(false);
