@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/refs */
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ExecutionHistoryCard } from '../../../shared/components/ExecutionHistoryCard';
+import { ExecutionPostCard } from '../../../shared/components/ExecutionPostCard';
 import type { RoutineDetailViewModel } from '../domain/routineDetail';
 import {
   routineDetailService,
@@ -238,7 +238,7 @@ function RoutineDetailContent({ routine, service }: { routine: RoutineDetailView
                 {executionPostsList.error && executionPostsList.items.length === 0 && <DetailListError retry={executionPostsList.retry} />}
                 {!executionPostsList.error && executionPostsList.items.length === 0 && <DetailEmptyState message={messages.routineDetail.executionPostsEmpty} />}
                 {executionPostsList.error && executionPostsList.items.length > 0 && <DetailListError retry={executionPostsList.retry} />}
-                {executionPostsList.items.map((post) => <ExecutionHistoryCard dateLabel={post.date} execution={{ executedActionCount: post.achieved, id: post.id, memo: post.comment ?? null, postedAt: post.date, routineId: routine.id, routineTitle: routine.title, supportCount: post.cheers }} key={post.id} onSelect={(execution) => navigate(`/routines/${execution.routineId}/executions/${execution.id}`)} />)}
+                {executionPostsList.items.map((post) => <ExecutionPostCard key={post.id} post={{ achievedActionCount: post.achieved, authorInitial: post.avatar, authorName: post.userName, dateLabel: post.date, executionId: post.id, iconImageUrl: post.iconImageUrl, memo: post.comment, routineId: routine.id, supportCount: post.cheers, supported: post.supported ?? false, totalActionCount: post.total }} />)}
                 {executionPostsList.items.length > 0 && <div aria-label="さらに読み込む" ref={executionPostsList.sentinelRef} />}
               </div>
             )}

@@ -89,13 +89,13 @@ describe('RoutineDetailPage', () => {
     expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toHaveClass('routine-detail-like--liked');
   });
 
-  it('実行投稿を実行履歴カードの応援数で表示する', async () => {
+  it('APIから受け取った supported を初期の応援済み表示へ反映する', async () => {
     const service = createRoutineDetailService({ get: async () => ({ ...detail, executionPosts: [{ ...detail.executionPosts[0], supported: true }] }) });
 
     renderPage(service);
 
-    expect(await screen.findByRole('button', { name: 'テストルーティン' })).toHaveClass('account-page__card');
-    expect(screen.getByText('応援')).toHaveTextContent('3');
+    expect(await screen.findByRole('button', { name: '応援済み 実行した人' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '応援済み 実行した人' })).toHaveTextContent('3');
   });
 
   it('実行投稿とカスタマイズのタブを切り替え、空状態を表示する', async () => {
@@ -112,12 +112,12 @@ describe('RoutineDetailPage', () => {
     expect(screen.getByText('まだカスタマイズはありません')).toBeInTheDocument();
   });
 
-  it('実行投稿を実行履歴カードで表示する', async () => {
+  it('実行投稿から対応する実行詳細へリンクする', async () => {
     const service = createRoutineDetailService({ get: async () => detail });
 
     renderPage(service);
 
-    expect(await screen.findByRole('button', { name: 'テストルーティン' })).toHaveClass('account-page__card');
+    expect(await screen.findByRole('link', { name: /実行した人/ })).toHaveAttribute('href', '/routines/routine-1/executions/execution-1');
   });
 
   it('実行投稿とカスタマイズをそれぞれ末尾へ追加し、total到達後は取得しない', async () => {
@@ -137,7 +137,7 @@ describe('RoutineDetailPage', () => {
       takeRecords() { return []; }
     });
     const notifyIntersection = () => intersectionNotifiers.forEach((notify) => notify());
-    const executionPost = { achieved: 2, avatar: 'A', cheers: 1, comment: '次の実行', date: '昨日', id: 'execution-2', minutes: 20, total: 2, userHandle: 'another', userName: '別の実行者' };
+    const executionPost = { achieved: 2, avatar: 'A', cheers: 1, date: '昨日', id: 'execution-2', minutes: 20, total: 2, userHandle: 'another', userName: '別の実行者' };
     const customization = { authorName: '別の作者', description: 'もう一つの版です。', id: 'customization-2', title: 'もう一つの版' };
     const listExecutionPostsPage = vi.fn().mockResolvedValue({ items: [executionPost], total: 2 });
     const listCustomizationsPage = vi.fn().mockResolvedValue({ items: [customization], total: 2 });
@@ -152,7 +152,7 @@ describe('RoutineDetailPage', () => {
     await screen.findByRole('heading', { name: 'テストルーティン' });
     await screen.findByLabelText('さらに読み込む');
     notifyIntersection();
-    expect(await screen.findByText('次の実行')).toBeInTheDocument();
+    expect(await screen.findByText(/別の実行者/)).toBeInTheDocument();
     notifyIntersection();
     await waitFor(() => expect(listExecutionPostsPage).toHaveBeenCalledTimes(1));
 
@@ -206,7 +206,7 @@ describe('RoutineDetailPage', () => {
       takeRecords() { return []; }
     });
     const notifyIntersection = () => intersectionNotifiers.forEach((notify) => notify());
-    const executionPost = { achieved: 2, avatar: 'A', cheers: 1, comment: '次の実行', date: '昨日', id: 'execution-2', minutes: 20, total: 2, userHandle: 'another', userName: '別の実行者' };
+    const executionPost = { achieved: 2, avatar: 'A', cheers: 1, date: '昨日', id: 'execution-2', minutes: 20, total: 2, userHandle: 'another', userName: '別の実行者' };
     const listExecutionPostsPage = vi.fn()
       .mockRejectedValueOnce(new Error('temporary failure'))
       .mockResolvedValueOnce({ items: [executionPost], total: 2 });
@@ -220,9 +220,9 @@ describe('RoutineDetailPage', () => {
     await screen.findByLabelText('さらに読み込む');
     notifyIntersection();
     expect(await screen.findByText(/ルーティン詳細を読み込めませんでした。時間をおいて再試行してください。/)).toBeInTheDocument();
-    expect(screen.getByText('達成項目数')).toBeInTheDocument();
+    expect(screen.getByText('実行した人')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '再試行' }));
-    expect(await screen.findByText('次の実行')).toBeInTheDocument();
+    expect(await screen.findByText(/別の実行者/)).toBeInTheDocument();
     expect(listExecutionPostsPage).toHaveBeenCalledTimes(2);
   });
 
