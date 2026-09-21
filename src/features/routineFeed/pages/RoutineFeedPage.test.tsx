@@ -196,7 +196,8 @@ describe('RoutineFeedPage', () => {
     const executionCard = await screen.findByRole('button', { name: '朝の集中ルーティン' });
     expect(executionCard.closest('.routine-feed-execution-post')).toBeInTheDocument();
     expect(executionCard).toHaveClass('account-page__card');
-    expect(screen.getByText('田中 陽介')).toBeInTheDocument();
+    expect(executionCard.querySelector('.routine-card__author')).toHaveTextContent('田中 陽介');
+    expect(executionCard.querySelector('.routine-card__avatar')).toContainElement(executionCard.querySelector('.account-avatar__image'));
     expect(executionCard.querySelector('.account-avatar__image')).toHaveAttribute('src', 'https://example.com/icons/tanaka.webp');
     expect(screen.getByText('集中できました')).toBeInTheDocument();
     expect(screen.getByText('達成項目数')).toHaveTextContent('1');

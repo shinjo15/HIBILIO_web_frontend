@@ -19,27 +19,6 @@
   padding: 16px;
 }
 
-.execution-history-card__author {
-  align-items: center;
-  display: flex;
-  font-size: 13px;
-  font-weight: 600;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.execution-history-card__avatar {
-  align-items: center;
-  background-color: var(--hibilio-color-muted);
-  border-radius: 50%;
-  display: inline-flex;
-  flex-shrink: 0;
-  height: 28px;
-  justify-content: center;
-  overflow: hidden;
-  width: 28px;
-}
-
 .account-page__card-header,
 .account-page__card-metrics {
   align-items: flex-start;
