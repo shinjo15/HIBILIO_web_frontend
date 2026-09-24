@@ -11,6 +11,7 @@ const publicAccountResponseSchema = z.object({
   account_name: z.string().min(1),
   header_image_url: z.string().url().nullish().transform((url) => url ?? null),
   icon_image_url: z.string().url().nullish().transform((url) => url ?? null),
+  visibility: z.enum(['public', 'private']).default('public'),
   favorite_tags: z.array(z.object({
     tag_identifier: z.string().min(1),
     tag_name: z.string().min(1),
@@ -77,6 +78,10 @@ export function createPublicAccountService(adapter: PublicAccountAdapter = publi
       }
 
       const profile = publicAccountResponseSchema.parse(response);
+      if (profile.visibility === 'private') {
+        return null;
+      }
+
       return accountProfileSchema.parse({
         accountIdentifier: profile.account_identifier,
         bio: profile.account_bio,
