@@ -5,13 +5,14 @@ import type { Routine } from '../../routineFeed/domain/routine';
 import { accountProfileSchema, type AccountExecutionSummary, type AccountProfile } from '../domain/account';
 import type { PageResult } from '../../../shared/hooks/useInfiniteList';
 
-const publicAccountResponseSchema = z.object({
+const detailedPublicAccountResponseSchema = z.object({
   account_bio: z.string().nullable(),
   account_identifier: z.string().min(1),
   account_name: z.string().min(1),
   header_image_url: z.string().url().nullish().transform((url) => url ?? null),
   icon_image_url: z.string().url().nullish().transform((url) => url ?? null),
   visibility: z.enum(['public', 'private']).default('public'),
+  is_following: z.boolean().optional(),
   favorite_tags: z.array(z.object({
     tag_identifier: z.string().min(1),
     tag_name: z.string().min(1),
@@ -22,12 +23,29 @@ const publicAccountResponseSchema = z.object({
   })),
 });
 
+const privateAccountResponseSchema = z.object({
+  account_identifier: z.string().min(1),
+  account_name: z.string().min(1),
+  has_pending_follow_request: z.boolean(),
+  visibility: z.literal('private'),
+});
+
 type PublicAccountAdapter = {
   get: (accountIdentifier: string) => Promise<unknown | null>;
 };
 
+export type PrivateAccountProfile = {
+  accountIdentifier: string;
+  hasPendingFollowRequest: boolean;
+  name: string;
+  visibility: 'private';
+};
+
+export type DetailedPublicAccountProfile = AccountProfile & { isFollowing?: boolean };
+export type PublicAccountProfile = DetailedPublicAccountProfile | PrivateAccountProfile;
+
 export type PublicAccountService = {
-  get: (accountIdentifier: string) => Promise<AccountProfile | null>;
+  get: (accountIdentifier: string) => Promise<PublicAccountProfile | null>;
   listExecutionHistories: (accountIdentifier: string) => Promise<AccountExecutionSummary[]>;
   listExecutionHistoriesPage?: (accountIdentifier: string, page: number) => Promise<PageResult<AccountExecutionSummary>>;
   listLikes: (accountIdentifier: string) => Promise<Routine[]>;
@@ -38,7 +56,7 @@ export type PublicAccountService = {
 
 const publicAccountApiAdapter: PublicAccountAdapter = {
   get: async (accountIdentifier) => {
-    const response = await fetch(`/api/accounts/${accountIdentifier}`, { method: 'GET' });
+    const response = await fetch(`/api/accounts/${accountIdentifier}`, { credentials: 'include', method: 'GET' });
 
     if (response.status === 404) {
       return null;
@@ -77,22 +95,32 @@ export function createPublicAccountService(adapter: PublicAccountAdapter = publi
         return null;
       }
 
-      const profile = publicAccountResponseSchema.parse(response);
-      if (profile.visibility === 'private') {
-        return null;
+      const detailedProfile = detailedPublicAccountResponseSchema.safeParse(response);
+      if (detailedProfile.success) {
+        const profile = detailedProfile.data;
+        return {
+          ...accountProfileSchema.parse({
+            accountIdentifier: profile.account_identifier,
+            bio: profile.account_bio,
+            favoriteTags: profile.favorite_tags.map((tag) => ({ id: tag.tag_identifier, name: tag.tag_name })),
+            headerImageUrl: profile.header_image_url,
+            initial: profile.account_name.charAt(0),
+            iconImageUrl: profile.icon_image_url,
+            name: profile.account_name,
+            socialLinks: profile.social_links.map((link) => ({ socialType: link.social_type, socialUrl: link.social_url })),
+            visibility: profile.visibility,
+          }),
+          ...(profile.is_following === undefined ? {} : { isFollowing: profile.is_following }),
+        };
       }
 
-      return accountProfileSchema.parse({
-        accountIdentifier: profile.account_identifier,
-        bio: profile.account_bio,
-        favoriteTags: profile.favorite_tags.map((tag) => ({ id: tag.tag_identifier, name: tag.tag_name })),
-        headerImageUrl: profile.header_image_url,
-        initial: profile.account_name.charAt(0),
-        iconImageUrl: profile.icon_image_url,
-        name: profile.account_name,
-        socialLinks: profile.social_links.map((link) => ({ socialType: link.social_type, socialUrl: link.social_url })),
-        visibility: 'public',
-      });
+      const privateProfile = privateAccountResponseSchema.parse(response);
+      return {
+        accountIdentifier: privateProfile.account_identifier,
+        hasPendingFollowRequest: privateProfile.has_pending_follow_request,
+        name: privateProfile.account_name,
+        visibility: 'private',
+      };
     },
     listLikes: async (accountIdentifier) => (await listLikesPage(accountIdentifier, 1)).items,
     listLikesPage,

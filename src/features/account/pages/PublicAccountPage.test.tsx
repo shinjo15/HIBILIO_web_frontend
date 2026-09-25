@@ -1,6 +1,6 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PublicAccountPage } from './PublicAccountPage';
 import { createPublicAccountService, type PublicAccountService } from '../services/publicAccountService';
@@ -90,6 +90,58 @@ describe('PublicAccountPage', () => {
     expect(screen.queryByRole('button', { name: 'アカウントのメニュー' })).not.toBeInTheDocument();
   });
 
+  it('承認済みフォロワーにはフル詳細とAPIのis_followingによるフォロー中表示を表示する', async () => {
+    const service = createPublicAccountService({ get: async () => ({
+      account_bio: '鍵Accountの自己紹介',
+      account_identifier: 'account-1',
+      account_name: '鍵Account',
+      favorite_tags: [],
+      has_pending_follow_request: false,
+      header_image_url: 'https://example.com/headers/private.webp',
+      icon_image_url: 'https://example.com/icons/private.webp',
+      is_following: true,
+      social_links: [],
+      visibility: 'private',
+    }) });
+
+    renderPage(service);
+
+    expect(await screen.findByRole('heading', { name: '鍵Account' })).toBeInTheDocument();
+    expect(screen.getByText('鍵Accountの自己紹介')).toBeInTheDocument();
+    expect(document.querySelector('.account-profile__avatar .account-avatar__image')).toHaveAttribute('src', 'https://example.com/icons/private.webp');
+    expect(screen.getByRole('button', { name: 'フォロー中' })).toBeDisabled();
+    expect(screen.getAllByRole('tab')).toHaveLength(3);
+  });
+
+  it('承認済み鍵Accountの初期表示は詳細取得を一度だけ行う', async () => {
+    const get = vi.fn().mockResolvedValue({ accountIdentifier: 'account-1', bio: '鍵Accountの自己紹介', favoriteTags: [], initial: '鍵', isFollowing: true, name: '鍵Account', socialLinks: [], visibility: 'private' });
+    const service: PublicAccountService = { get, listExecutionHistories: async () => [], listLikes: async () => [], listPosts: async () => [] };
+
+    renderPage(service);
+
+    await screen.findByRole('heading', { name: '鍵Account' });
+    expect(get).toHaveBeenCalledTimes(1);
+  });
+
+  it('別Accountへの遷移中は前Accountの詳細を表示しない', async () => {
+    const user = userEvent.setup();
+    let resolveSecondProfile: (value: Awaited<ReturnType<PublicAccountService['get']>>) => void = () => {};
+    const get = vi.fn((accountId: string) => accountId === 'account-1'
+      ? Promise.resolve({ accountIdentifier: 'account-1', bio: '最初の自己紹介', favoriteTags: [], initial: '最', name: '最初のAccount', socialLinks: [], visibility: 'public' as const })
+      : new Promise<Awaited<ReturnType<PublicAccountService['get']>>>((resolve) => { resolveSecondProfile = resolve; }));
+    const service: PublicAccountService = { get, listExecutionHistories: async () => [], listLikes: async () => [], listPosts: async () => [] };
+
+    render(<MemoryRouter initialEntries={['/accounts/account-1']}><Routes><Route element={<AccountRoute service={service} />} path="/accounts/:accountId" /></Routes></MemoryRouter>);
+    await screen.findByRole('heading', { name: '最初のAccount' });
+
+    await user.click(screen.getByRole('button', { name: '次のAccount' }));
+
+    expect(screen.getByText('アカウント情報を読み込んでいます…')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '最初のAccount' })).not.toBeInTheDocument();
+    resolveSecondProfile({ accountIdentifier: 'account-2', bio: '次の自己紹介', favoriteTags: [], initial: '次', name: '次のAccount', socialLinks: [], visibility: 'public' });
+    expect(await screen.findByRole('heading', { name: '次のAccount' })).toBeInTheDocument();
+  });
+
   it('ログイン中アカウントの取得に失敗してもフォロー・ブロック操作を表示しない', async () => {
     const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '自分', favorite_tags: [], social_links: [] }) });
     const currentAccountService: Pick<AccountService, 'getProfile'> = { getProfile: async () => { throw new Error('network failure'); } };
@@ -161,23 +213,120 @@ describe('PublicAccountPage', () => {
     expect(screen.getByRole('button', { name: '戻る' })).toBeInTheDocument();
   });
 
-  it('鍵アカウントでは詳細UIを表示せず、アカウントが見つからない状態を表示する', async () => {
+  it('詳細取得の通信障害では見つからない状態にせず、戻る付きエラーを表示する', async () => {
+    const service: PublicAccountService = {
+      get: async () => { throw new Error('network failure'); },
+      listExecutionHistories: async () => [],
+      listLikes: async () => [],
+      listPosts: async () => [],
+    };
+
+    renderPage(service);
+
+    expect(await screen.findByText('アカウント情報を読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '戻る' })).toBeInTheDocument();
+    expect(screen.queryByText('アカウントが見つかりませんでした。')).not.toBeInTheDocument();
+  });
+
+  it('詳細取得のレスポンス解析失敗では見つからない状態にせず、戻る付きエラーを表示する', async () => {
+    const service = createPublicAccountService({ get: async () => ({ account_identifier: 'account-1', visibility: 'private' }) });
+
+    renderPage(service);
+
+    expect(await screen.findByText('アカウント情報を読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '戻る' })).toBeInTheDocument();
+    expect(screen.queryByText('アカウントが見つかりませんでした。')).not.toBeInTheDocument();
+  });
+
+  it('未承認の鍵Accountでは名前とフォローリクエスト操作だけを表示する', async () => {
     const service = createPublicAccountService({ get: async () => ({
-      account_bio: '非公開の自己紹介',
       account_identifier: 'account-1',
       account_name: '鍵アカウント',
-      favorite_tags: [],
-      social_links: [],
+      has_pending_follow_request: false,
       visibility: 'private',
     }) });
 
     renderPage(service);
 
-    expect(await screen.findByText('アカウントが見つかりませんでした。')).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: '鍵アカウント' })).not.toBeInTheDocument();
-    expect(screen.queryByText('非公開の自己紹介')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'フォロー' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '鍵アカウント' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '戻る' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'フォローリクエストを送信' })).toBeInTheDocument();
+    expect(screen.queryByText('アカウントが見つかりませんでした。')).not.toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
     expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'アカウントのメニュー' })).not.toBeInTheDocument();
+  });
+
+  it('鍵Accountの申請成功直後に送信済み表示へ反映する', async () => {
+    const user = userEvent.setup();
+    const followService: AccountFollowService = { create: vi.fn().mockResolvedValue(undefined) };
+    const service = createPublicAccountService({ get: async () => ({ account_identifier: 'account-1', account_name: '鍵アカウント', has_pending_follow_request: false, visibility: 'private' }) });
+
+    renderPage(service, '/accounts/account-1', undefined, followService);
+
+    await user.click(await screen.findByRole('button', { name: 'フォローリクエストを送信' }));
+
+    expect(followService.create).toHaveBeenCalledWith('account-1');
+    expect(screen.getByRole('button', { name: 'フォローリクエスト送信済み' })).toBeDisabled();
+  });
+
+  it('鍵Accountの再ロード時は最小レスポンスのpending状態を送信済み表示へ反映する', async () => {
+    const service = createPublicAccountService({ get: async () => ({
+      account_identifier: 'account-1',
+      account_name: '鍵アカウント',
+      has_pending_follow_request: true,
+      visibility: 'private',
+    }) });
+
+    renderPage(service);
+
+    expect(await screen.findByRole('button', { name: 'フォローリクエスト送信済み' })).toBeDisabled();
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+  });
+
+  it('鍵Accountの409時は詳細を再取得し、pending状態だけを表示へ反映する', async () => {
+    const user = userEvent.setup();
+    const followService: AccountFollowService = { create: vi.fn().mockRejectedValue(new AccountFollowError('duplicate', 409)) };
+    const get = vi.fn()
+      .mockResolvedValueOnce({ accountIdentifier: 'account-1', hasPendingFollowRequest: false, name: '鍵アカウント', visibility: 'private' })
+      .mockResolvedValueOnce({ accountIdentifier: 'account-1', hasPendingFollowRequest: true, name: '鍵アカウント', visibility: 'private' });
+    const service: PublicAccountService = { get, listExecutionHistories: async () => [], listLikes: async () => [], listPosts: async () => [] };
+
+    renderPage(service, '/accounts/account-1', undefined, followService);
+
+    await user.click(await screen.findByRole('button', { name: 'フォローリクエストを送信' }));
+
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole('button', { name: 'フォローリクエスト送信済み' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'フォロー中' })).not.toBeInTheDocument();
+  });
+
+  it('鍵Accountの409後もpendingでなければフォローリクエスト失敗を表示する', async () => {
+    const user = userEvent.setup();
+    const followService: AccountFollowService = { create: vi.fn().mockRejectedValue(new AccountFollowError('duplicate', 409)) };
+    const get = vi.fn().mockResolvedValue({ accountIdentifier: 'account-1', hasPendingFollowRequest: false, name: '鍵アカウント', visibility: 'private' });
+    const service: PublicAccountService = { get, listExecutionHistories: async () => [], listLikes: async () => [], listPosts: async () => [] };
+
+    renderPage(service, '/accounts/account-1', undefined, followService);
+
+    await user.click(await screen.findByRole('button', { name: 'フォローリクエストを送信' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('アカウントをフォローできませんでした。時間をおいて再試行してください。');
+  });
+
+  it('鍵Accountの409後に承認済み詳細が返ればAPIのis_followingをフォロー中表示へ反映する', async () => {
+    const user = userEvent.setup();
+    const followService: AccountFollowService = { create: vi.fn().mockRejectedValue(new AccountFollowError('duplicate', 409)) };
+    const get = vi.fn()
+      .mockResolvedValueOnce({ accountIdentifier: 'account-1', hasPendingFollowRequest: false, name: '鍵アカウント', visibility: 'private' })
+      .mockResolvedValue({ accountIdentifier: 'account-1', bio: '鍵Accountの自己紹介', favoriteTags: [], initial: '鍵', isFollowing: true, name: '鍵アカウント', socialLinks: [], visibility: 'private' });
+    const service: PublicAccountService = { get, listExecutionHistories: async () => [], listLikes: async () => [], listPosts: async () => [] };
+
+    renderPage(service, '/accounts/account-1', undefined, followService);
+
+    await user.click(await screen.findByRole('button', { name: 'フォローリクエストを送信' }));
+
+    expect(await screen.findByRole('button', { name: 'フォロー中' })).toBeDisabled();
   });
 
   it('ブロック成功時に対象アカウントをブロック済みとして表示する', async () => {
@@ -307,4 +456,9 @@ describe('PublicAccountPage', () => {
 
 function Location() {
   return <output>{useLocation().pathname}</output>;
+}
+
+function AccountRoute({ service }: { service: PublicAccountService }) {
+  const navigate = useNavigate();
+  return <><button onClick={() => navigate('/accounts/account-2')} type="button">次のAccount</button><PublicAccountPage service={service} /></>;
 }

@@ -29,7 +29,7 @@ describe('createPublicAccountService', () => {
       socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/example' }],
       visibility: 'public',
     });
-    expect(fetchMock).toHaveBeenCalledWith('/api/accounts/11111111-1111-4111-8111-111111111111', { method: 'GET' });
+    expect(fetchMock).toHaveBeenCalledWith('/api/accounts/11111111-1111-4111-8111-111111111111', { credentials: 'include', method: 'GET' });
   });
 
   it('公開されていないか存在しないアカウントは null を返す', async () => {
@@ -38,17 +38,48 @@ describe('createPublicAccountService', () => {
     await expect(createPublicAccountService().get('missing-account')).resolves.toBeNull();
   });
 
-  it('鍵アカウントの詳細レスポンスは表示モデルに変換せず null を返す', async () => {
+  it('未承認の鍵Account詳細レスポンスを最小表示モデルへ変換する', async () => {
     const service = createPublicAccountService({ get: async () => ({
-      account_bio: '非公開の自己紹介',
       account_identifier: 'private-account',
       account_name: '鍵アカウント',
-      favorite_tags: [],
-      social_links: [],
+      has_pending_follow_request: true,
       visibility: 'private',
     }) });
 
-    await expect(service.get('private-account')).resolves.toBeNull();
+    await expect(service.get('private-account')).resolves.toEqual({
+      accountIdentifier: 'private-account',
+      hasPendingFollowRequest: true,
+      name: '鍵アカウント',
+      visibility: 'private',
+    });
+  });
+
+  it('承認済みフォロワー向けの実API shapeの鍵Accountフル詳細を詳細表示モデルへ変換する', async () => {
+    const service = createPublicAccountService({ get: async () => ({
+      account_bio: '鍵Accountの自己紹介',
+      account_identifier: 'private-account',
+      account_name: '鍵アカウント',
+      favorite_tags: [{ tag_identifier: 'tag-1', tag_name: '習慣化' }],
+      has_pending_follow_request: false,
+      header_image_url: 'https://example.com/headers/private.webp',
+      icon_image_url: 'https://example.com/icons/private.webp',
+      is_following: true,
+      social_links: [{ social_type: 'x', social_url: 'https://x.com/private' }],
+      visibility: 'private',
+    }) });
+
+    await expect(service.get('private-account')).resolves.toEqual({
+      accountIdentifier: 'private-account',
+      bio: '鍵Accountの自己紹介',
+      favoriteTags: [{ id: 'tag-1', name: '習慣化' }],
+      headerImageUrl: 'https://example.com/headers/private.webp',
+      iconImageUrl: 'https://example.com/icons/private.webp',
+      initial: '鍵',
+      isFollowing: true,
+      name: '鍵アカウント',
+      socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/private' }],
+      visibility: 'private',
+    });
   });
 
   it('公開投稿・いいね一覧へSession Cookieを送り、閲覧者基準のlikedを返す', async () => {
