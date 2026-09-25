@@ -197,6 +197,9 @@
     "executionHistoryEmpty": "実行履歴はまだありません",
     "executionHistoryDescription": "完了したステップを確認できます。",
     "executionHistoryNotFound": "実行履歴が見つかりませんでした。",
+    "followRequestsEmpty": "受信したフォローリクエストはまだありません",
+    "followRequestsError": "フォローリクエストを読み込めませんでした。時間をおいて再試行してください。",
+    "followRequestsLoading": "フォローリクエストを読み込んでいます…",
 
     "likedRoutine": "いいねしたルーティン",
     "likesEmpty": "いいねしたルーティンはまだありません",
@@ -211,6 +214,7 @@
       "ariaLabel": "アカウント情報の表示切り替え",
       "blockedAccounts": "ブロック中",
       "executionHistory": "実行履歴",
+      "followRequests": "フォローリクエスト",
 
       "likes": "いいね",
       "posts": "投稿"

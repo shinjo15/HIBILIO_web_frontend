@@ -27,6 +27,7 @@ const getMyAccountResponseSchema = z.object({
     social_type: z.string().min(1),
     social_url: z.string().url(),
   })),
+  visibility: z.enum(['public', 'private']),
 });
 
 const accountRelationListResponseSchema = z.object({
@@ -78,6 +79,10 @@ type AccountBlocksAdapter = {
   listBlockedAccounts: () => Promise<unknown>;
 };
 
+type ReceivedFollowRequestsAdapter = {
+  listReceivedFollowRequests: () => Promise<unknown>;
+};
+
 export class AccountUnauthorizedError extends Error {
   constructor(message = 'Account profile requires authentication') {
     super(message);
@@ -91,6 +96,7 @@ export type AccountService = {
   listExecutionHistories: () => Promise<AccountExecutionSummary[]>;
   listExecutionHistoriesPage?: (page: number) => Promise<PageResult<AccountExecutionSummary>>;
   listBlockedAccounts: () => Promise<AccountRelation[]>;
+  listReceivedFollowRequests: () => Promise<AccountRelation[]>;
 
   listLikes: () => Promise<Routine[]>;
   listLikesPage?: (page: number) => Promise<PageResult<Routine>>;
@@ -168,6 +174,31 @@ const accountBlocksApiAdapter: AccountBlocksAdapter = {
   },
 };
 
+const receivedFollowRequestsResponseSchema = z.object({
+  follow_requests: z.array(z.object({
+    account_bio: z.string().nullable(),
+    account_identifier: z.string().min(1),
+    account_name: z.string().min(1),
+    icon_image_url: z.string().url().nullish().transform((url) => url ?? null),
+  })),
+});
+
+const receivedFollowRequestsApiAdapter: ReceivedFollowRequestsAdapter = {
+  listReceivedFollowRequests: async () => {
+    const response = await fetch('/api/my/follow-requests', { credentials: 'include', method: 'GET' });
+
+    if (response.status === 401) {
+      throw new AccountUnauthorizedError('Received follow requests require authentication');
+    }
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch received follow requests');
+    }
+
+    return response.json();
+  },
+};
+
 const accountPostsApiAdapter: AccountPostsAdapter = {
   listPosts: async (page = 1) => {
     const response = await fetch(`/api/my/posts?page=${page}&number_of_items_per_page=40`, {
@@ -194,6 +225,7 @@ export function createAccountService(
   postsAdapter: AccountPostsAdapter = accountPostsApiAdapter,
 
   blocksAdapter: AccountBlocksAdapter = accountBlocksApiAdapter,
+  receivedFollowRequestsAdapter: ReceivedFollowRequestsAdapter = receivedFollowRequestsApiAdapter,
 ): AccountService {
   const listExecutionHistoriesPage = async (page: number) => parseAccountRoutineExecutionsPage(await executionAdapter.listExecutionHistories(page));
   const listLikesPage = async (page: number) => parseLikedRoutinesPage(await likesAdapter.listLikes(page));
@@ -233,11 +265,18 @@ export function createAccountService(
         iconImageUrl: profile.icon_image_url,
         name: profile.account_name,
         socialLinks: profile.social_links.map((link) => ({ socialType: link.social_type, socialUrl: link.social_url })),
+        visibility: profile.visibility,
       });
     },
     listExecutionHistories: async () => (await listExecutionHistoriesPage(1)).items,
     listExecutionHistoriesPage,
     listBlockedAccounts: async () => parseAccountRelations(await blocksAdapter.listBlockedAccounts()),
+    listReceivedFollowRequests: async () => receivedFollowRequestsResponseSchema.parse(await receivedFollowRequestsAdapter.listReceivedFollowRequests()).follow_requests.map((account) => accountRelationSchema.parse({
+      accountIdentifier: account.account_identifier,
+      bio: account.account_bio,
+      iconImageUrl: account.icon_image_url,
+      name: account.account_name,
+    })),
 
     listLikes: async () => (await listLikesPage(1)).items,
     listLikesPage,

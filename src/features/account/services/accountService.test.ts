@@ -19,6 +19,7 @@ describe('createAccountService', () => {
         social_type: 'x',
         social_url: 'https://x.com/example',
       }],
+      visibility: 'private',
     })));
     vi.stubGlobal('fetch', fetchMock);
     const service = createAccountService();
@@ -32,6 +33,7 @@ describe('createAccountService', () => {
       iconImageUrl: 'https://example.com/icons/account.webp',
       name: 'ログインアカウント',
       socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/example' }],
+      visibility: 'private',
     });
     expect(fetchMock).toHaveBeenCalledWith('/api/my/account', { credentials: 'include', method: 'GET' });
   });
@@ -239,5 +241,32 @@ describe('createAccountService', () => {
     const service = createAccountService();
 
     await expect(service.listBlockedAccounts()).rejects.toMatchObject({ name: 'AccountUnauthorizedError' });
+  });
+
+  it('GET /api/my/follow-requests の契約を受信フォローリクエスト表示モデルへ変換する', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      follow_requests: [{
+        account_bio: '新しい申請者の自己紹介',
+        account_identifier: '22222222-2222-4222-8222-222222222222',
+        account_name: '新しい申請者',
+        icon_image_url: 'https://example.com/icons/requesting-account.webp',
+      }],
+    })));
+    vi.stubGlobal('fetch', fetchMock);
+    const service = createAccountService();
+
+    await expect(service.listReceivedFollowRequests()).resolves.toEqual([{
+      accountIdentifier: '22222222-2222-4222-8222-222222222222',
+      bio: '新しい申請者の自己紹介',
+      iconImageUrl: 'https://example.com/icons/requesting-account.webp',
+      name: '新しい申請者',
+    }]);
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/follow-requests', { credentials: 'include', method: 'GET' });
+  });
+
+  it('受信フォローリクエスト API が401なら未認証エラーを返す', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
+
+    await expect(createAccountService().listReceivedFollowRequests()).rejects.toMatchObject({ name: 'AccountUnauthorizedError' });
   });
 });

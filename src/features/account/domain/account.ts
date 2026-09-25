@@ -9,6 +9,7 @@ export const accountProfileSchema = z.object({
   iconImageUrl: z.string().url().nullable().optional(),
   name: z.string().min(1),
   socialLinks: z.array(z.object({ socialType: z.string().min(1), socialUrl: z.string().url() })),
+  visibility: z.enum(['public', 'private']),
 });
 
 export const accountRelationSchema = z.object({
@@ -71,4 +72,4 @@ export type AccountPost = z.infer<typeof accountPostSchema>;
 export type AccountExecutionHistory = z.infer<typeof accountExecutionHistorySchema>;
 export type AccountExecutionSummary = z.infer<typeof accountExecutionSummarySchema>;
 export type LikedRoutine = z.infer<typeof likedRoutineSchema>;
-export type AccountTab = 'posts' | 'likes' | 'executionHistory' | 'blockedAccounts';
+export type AccountTab = 'posts' | 'likes' | 'executionHistory' | 'blockedAccounts' | 'followRequests';

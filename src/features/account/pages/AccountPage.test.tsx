@@ -14,9 +14,10 @@ const service: AccountService = {
   getExecutionHistory: async (executionId) => executionId === 'execution-1'
     ? { actions: [], executedAt: '2026-09-03T12:00:00+00:00', id: 'execution-1', memo: null, postedAt: '2026-09-03T12:00:00+00:00', routineId: 'routine-1', routineMemo: null, routineTitle: '朝の集中ルーティン', supportCount: 3, tags: [] }
     : null,
-  getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: '毎日続けることが目標。', favoriteTags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '睡眠' }], headerImageUrl: 'https://example.com/headers/yamada.webp', initial: '山', iconImageUrl: 'https://example.com/icons/yamada.webp', name: '山田 由紀', socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/yuki_sleep' }] }),
+  getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: '毎日続けることが目標。', favoriteTags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '睡眠' }], headerImageUrl: 'https://example.com/headers/yamada.webp', initial: '山', iconImageUrl: 'https://example.com/icons/yamada.webp', name: '山田 由紀', socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/yuki_sleep' }], visibility: 'public' }),
   listExecutionHistories: async () => [{ executedActionCount: 2, id: 'execution-1', memo: '集中できました', postedAt: '2026-09-03T12:00:00+00:00', routineId: 'routine-1', routineTitle: '朝の集中ルーティン', supportCount: 3 }],
   listBlockedAccounts: async () => [],
+  listReceivedFollowRequests: async () => [],
   listLikes: async () => [likedPost],
   listPosts: async () => [firstPost],
 };
@@ -67,6 +68,82 @@ describe('AccountPage', () => {
     await waitFor(() => expect(listBlockedAccounts).toHaveBeenCalledTimes(1));
     expect(screen.getByRole('tab', { name: '4いいね' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '2ブロック中' })).toBeInTheDocument();
+  });
+
+  it('鍵アカウントではブロック中の右に受信フォローリクエストを表示する', async () => {
+    const user = userEvent.setup();
+    const listReceivedFollowRequests = vi.fn().mockResolvedValue([{
+      accountIdentifier: '22222222-2222-4222-8222-222222222222',
+      bio: 'フォローをお願いします。',
+      iconImageUrl: 'https://example.com/icons/requesting-account.webp',
+      name: '申請者',
+    }]);
+    renderPage({
+      ...service,
+      getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: '毎日続けることが目標。', favoriteTags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '睡眠' }], headerImageUrl: 'https://example.com/headers/yamada.webp', initial: '山', iconImageUrl: 'https://example.com/icons/yamada.webp', name: '山田 由紀', socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/yuki_sleep' }], visibility: 'private' }),
+      listReceivedFollowRequests,
+    });
+
+    await screen.findByRole('heading', { name: '山田 由紀' });
+
+    await waitFor(() => expect(listReceivedFollowRequests).toHaveBeenCalledTimes(1));
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['1投稿', '1いいね', '1実行履歴', '0ブロック中', '1フォローリクエスト']);
+    expect(screen.getByRole('tablist')).toHaveClass('account-tabs--five');
+    await user.click(screen.getByRole('tab', { name: '1フォローリクエスト' }));
+    expect(await screen.findByRole('link', { name: '申請者' })).toBeInTheDocument();
+    expect(screen.getByText('フォローをお願いします。')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '申請者' }).querySelector('.account-avatar__image')).toHaveAttribute('src', 'https://example.com/icons/requesting-account.webp');
+  });
+
+  it('public本人では受信フォローリクエストを取得せず、タブを表示しない', async () => {
+    const listReceivedFollowRequests = vi.fn();
+    renderPage({ ...service, listReceivedFollowRequests });
+
+    await screen.findByRole('heading', { name: '山田 由紀' });
+
+    expect(listReceivedFollowRequests).not.toHaveBeenCalled();
+    expect(screen.queryByRole('tab', { name: /フォローリクエスト/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('tablist')).toHaveClass('account-tabs--four');
+  });
+
+  it('鍵アカウントの受信フォローリクエスト取得失敗をタブ内に表示する', async () => {
+    const user = userEvent.setup();
+    renderPage({
+      ...service,
+      getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: '毎日続けることが目標。', favoriteTags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '睡眠' }], headerImageUrl: 'https://example.com/headers/yamada.webp', initial: '山', iconImageUrl: 'https://example.com/icons/yamada.webp', name: '山田 由紀', socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/yuki_sleep' }], visibility: 'private' }),
+      listReceivedFollowRequests: vi.fn().mockRejectedValue(new Error('failed')),
+    });
+
+    await screen.findByRole('heading', { name: '山田 由紀' });
+    await user.click(screen.getByRole('tab', { name: /フォローリクエスト/ }));
+
+    expect(await screen.findByText('フォローリクエストを読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
+    expect(screen.getByRole('tabpanel')).toHaveClass('account-page__state--error');
+  });
+
+  it('鍵アカウントの受信フォローリクエスト取得が401なら認証状態を削除してログインへ遷移する', async () => {
+    markAuthenticated();
+    renderPage({
+      ...service,
+      getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: '毎日続けることが目標。', favoriteTags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '睡眠' }], headerImageUrl: 'https://example.com/headers/yamada.webp', initial: '山', iconImageUrl: 'https://example.com/icons/yamada.webp', name: '山田 由紀', socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/yuki_sleep' }], visibility: 'private' }),
+      listReceivedFollowRequests: vi.fn().mockRejectedValue(new AccountUnauthorizedError()),
+    });
+
+    expect(await screen.findByText('/login')).toBeInTheDocument();
+    expect(isAuthenticated()).toBe(false);
+  });
+
+  it('鍵アカウントで受信フォローリクエストが空なら空状態を表示する', async () => {
+    const user = userEvent.setup();
+    renderPage({
+      ...service,
+      getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: '毎日続けることが目標。', favoriteTags: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '睡眠' }], headerImageUrl: 'https://example.com/headers/yamada.webp', initial: '山', iconImageUrl: 'https://example.com/icons/yamada.webp', name: '山田 由紀', socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/yuki_sleep' }], visibility: 'private' }),
+    });
+
+    await screen.findByRole('heading', { name: '山田 由紀' });
+    await user.click(await screen.findByRole('tab', { name: '0フォローリクエスト' }));
+
+    expect(await screen.findByText('受信したフォローリクエストはまだありません')).toBeInTheDocument();
   });
 
   it('プロフィールと投稿を表示し、投稿からルーティン詳細へ遷移する', async () => {
