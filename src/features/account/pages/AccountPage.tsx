@@ -22,13 +22,14 @@ import { AccountAvatar, AccountHeaderImage } from '../../../shared/components/Ac
 import { routineLikeService, RoutineLikeUnauthorizedError, type RoutineLikeService } from '../../routineFeed/services/routineLikeService';
 import { accountBlockService, AccountBlockError, AccountBlockUnauthorizedError, type AccountBlockService } from '../services/accountBlockService';
 import { accountFollowService, AccountFollowError, AccountFollowUnauthorizedError, type AccountFollowService } from '../services/accountFollowService';
+import { followRequestService as defaultFollowRequestService, FollowRequestError, FollowRequestUnauthorizedError, type FollowRequestService } from '../services/followRequestService';
 import messages from '../../../shared/message/message.json';
 import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
 import { ReportDialog } from '../../report/components/ReportDialog';
 import type { ReportService } from '../../report/services/reportService';
 import '../account.css';
 
-type AccountPageProps = { blockService?: AccountBlockService; currentAccountIdentifier?: string | null; followService?: AccountFollowService; isOwnAccount?: boolean; likeService?: RoutineLikeService; notFoundMessage?: string; onBack?: () => void; reportService?: ReportService; service?: AccountService; showPublicActions?: boolean };
+type AccountPageProps = { blockService?: AccountBlockService; currentAccountIdentifier?: string | null; followRequestService?: FollowRequestService; followService?: AccountFollowService; isOwnAccount?: boolean; likeService?: RoutineLikeService; notFoundMessage?: string; onBack?: () => void; reportService?: ReportService; service?: AccountService; showPublicActions?: boolean };
 
 const tabs: Array<{ label: string; value: AccountTab }> = [
   { label: messages.account.tabs.posts, value: 'posts' },
@@ -37,7 +38,7 @@ const tabs: Array<{ label: string; value: AccountTab }> = [
   { label: messages.account.tabs.blockedAccounts, value: 'blockedAccounts' },
 ];
 
-export function AccountPage({ blockService = accountBlockService, currentAccountIdentifier, followService = accountFollowService, isOwnAccount = true, likeService = routineLikeService, notFoundMessage, onBack, reportService, service = accountService, showPublicActions = true }: AccountPageProps) {
+export function AccountPage({ blockService = accountBlockService, currentAccountIdentifier, followRequestService = defaultFollowRequestService, followService = accountFollowService, isOwnAccount = true, likeService = routineLikeService, notFoundMessage, onBack, reportService, service = accountService, showPublicActions = true }: AccountPageProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [blockedAccounts, setBlockedAccounts] = useState<AccountRelation[]>([]);
@@ -58,6 +59,8 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
   const [blockedAccountsStatus, setBlockedAccountsStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
   const [followRequests, setFollowRequests] = useState<AccountRelation[]>([]);
   const [followRequestsStatus, setFollowRequestsStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
+  const [followRequestActionError, setFollowRequestActionError] = useState(false);
+  const [processingFollowRequestAccountIdentifier, setProcessingFollowRequestAccountIdentifier] = useState<string | null>(null);
   const [actionMenuAnchor, setActionMenuAnchor] = useState<HTMLElement | null>(null);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [reportingRoutine, setReportingRoutine] = useState<Routine | null>(null);
@@ -273,6 +276,37 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
     }
   }
 
+  async function processFollowRequest(account: AccountRelation, action: 'approve' | 'reject') {
+    if (processingFollowRequestAccountIdentifier !== null) return;
+
+    setProcessingFollowRequestAccountIdentifier(account.accountIdentifier);
+    setFollowRequestActionError(false);
+    try {
+      await followRequestService[action](account.accountIdentifier);
+      setFollowRequests((current) => current.filter((item) => item.accountIdentifier !== account.accountIdentifier));
+    } catch (error) {
+      if (error instanceof FollowRequestUnauthorizedError) {
+        clearAuthenticated();
+        navigate('/login');
+      } else if (error instanceof FollowRequestError && error.status === 404) {
+        try {
+          setFollowRequests(await service.listReceivedFollowRequests());
+        } catch (reloadError) {
+          if (reloadError instanceof AccountUnauthorizedError) {
+            clearAuthenticated();
+            navigate('/login');
+          } else {
+            setFollowRequestActionError(true);
+          }
+        }
+      } else {
+        setFollowRequestActionError(true);
+      }
+    } finally {
+      setProcessingFollowRequestAccountIdentifier(null);
+    }
+  }
+
   if (isLoading) {
     return <p className="account-page__state account-page__state--loading">{messages.account.loading}</p>;
   }
@@ -349,7 +383,7 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
         {activeTab === 'likes' && <AccountLikesList canReport={(routine) => isOwnAccount ? profile.accountIdentifier !== routine.accountId : currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId)} error={likesList.error} likeAnimation={likeAnimation} likeError={likeError} likingPostIdentifier={likingPostIdentifier} likes={likes} onLike={toggleLike} onReport={setReportingRoutine} retry={likesList.retry} sentinelRef={likesList.sentinelRef} status={likesList.total === null && !likesList.error ? 'loading' : likesList.error && likes.length === 0 ? 'error' : 'loaded'} />}
         {activeTab === 'executionHistory' && <ExecutionHistoryList error={executionHistoriesList.error} histories={executionHistories} onSelect={(history) => navigate(`/routines/${history.routineId}/executions/${history.id}`)} retry={executionHistoriesList.retry} sentinelRef={executionHistoriesList.sentinelRef} />}
         {activeTab === 'blockedAccounts' && <AccountRelationListState accounts={blockedAccounts} action={(account) => <button className="account-relation-card-with-action__button" disabled={unblockingAccountIdentifier === account.accountIdentifier} onClick={(event) => { event.stopPropagation(); void removeBlock(account); }} type="button"><BlockIcon />{unblockingAccountIdentifier === account.accountIdentifier ? messages.account.unblocking : messages.account.unblock}</button>} actionError={unblockError ? messages.account.unblockError : null} emptyMessage={messages.account.blockedAccountsEmpty} errorMessage={messages.account.blockedAccountsError} loadingMessage={messages.account.blockedAccountsLoading} status={blockedAccountsStatus} />}
-        {activeTab === 'followRequests' && <AccountRelationListState accounts={followRequests} actionError={null} emptyMessage={messages.account.followRequestsEmpty} errorMessage={messages.account.followRequestsError} loadingMessage={messages.account.followRequestsLoading} status={followRequestsStatus} />}
+        {activeTab === 'followRequests' && <AccountRelationListState accounts={followRequests} action={(account) => <div className="account-relation-card-with-action__actions"><button className="account-relation-card-with-action__button" disabled={processingFollowRequestAccountIdentifier === account.accountIdentifier} onClick={(event) => { event.stopPropagation(); void processFollowRequest(account, 'approve'); }} type="button">{messages.account.followRequestApprove}</button><button className="account-relation-card-with-action__button account-relation-card-with-action__button--secondary" disabled={processingFollowRequestAccountIdentifier === account.accountIdentifier} onClick={(event) => { event.stopPropagation(); void processFollowRequest(account, 'reject'); }} type="button">{messages.account.followRequestReject}</button></div>} actionError={followRequestActionError ? messages.account.followRequestActionError : null} emptyMessage={messages.account.followRequestsEmpty} errorMessage={messages.account.followRequestsError} loadingMessage={messages.account.followRequestsLoading} status={followRequestsStatus} />}
         {reportingRoutine !== null && <ReportDialog onClose={() => setReportingRoutine(null)} onUnauthorized={() => { clearAuthenticated(); navigate('/login'); }} open service={reportService} targetAccountIdentifier={reportingRoutine.accountId} targetPostIdentifier={reportingRoutine.id} />}
       </div>
     </section>

@@ -200,6 +200,9 @@
     "followRequestsEmpty": "受信したフォローリクエストはまだありません",
     "followRequestsError": "フォローリクエストを読み込めませんでした。時間をおいて再試行してください。",
     "followRequestsLoading": "フォローリクエストを読み込んでいます…",
+    "followRequestActionError": "フォローリクエストを処理できませんでした。時間をおいて再試行してください。",
+    "followRequestApprove": "承認",
+    "followRequestReject": "却下",
 
     "likedRoutine": "いいねしたルーティン",
     "likesEmpty": "いいねしたルーティンはまだありません",
