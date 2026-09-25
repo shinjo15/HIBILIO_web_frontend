@@ -25,6 +25,7 @@ const accountService: AccountService = {
   listExecutionHistories: async () => [],
   listBlockedAccounts: async () => [],
   listReceivedFollowRequests: async () => [],
+  listSentFollowRequests: async () => [],
   listLikes: async () => [],
   listPosts: async () => [],
 };

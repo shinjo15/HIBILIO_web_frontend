@@ -203,6 +203,11 @@
     "followRequestActionError": "フォローリクエストを処理できませんでした。時間をおいて再試行してください。",
     "followRequestApprove": "承認",
     "followRequestReject": "却下",
+    "sentFollowRequestsEmpty": "送信済みのフォローリクエストはまだありません",
+    "sentFollowRequestsError": "送信済みフォローリクエストを読み込めませんでした。時間をおいて再試行してください。",
+    "sentFollowRequestsLoading": "送信済みフォローリクエストを読み込んでいます…",
+    "sentFollowRequestCancel": "取り消す",
+    "sentFollowRequestCancelling": "取り消しています…",
 
     "likedRoutine": "いいねしたルーティン",
     "likesEmpty": "いいねしたルーティンはまだありません",
@@ -218,6 +223,7 @@
       "blockedAccounts": "ブロック中",
       "executionHistory": "実行履歴",
       "followRequests": "フォローリクエスト",
+      "sentFollowRequests": "送信済みフォローリクエスト",
 
       "likes": "いいね",
       "posts": "投稿"

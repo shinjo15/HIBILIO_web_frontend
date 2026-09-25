@@ -72,4 +72,4 @@ export type AccountPost = z.infer<typeof accountPostSchema>;
 export type AccountExecutionHistory = z.infer<typeof accountExecutionHistorySchema>;
 export type AccountExecutionSummary = z.infer<typeof accountExecutionSummarySchema>;
 export type LikedRoutine = z.infer<typeof likedRoutineSchema>;
-export type AccountTab = 'posts' | 'likes' | 'executionHistory' | 'blockedAccounts' | 'followRequests';
+export type AccountTab = 'posts' | 'likes' | 'executionHistory' | 'blockedAccounts' | 'followRequests' | 'sentFollowRequests';

@@ -269,4 +269,43 @@ describe('createAccountService', () => {
 
     await expect(createAccountService().listReceivedFollowRequests()).rejects.toMatchObject({ name: 'AccountUnauthorizedError' });
   });
+
+  it('GET /api/my/sent-follow-requests の契約を送信済みフォローリクエスト表示モデルへ返却順のまま変換する', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      follow_requests: [
+        {
+          account_bio: '保留中の自己紹介',
+          account_identifier: '22222222-2222-4222-8222-222222222222',
+          account_name: '保留中の申請先',
+          header_image_url: 'https://example.com/headers/pending-account.webp',
+          icon_image_url: 'https://example.com/icons/pending-account.webp',
+        },
+        {
+          account_bio: null,
+          account_identifier: '33333333-3333-4333-8333-333333333333',
+          account_name: '却下済みの申請先',
+          header_image_url: 'https://example.com/headers/rejected-account.webp',
+          icon_image_url: 'https://example.com/icons/rejected-account.webp',
+        },
+      ],
+    })));
+    vi.stubGlobal('fetch', fetchMock);
+    const service = createAccountService();
+
+    await expect(service.listSentFollowRequests()).resolves.toEqual([
+      {
+        accountIdentifier: '22222222-2222-4222-8222-222222222222',
+        bio: '保留中の自己紹介',
+        iconImageUrl: 'https://example.com/icons/pending-account.webp',
+        name: '保留中の申請先',
+      },
+      {
+        accountIdentifier: '33333333-3333-4333-8333-333333333333',
+        bio: null,
+        iconImageUrl: 'https://example.com/icons/rejected-account.webp',
+        name: '却下済みの申請先',
+      },
+    ]);
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/sent-follow-requests', { credentials: 'include', method: 'GET' });
+  });
 });
