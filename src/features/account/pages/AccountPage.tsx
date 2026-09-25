@@ -29,7 +29,7 @@ import { ReportDialog } from '../../report/components/ReportDialog';
 import type { ReportService } from '../../report/services/reportService';
 import '../account.css';
 
-type AccountPageProps = { blockService?: AccountBlockService; currentAccountIdentifier?: string | null; followRequestService?: FollowRequestService; followService?: AccountFollowService; isOwnAccount?: boolean; likeService?: RoutineLikeService; notFoundMessage?: string; onBack?: () => void; reportService?: ReportService; service?: AccountService; showPublicActions?: boolean };
+type AccountPageProps = { blockService?: AccountBlockService; currentAccountIdentifier?: string | null; followRequestService?: FollowRequestService; followService?: AccountFollowService; isInitiallyFollowed?: boolean; isOwnAccount?: boolean; likeService?: RoutineLikeService; notFoundMessage?: string; onBack?: () => void; reportService?: ReportService; service?: AccountService; showPublicActions?: boolean };
 
 const tabs: Array<{ label: string; value: AccountTab }> = [
   { label: messages.account.tabs.posts, value: 'posts' },
@@ -38,7 +38,7 @@ const tabs: Array<{ label: string; value: AccountTab }> = [
   { label: messages.account.tabs.blockedAccounts, value: 'blockedAccounts' },
 ];
 
-export function AccountPage({ blockService = accountBlockService, currentAccountIdentifier, followRequestService = defaultFollowRequestService, followService = accountFollowService, isOwnAccount = true, likeService = routineLikeService, notFoundMessage, onBack, reportService, service = accountService, showPublicActions = true }: AccountPageProps) {
+export function AccountPage({ blockService = accountBlockService, currentAccountIdentifier, followRequestService = defaultFollowRequestService, followService = accountFollowService, isInitiallyFollowed = false, isOwnAccount = true, likeService = routineLikeService, notFoundMessage, onBack, reportService, service = accountService, showPublicActions = true }: AccountPageProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [blockedAccounts, setBlockedAccounts] = useState<AccountRelation[]>([]);
@@ -50,7 +50,7 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlocking, setIsBlocking] = useState(false);
   const [followError, setFollowError] = useState(false);
-  const [isFollowed, setIsFollowed] = useState(false);
+  const [isFollowed, setIsFollowed] = useState(isInitiallyFollowed);
   const [isFollowing, setIsFollowing] = useState(false);
   const [unblockingAccountIdentifier, setUnblockingAccountIdentifier] = useState<string | null>(null);
   const [unblockError, setUnblockError] = useState(false);
