@@ -53,7 +53,7 @@ const publicAccountApiAdapter: PublicAccountAdapter = {
 };
 
 export function createPublicAccountService(adapter: PublicAccountAdapter = publicAccountApiAdapter): PublicAccountService {
-  const listLikesPage = async (accountIdentifier: string, page: number) => fetch(`/api/accounts/${accountIdentifier}/likes?page=${page}&number_of_items_per_page=40`)
+  const listLikesPage = async (accountIdentifier: string, page: number) => fetch(`/api/accounts/${accountIdentifier}/likes?page=${page}&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' })
     .then(async (response) => {
       if (!response.ok) throw new Error(`Failed to fetch public liked routines: ${response.status}`);
       return parseLikedRoutinesPage(await response.json());
@@ -63,7 +63,7 @@ export function createPublicAccountService(adapter: PublicAccountAdapter = publi
       if (!response.ok) throw new Error(`Failed to fetch public routine executions: ${response.status}`);
       return parseAccountRoutineExecutionsPage(await response.json());
     });
-  const listPostsPage = async (accountIdentifier: string, page: number) => fetch(`/api/accounts/${accountIdentifier}/posts?page=${page}&number_of_items_per_page=40`)
+  const listPostsPage = async (accountIdentifier: string, page: number) => fetch(`/api/accounts/${accountIdentifier}/posts?page=${page}&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' })
     .then(async (response) => {
       if (!response.ok) throw new Error(`Failed to fetch public routine posts: ${response.status}`);
       return parseAccountPostsPage(await response.json());
