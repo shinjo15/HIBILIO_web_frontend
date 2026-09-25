@@ -1,3 +1,5 @@
+import CloseIcon from '@mui/icons-material/Close';
+
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { accountService as defaultCurrentAccountService, AccountUnauthorizedError, type AccountService } from '../services/accountService';
@@ -73,12 +75,15 @@ function PrivateAccountPage({ followService, onBack, onProfileReload, profile, s
   const navigate = useNavigate();
   const [hasPendingFollowRequest, setHasPendingFollowRequest] = useState(profile.hasPendingFollowRequest);
   const [isRequesting, setIsRequesting] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
   const [hasRequestError, setHasRequestError] = useState(false);
+  const [removeRequestError, setRemoveRequestError] = useState<string | null>(null);
 
   async function requestFollow() {
-    if (hasPendingFollowRequest || isRequesting) return;
+    if (hasPendingFollowRequest || isRequesting || isRemoving) return;
     setIsRequesting(true);
     setHasRequestError(false);
+    setRemoveRequestError(null);
     try {
       await followService.create(profile.accountIdentifier);
       setHasPendingFollowRequest(true);
@@ -110,7 +115,32 @@ function PrivateAccountPage({ followService, onBack, onProfileReload, profile, s
     }
   }
 
-  return <section className="account-page"><header className="account-page__header account-page__header--public"><button aria-label={messages.publicAccount.back} className="account-page__back" onClick={onBack} type="button">← {messages.publicAccount.back}</button></header><div className="account-page__content"><section className="account-profile"><div className="account-profile__banner"><AccountHeaderImage headerImageUrl={null} /><AccountAvatar className="account-profile__avatar" iconImageUrl={null} initial={profile.name.charAt(0)} /></div><div className="account-profile__body"><div className="account-profile__actions"><button aria-label={isRequesting ? messages.publicAccount.followRequestSending : hasPendingFollowRequest ? messages.publicAccount.followRequestSent : messages.publicAccount.followRequest} className={hasPendingFollowRequest ? 'account-page__follow account-page__follow--followed' : 'account-page__follow'} disabled={isRequesting || hasPendingFollowRequest} onClick={() => void requestFollow()} type="button"><FollowIcon />{isRequesting ? messages.publicAccount.followRequestSending : hasPendingFollowRequest ? messages.publicAccount.followRequestSent : messages.publicAccount.followRequest}</button></div><div className="account-profile__details"><h1 className="account-profile__name">{profile.name}</h1></div></div>{hasRequestError && <p className="account-page__block-error" role="alert">{messages.publicAccount.followError}</p>}</section><p className="account-page__state">{messages.publicAccount.privateAccountNotice}</p></div></section>;
+  async function removeFollowRequest() {
+    if (!hasPendingFollowRequest || isRequesting || isRemoving) return;
+    setIsRemoving(true);
+    setHasRequestError(false);
+    setRemoveRequestError(null);
+    try {
+      await followService.remove(profile.accountIdentifier);
+      setHasPendingFollowRequest(false);
+      onProfileReload({ ...profile, hasPendingFollowRequest: false });
+    } catch (error) {
+      if (error instanceof AccountFollowUnauthorizedError) {
+        clearAuthenticated();
+        navigate('/login');
+      } else if (error instanceof AccountFollowError && error.status === 404) {
+        setRemoveRequestError(messages.publicAccount.followRequestCancelNotFound);
+      } else if (error instanceof AccountFollowError && error.status === 409) {
+        setRemoveRequestError(messages.publicAccount.followRequestCancelConflict);
+      } else {
+        setRemoveRequestError(messages.publicAccount.followRequestCancelError);
+      }
+    } finally {
+      setIsRemoving(false);
+    }
+  }
+
+  return <section className="account-page"><header className="account-page__header account-page__header--public"><button aria-label={messages.publicAccount.back} className="account-page__back" onClick={onBack} type="button">← {messages.publicAccount.back}</button></header><div className="account-page__content"><section className="account-profile"><div className="account-profile__banner"><AccountHeaderImage headerImageUrl={null} /><AccountAvatar className="account-profile__avatar" iconImageUrl={null} initial={profile.name.charAt(0)} /></div><div className="account-profile__body"><div className="account-profile__actions account-profile__actions--private">{hasPendingFollowRequest ? <button aria-label={isRemoving ? messages.publicAccount.followRequestCancelling : messages.publicAccount.followRequestSentCancelable} className="account-page__follow-request-sent" disabled={isRequesting || isRemoving} onClick={() => void removeFollowRequest()} title={isRemoving ? messages.publicAccount.followRequestCancelling : messages.publicAccount.followRequestSentCancelable} type="button">{isRemoving ? messages.publicAccount.followRequestCancelling : <><span>{messages.publicAccount.followRequestSent}</span><CloseIcon fontSize="small" /></>}</button> : <button aria-label={isRequesting ? messages.publicAccount.followRequestSending : messages.publicAccount.followRequest} className="account-page__follow" disabled={isRequesting || isRemoving} onClick={() => void requestFollow()} type="button"><FollowIcon />{isRequesting ? messages.publicAccount.followRequestSending : messages.publicAccount.followRequest}</button>}</div><div className="account-profile__details"><h1 className="account-profile__name">{profile.name}</h1></div></div>{(hasRequestError || removeRequestError !== null) && <p className="account-page__block-error" role="alert">{removeRequestError ?? messages.publicAccount.followError}</p>}</section><p className="account-page__state">{messages.publicAccount.privateAccountNotice}</p></div></section>;
 }
 
 function FollowIcon() {
