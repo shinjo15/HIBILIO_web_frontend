@@ -176,25 +176,25 @@
 .account-page__follow-request-sent {
   align-items: center;
   background: var(--hibilio-color-primary);
+  border: 0;
   border-radius: 999px;
   color: var(--hibilio-color-on-primary);
+  cursor: pointer;
   display: inline-flex;
   font-size: 12px;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 36px;
+  overflow-wrap: anywhere;
   padding: 6px 12px;
 }
 
-.account-page__follow-request-cancel {
-  background: transparent;
-  border: 1px solid var(--hibilio-color-border);
-  border-radius: 999px;
-  color: var(--hibilio-color-muted-text);
-  cursor: pointer;
-  font-size: 12px;
-  padding: 6px 12px;
-}
-
-.account-page__follow-request-cancel:disabled {
+.account-page__follow-request-sent:disabled {
   cursor: default;
+}
+
+.account-page__follow-request-sent svg {
+  flex: 0 0 auto;
 }
 
 .account-page__block {

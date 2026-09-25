@@ -243,6 +243,7 @@
     "followRequestCancelConflict": "フォローリクエストはすでに承認されています。画面を再読み込みしてください。",
     "followRequestSending": "フォローリクエストを送信しています…",
     "followRequestSent": "フォローリクエスト送信済み",
+    "followRequestSentCancelable": "フォローリクエスト送信済み。取り消す",
     "loading": "アカウント情報を読み込んでいます…",
     "notFound": "アカウントが見つかりませんでした。",
     "privateAccountNotice": "このアカウントは鍵アカウントです"

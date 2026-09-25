@@ -273,7 +273,7 @@ describe('PublicAccountPage', () => {
 
     expect(followService.create).toHaveBeenCalledWith('account-1');
     expect(screen.getByText('フォローリクエスト送信済み')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'フォローリクエストを取り消す' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'フォローリクエスト送信済み。取り消す' })).toBeEnabled();
   });
 
   it('未承認の鍵Accountで申請済みならデフォルト画像のプロフィールと送信済み表示を表示する', async () => {
@@ -286,8 +286,13 @@ describe('PublicAccountPage', () => {
 
     renderPage(service);
 
-    expect(await screen.findByText('フォローリクエスト送信済み')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'フォローリクエストを取り消す' })).toBeEnabled();
+    const sentButton = await screen.findByRole('button', { name: 'フォローリクエスト送信済み。取り消す' });
+    expect(sentButton).toBeEnabled();
+    expect(sentButton).toHaveAttribute('title', 'フォローリクエスト送信済み。取り消す');
+    expect(sentButton).toHaveTextContent('フォローリクエスト送信済み');
+    expect(sentButton.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'フォローリクエスト送信済み。取り消す' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'フォローリクエストを取り消す' })).not.toBeInTheDocument();
     expect(document.querySelector('.account-profile__banner')).toBeInTheDocument();
     expect(document.querySelector('.account-profile__banner .account-header-image')).not.toBeInTheDocument();
     expect(document.querySelector('.account-profile__avatar')).toHaveTextContent('鍵');
@@ -310,7 +315,10 @@ describe('PublicAccountPage', () => {
     renderPage(service, '/accounts/account-1', undefined, followService);
 
     expect(await screen.findByText('フォローリクエスト送信済み')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'フォローリクエストを取り消す' }));
+    const sentButton = screen.getByRole('button', { name: 'フォローリクエスト送信済み。取り消す' });
+    const closeIcon = sentButton.querySelector('svg');
+    expect(closeIcon).toBeInTheDocument();
+    await user.click(closeIcon!);
 
     expect(followService.remove).toHaveBeenCalledWith('account-1');
     expect(await screen.findByRole('button', { name: 'フォローリクエストを送信' })).toBeEnabled();
@@ -327,7 +335,7 @@ describe('PublicAccountPage', () => {
 
     renderPage(service, '/accounts/account-1', undefined, followService);
 
-    await user.click(await screen.findByRole('button', { name: 'フォローリクエストを取り消す' }));
+    await user.click(await screen.findByRole('button', { name: 'フォローリクエスト送信済み。取り消す' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('フォローリクエストが見つかりませんでした。画面を再読み込みしてください。');
     expect(screen.getByText('フォローリクエスト送信済み')).toBeInTheDocument();
@@ -340,7 +348,7 @@ describe('PublicAccountPage', () => {
 
     renderPage(service, '/accounts/account-1', undefined, followService);
 
-    await user.click(await screen.findByRole('button', { name: 'フォローリクエストを取り消す' }));
+    await user.click(await screen.findByRole('button', { name: 'フォローリクエスト送信済み。取り消す' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('フォローリクエストはすでに承認されています。画面を再読み込みしてください。');
     expect(screen.getByText('フォローリクエスト送信済み')).toBeInTheDocument();
@@ -353,7 +361,7 @@ describe('PublicAccountPage', () => {
 
     renderPage(service, '/accounts/account-1', undefined, followService);
 
-    await user.click(await screen.findByRole('button', { name: 'フォローリクエストを取り消す' }));
+    await user.click(await screen.findByRole('button', { name: 'フォローリクエスト送信済み。取り消す' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('フォローリクエストを取り消せませんでした。時間をおいて再試行してください。');
     expect(screen.getByText('フォローリクエスト送信済み')).toBeInTheDocument();
@@ -366,7 +374,7 @@ describe('PublicAccountPage', () => {
     markAuthenticated();
 
     renderPage(service, '/accounts/account-1', undefined, followService);
-    await user.click(await screen.findByRole('button', { name: 'フォローリクエストを取り消す' }));
+    await user.click(await screen.findByRole('button', { name: 'フォローリクエスト送信済み。取り消す' }));
 
     expect(await screen.findByText('/login')).toBeInTheDocument();
     expect(isAuthenticated()).toBe(false);
@@ -379,12 +387,12 @@ describe('PublicAccountPage', () => {
     const service = createPublicAccountService({ get: async () => ({ account_identifier: 'account-1', account_name: '鍵アカウント', has_pending_follow_request: true, visibility: 'private' }) });
 
     renderPage(service, '/accounts/account-1', undefined, followService);
-    const cancelButton = await screen.findByRole('button', { name: 'フォローリクエストを取り消す' });
+    const cancelButton = await screen.findByRole('button', { name: 'フォローリクエスト送信済み。取り消す' });
     await user.click(cancelButton);
-    await user.click(screen.getByRole('button', { name: 'フォローリクエストを取り消しています…' }));
 
     expect(followService.remove).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('button', { name: 'フォローリクエストを取り消しています…' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'フォローリクエストを取り消しています…' })).toHaveTextContent('フォローリクエストを取り消しています…');
     resolveRemove();
     expect(await screen.findByRole('button', { name: 'フォローリクエストを送信' })).toBeEnabled();
   });
@@ -403,7 +411,7 @@ describe('PublicAccountPage', () => {
 
     expect(get).toHaveBeenCalledTimes(2);
     expect(screen.getByText('フォローリクエスト送信済み')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'フォローリクエストを取り消す' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'フォローリクエスト送信済み。取り消す' })).toBeEnabled();
     expect(screen.queryByRole('button', { name: 'フォロー中' })).not.toBeInTheDocument();
   });
 
