@@ -83,6 +83,10 @@ type ReceivedFollowRequestsAdapter = {
   listReceivedFollowRequests: () => Promise<unknown>;
 };
 
+type SentFollowRequestsAdapter = {
+  listSentFollowRequests: () => Promise<unknown>;
+};
+
 export class AccountUnauthorizedError extends Error {
   constructor(message = 'Account profile requires authentication') {
     super(message);
@@ -98,6 +102,7 @@ export type AccountService = {
   listBlockedAccounts: () => Promise<AccountRelation[]>;
   listReceivedFollowRequests: () => Promise<AccountRelation[]>;
 
+  listSentFollowRequests: () => Promise<AccountRelation[]>;
   listLikes: () => Promise<Routine[]>;
   listLikesPage?: (page: number) => Promise<PageResult<Routine>>;
   listPosts: () => Promise<Routine[]>;
@@ -199,6 +204,31 @@ const receivedFollowRequestsApiAdapter: ReceivedFollowRequestsAdapter = {
   },
 };
 
+const sentFollowRequestsResponseSchema = z.object({
+  follow_requests: z.array(z.object({
+    account_bio: z.string().nullable(),
+    account_identifier: z.string().min(1),
+    account_name: z.string().min(1),
+    icon_image_url: z.string().url().nullish().transform((url) => url ?? null),
+  })),
+});
+
+const sentFollowRequestsApiAdapter: SentFollowRequestsAdapter = {
+  listSentFollowRequests: async () => {
+    const response = await fetch('/api/my/sent-follow-requests', { credentials: 'include', method: 'GET' });
+
+    if (response.status === 401) {
+      throw new AccountUnauthorizedError('Sent follow requests require authentication');
+    }
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch sent follow requests');
+    }
+
+    return response.json();
+  },
+};
+
 const accountPostsApiAdapter: AccountPostsAdapter = {
   listPosts: async (page = 1) => {
     const response = await fetch(`/api/my/posts?page=${page}&number_of_items_per_page=40`, {
@@ -226,6 +256,7 @@ export function createAccountService(
 
   blocksAdapter: AccountBlocksAdapter = accountBlocksApiAdapter,
   receivedFollowRequestsAdapter: ReceivedFollowRequestsAdapter = receivedFollowRequestsApiAdapter,
+  sentFollowRequestsAdapter: SentFollowRequestsAdapter = sentFollowRequestsApiAdapter,
 ): AccountService {
   const listExecutionHistoriesPage = async (page: number) => parseAccountRoutineExecutionsPage(await executionAdapter.listExecutionHistories(page));
   const listLikesPage = async (page: number) => parseLikedRoutinesPage(await likesAdapter.listLikes(page));
@@ -271,13 +302,8 @@ export function createAccountService(
     listExecutionHistories: async () => (await listExecutionHistoriesPage(1)).items,
     listExecutionHistoriesPage,
     listBlockedAccounts: async () => parseAccountRelations(await blocksAdapter.listBlockedAccounts()),
-    listReceivedFollowRequests: async () => receivedFollowRequestsResponseSchema.parse(await receivedFollowRequestsAdapter.listReceivedFollowRequests()).follow_requests.map((account) => accountRelationSchema.parse({
-      accountIdentifier: account.account_identifier,
-      bio: account.account_bio,
-      iconImageUrl: account.icon_image_url,
-      name: account.account_name,
-    })),
-
+    listReceivedFollowRequests: async () => parseFollowRequests(await receivedFollowRequestsAdapter.listReceivedFollowRequests(), receivedFollowRequestsResponseSchema),
+    listSentFollowRequests: async () => parseFollowRequests(await sentFollowRequestsAdapter.listSentFollowRequests(), sentFollowRequestsResponseSchema),
     listLikes: async () => (await listLikesPage(1)).items,
     listLikesPage,
     listPosts: async () => (await listPostsPage(1)).items,
@@ -287,6 +313,15 @@ export function createAccountService(
 
 function parseAccountRelations(response: unknown): AccountRelation[] {
   return accountRelationListResponseSchema.parse(response).blocks.map((account) => accountRelationSchema.parse({
+    accountIdentifier: account.account_identifier,
+    bio: account.account_bio,
+    iconImageUrl: account.icon_image_url,
+    name: account.account_name,
+  }));
+}
+
+function parseFollowRequests(response: unknown, schema: typeof receivedFollowRequestsResponseSchema): AccountRelation[] {
+  return schema.parse(response).follow_requests.map((account) => accountRelationSchema.parse({
     accountIdentifier: account.account_identifier,
     bio: account.account_bio,
     iconImageUrl: account.icon_image_url,

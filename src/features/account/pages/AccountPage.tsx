@@ -61,6 +61,10 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
   const [followRequestsStatus, setFollowRequestsStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
   const [followRequestActionError, setFollowRequestActionError] = useState(false);
   const [processingFollowRequestAccountIdentifier, setProcessingFollowRequestAccountIdentifier] = useState<string | null>(null);
+  const [sentFollowRequests, setSentFollowRequests] = useState<AccountRelation[]>([]);
+  const [sentFollowRequestsStatus, setSentFollowRequestsStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
+  const [sentFollowRequestCancelError, setSentFollowRequestCancelError] = useState<string | null>(null);
+  const [cancellingSentFollowRequestAccountIdentifier, setCancellingSentFollowRequestAccountIdentifier] = useState<string | null>(null);
   const [actionMenuAnchor, setActionMenuAnchor] = useState<HTMLElement | null>(null);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [reportingRoutine, setReportingRoutine] = useState<Routine | null>(null);
@@ -172,6 +176,31 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
 
     return () => { cancelled = true; };
   }, [isOwnAccount, navigate, profile?.visibility, service]);
+
+  useEffect(() => {
+    if (!isOwnAccount) return;
+
+    let cancelled = false;
+    service.listSentFollowRequests()
+      .then((loadedRequests) => {
+        if (!cancelled) {
+          setSentFollowRequests(loadedRequests);
+          setSentFollowRequestsStatus('loaded');
+        }
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        if (error instanceof AccountUnauthorizedError) {
+          clearAuthenticated();
+          navigate('/login');
+          return;
+        }
+
+        setSentFollowRequestsStatus('error');
+      });
+
+    return () => { cancelled = true; };
+  }, [isOwnAccount, navigate, service]);
 
   function selectTab(tab: AccountTab) {
     setActiveTab(tab);
@@ -307,6 +336,30 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
     }
   }
 
+  async function cancelSentFollowRequest(account: AccountRelation) {
+    if (cancellingSentFollowRequestAccountIdentifier !== null) return;
+
+    setCancellingSentFollowRequestAccountIdentifier(account.accountIdentifier);
+    setSentFollowRequestCancelError(null);
+    try {
+      await followService.remove(account.accountIdentifier);
+      setSentFollowRequests((current) => current.filter((item) => item.accountIdentifier !== account.accountIdentifier));
+    } catch (error) {
+      if (error instanceof AccountFollowUnauthorizedError) {
+        clearAuthenticated();
+        navigate('/login');
+      } else if (error instanceof AccountFollowError && error.status === 404) {
+        setSentFollowRequestCancelError(messages.publicAccount.followRequestCancelNotFound);
+      } else if (error instanceof AccountFollowError && error.status === 409) {
+        setSentFollowRequestCancelError(messages.publicAccount.followRequestCancelConflict);
+      } else {
+        setSentFollowRequestCancelError(messages.publicAccount.followRequestCancelError);
+      }
+    } finally {
+      setCancellingSentFollowRequestAccountIdentifier(null);
+    }
+  }
+
   if (isLoading) {
     return <p className="account-page__state account-page__state--loading">{messages.account.loading}</p>;
   }
@@ -321,11 +374,19 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
     blockedAccounts: blockedAccountsStatus === 'loaded' ? blockedAccounts.length : null,
     executionHistory: executionHistoriesList.total ?? (executionHistoriesList.error ? executionHistories.length : null),
     followRequests: followRequestsStatus === 'loaded' ? followRequests.length : null,
+    sentFollowRequests: sentFollowRequestsStatus === 'loaded' ? sentFollowRequests.length : null,
 
     likes: likesList.total ?? (likesList.error ? likes.length : null),
     posts: postsList.total ?? (postsList.error ? posts.length : null),
   };
-  const displayedTabs = isOwnAccount ? profile.visibility === 'private' ? [...tabs, { label: messages.account.tabs.followRequests, value: 'followRequests' as const }] : tabs : tabs.slice(0, 3);
+  const displayedTabs = isOwnAccount
+    ? [
+      ...tabs,
+      ...(profile.visibility === 'private' ? [{ label: messages.account.tabs.followRequests, value: 'followRequests' as const }] : []),
+      { label: messages.account.tabs.sentFollowRequests, value: 'sentFollowRequests' as const },
+    ]
+    : tabs.slice(0, 3);
+  const tabClassName = `account-tabs account-tabs--${['zero', 'one', 'two', 'three', 'four', 'five', 'six'][displayedTabs.length]}`;
 
   return (
     <section className="account-page">
@@ -361,7 +422,7 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
           </div>
           {blockError && <p className="account-page__block-error" role="alert">{messages.publicAccount.blockError}</p>}
           {followError && <p className="account-page__block-error" role="alert">{messages.publicAccount.followError}</p>}
-          <div aria-label={messages.account.tabs.ariaLabel} className={isOwnAccount ? profile.visibility === 'private' ? 'account-tabs account-tabs--five' : 'account-tabs account-tabs--four' : 'account-tabs account-tabs--three'} role="tablist">
+          <div aria-label={messages.account.tabs.ariaLabel} className={tabClassName} role="tablist">
             {displayedTabs.map((tab) => (
               <button
                 aria-selected={activeTab === tab.value}
@@ -384,6 +445,7 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
         {activeTab === 'executionHistory' && <ExecutionHistoryList error={executionHistoriesList.error} histories={executionHistories} onSelect={(history) => navigate(`/routines/${history.routineId}/executions/${history.id}`)} retry={executionHistoriesList.retry} sentinelRef={executionHistoriesList.sentinelRef} />}
         {activeTab === 'blockedAccounts' && <AccountRelationListState accounts={blockedAccounts} action={(account) => <button className="account-relation-card-with-action__button" disabled={unblockingAccountIdentifier === account.accountIdentifier} onClick={(event) => { event.stopPropagation(); void removeBlock(account); }} type="button"><BlockIcon />{unblockingAccountIdentifier === account.accountIdentifier ? messages.account.unblocking : messages.account.unblock}</button>} actionError={unblockError ? messages.account.unblockError : null} emptyMessage={messages.account.blockedAccountsEmpty} errorMessage={messages.account.blockedAccountsError} loadingMessage={messages.account.blockedAccountsLoading} status={blockedAccountsStatus} />}
         {activeTab === 'followRequests' && <AccountRelationListState accounts={followRequests} action={(account) => <div className="account-relation-card-with-action__actions"><button className="account-relation-card-with-action__button" disabled={processingFollowRequestAccountIdentifier === account.accountIdentifier} onClick={(event) => { event.stopPropagation(); void processFollowRequest(account, 'approve'); }} type="button">{messages.account.followRequestApprove}</button><button className="account-relation-card-with-action__button account-relation-card-with-action__button--secondary" disabled={processingFollowRequestAccountIdentifier === account.accountIdentifier} onClick={(event) => { event.stopPropagation(); void processFollowRequest(account, 'reject'); }} type="button">{messages.account.followRequestReject}</button></div>} actionError={followRequestActionError ? messages.account.followRequestActionError : null} emptyMessage={messages.account.followRequestsEmpty} errorMessage={messages.account.followRequestsError} loadingMessage={messages.account.followRequestsLoading} status={followRequestsStatus} />}
+        {activeTab === 'sentFollowRequests' && <AccountRelationListState accounts={sentFollowRequests} action={(account) => <button className="account-relation-card-with-action__button" disabled={cancellingSentFollowRequestAccountIdentifier === account.accountIdentifier} onClick={(event) => { event.stopPropagation(); void cancelSentFollowRequest(account); }} type="button">{cancellingSentFollowRequestAccountIdentifier === account.accountIdentifier ? messages.account.sentFollowRequestCancelling : messages.account.sentFollowRequestCancel}</button>} actionError={sentFollowRequestCancelError} emptyMessage={messages.account.sentFollowRequestsEmpty} errorMessage={messages.account.sentFollowRequestsError} loadingMessage={messages.account.sentFollowRequestsLoading} status={sentFollowRequestsStatus} />}
         {reportingRoutine !== null && <ReportDialog onClose={() => setReportingRoutine(null)} onUnauthorized={() => { clearAuthenticated(); navigate('/login'); }} open service={reportService} targetAccountIdentifier={reportingRoutine.accountId} targetPostIdentifier={reportingRoutine.id} />}
       </div>
     </section>

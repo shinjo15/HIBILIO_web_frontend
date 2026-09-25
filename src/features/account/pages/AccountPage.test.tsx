@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AccountPage } from './AccountPage';
 import { AccountUnauthorizedError, type AccountService } from '../services/accountService';
 import { AccountBlockUnauthorizedError, type AccountBlockService } from '../services/accountBlockService';
+import { AccountFollowError, AccountFollowUnauthorizedError, type AccountFollowService } from '../services/accountFollowService';
 import { FollowRequestError, FollowRequestUnauthorizedError, type FollowRequestService } from '../services/followRequestService';
 import { isAuthenticated, markAuthenticated } from '../../auth/services/authSession';
 
@@ -19,6 +20,7 @@ const service: AccountService = {
   listExecutionHistories: async () => [{ executedActionCount: 2, id: 'execution-1', memo: '集中できました', postedAt: '2026-09-03T12:00:00+00:00', routineId: 'routine-1', routineTitle: '朝の集中ルーティン', supportCount: 3 }],
   listBlockedAccounts: async () => [],
   listReceivedFollowRequests: async () => [],
+  listSentFollowRequests: async () => [],
   listLikes: async () => [likedPost],
   listPosts: async () => [firstPost],
 };
@@ -44,8 +46,8 @@ function Location() {
   return <output>{useLocation().pathname}</output>;
 }
 
-function renderPage(accountService: AccountService = service, blockService?: AccountBlockService, followRequestService?: FollowRequestService) {
-  return render(<MemoryRouter><AccountPage blockService={blockService} followRequestService={followRequestService} service={accountService} /><Location /></MemoryRouter>);
+function renderPage(accountService: AccountService = service, blockService?: AccountBlockService, followRequestService?: FollowRequestService, followService?: AccountFollowService) {
+  return render(<MemoryRouter><AccountPage blockService={blockService} followRequestService={followRequestService} followService={followService} service={accountService} /><Location /></MemoryRouter>);
 }
 
 afterEach(() => {
@@ -88,8 +90,8 @@ describe('AccountPage', () => {
     await screen.findByRole('heading', { name: '山田 由紀' });
 
     await waitFor(() => expect(listReceivedFollowRequests).toHaveBeenCalledTimes(1));
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['1投稿', '1いいね', '1実行履歴', '0ブロック中', '1フォローリクエスト']);
-    expect(screen.getByRole('tablist')).toHaveClass('account-tabs--five');
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['1投稿', '1いいね', '1実行履歴', '0ブロック中', '1フォローリクエスト', '0送信済みフォローリクエスト']);
+    expect(screen.getByRole('tablist')).toHaveClass('account-tabs--six');
     await user.click(screen.getByRole('tab', { name: '1フォローリクエスト' }));
     expect(await screen.findByRole('link', { name: '申請者' })).toBeInTheDocument();
     expect(screen.getByText('フォローをお願いします。')).toBeInTheDocument();
@@ -103,8 +105,161 @@ describe('AccountPage', () => {
     await screen.findByRole('heading', { name: '山田 由紀' });
 
     expect(listReceivedFollowRequests).not.toHaveBeenCalled();
-    expect(screen.queryByRole('tab', { name: /フォローリクエスト/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('tablist')).toHaveClass('account-tabs--four');
+    expect(screen.queryByRole('tab', { name: '0フォローリクエスト' })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '0送信済みフォローリクエスト' })).toBeInTheDocument();
+    expect(screen.getByRole('tablist')).toHaveClass('account-tabs--five');
+  });
+
+  it('public本人は送信済みフォローリクエストを返却順のまま一覧表示し、取消成功後にカードと件数を更新する', async () => {
+    const user = userEvent.setup();
+    const pendingAccount = { accountIdentifier: '22222222-2222-4222-8222-222222222222', bio: '保留中の自己紹介', iconImageUrl: 'https://example.com/icons/pending-account.webp', name: '保留中の申請先' };
+    const rejectedAccount = { accountIdentifier: '33333333-3333-4333-8333-333333333333', bio: null, name: '却下済みの申請先' };
+    let resolveRemove: () => void = () => {};
+    const followService: AccountFollowService = {
+      create: vi.fn(),
+      remove: vi.fn().mockImplementation(() => new Promise<void>((resolve) => { resolveRemove = resolve; })),
+    };
+    const listSentFollowRequests = vi.fn().mockResolvedValue([pendingAccount, rejectedAccount]);
+    renderPage({ ...service, listSentFollowRequests }, undefined, undefined, followService);
+
+    await screen.findByRole('heading', { name: '山田 由紀' });
+    await user.click(screen.getByRole('tab', { name: '2送信済みフォローリクエスト' }));
+
+    const pendingCard = (await screen.findByRole('link', { name: '保留中の申請先' })).closest('.account-relation-card-with-action');
+    const cancelButton = within(pendingCard as HTMLElement).getByRole('button', { name: '取り消す' });
+    expect(screen.getAllByRole('link', { name: /申請先/ }).map((link) => link.getAttribute('href'))).toEqual([
+      '/accounts/22222222-2222-4222-8222-222222222222',
+      '/accounts/33333333-3333-4333-8333-333333333333',
+    ]);
+    expect(screen.getByText('保留中の自己紹介')).toBeInTheDocument();
+    expect((await screen.findByRole('link', { name: '保留中の申請先' })).querySelector('.account-avatar__image')).toHaveAttribute('src', pendingAccount.iconImageUrl);
+
+    await user.click(cancelButton);
+    await user.click(cancelButton);
+
+    expect(followService.remove).toHaveBeenCalledTimes(1);
+    expect(followService.remove).toHaveBeenCalledWith(pendingAccount.accountIdentifier);
+    expect(cancelButton).toBeDisabled();
+    resolveRemove();
+    await waitFor(() => expect(screen.queryByRole('link', { name: '保留中の申請先' })).not.toBeInTheDocument());
+    expect(screen.getByRole('tab', { name: '1送信済みフォローリクエスト' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '却下済みの申請先' })).toBeInTheDocument();
+    expect(screen.getByRole('tablist')).toHaveClass('account-tabs--five');
+  });
+
+  it('鍵本人は受信と送信済みフォローリクエストを区別する6タブを表示し、取消失敗時はカードを残す', async () => {
+    const user = userEvent.setup();
+    const sentAccount = { accountIdentifier: '22222222-2222-4222-8222-222222222222', bio: null, name: '送信先' };
+    const receivedAccount = { accountIdentifier: '33333333-3333-4333-8333-333333333333', bio: null, name: '受信元' };
+    const followService: AccountFollowService = { create: vi.fn(), remove: vi.fn().mockRejectedValue(new AccountFollowError('conflict', 409)) };
+    renderPage({
+      ...service,
+      getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: null, favoriteTags: [], headerImageUrl: null, initial: '山', iconImageUrl: null, name: '山田 由紀', socialLinks: [], visibility: 'private' }),
+      listReceivedFollowRequests: async () => [receivedAccount],
+      listSentFollowRequests: async () => [sentAccount],
+    }, undefined, undefined, followService);
+
+    await screen.findByRole('heading', { name: '山田 由紀' });
+    await screen.findByRole('tab', { name: '1フォローリクエスト' });
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['1投稿', '1いいね', '1実行履歴', '0ブロック中', '1フォローリクエスト', '1送信済みフォローリクエスト']);
+    expect(screen.getByRole('tablist')).toHaveClass('account-tabs--six');
+    await user.click(screen.getByRole('tab', { name: '1送信済みフォローリクエスト' }));
+    await user.click(await screen.findByRole('button', { name: '取り消す' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('フォローリクエストはすでに承認されています。画面を再読み込みしてください。');
+    expect(screen.getByRole('link', { name: '送信先' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '1送信済みフォローリクエスト' })).toBeInTheDocument();
+  });
+
+  it('送信済みフォローリクエストの空・取得失敗状態をタブ内に表示する', async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderPage({ ...service, listSentFollowRequests: async () => [] });
+
+    await user.click(await screen.findByRole('tab', { name: '0送信済みフォローリクエスト' }));
+    expect(await screen.findByText('送信済みのフォローリクエストはまだありません')).toBeInTheDocument();
+
+    rerender(<MemoryRouter><AccountPage service={{ ...service, listSentFollowRequests: async () => { throw new Error('failed'); } }} /><Location /></MemoryRouter>);
+    await user.click(await screen.findByRole('tab', { name: /送信済みフォローリクエスト/ }));
+    expect(await screen.findByText('送信済みフォローリクエストを読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
+  });
+
+  it('送信済みフォローリクエスト取得が401なら認証状態を削除してログインへ遷移する', async () => {
+    markAuthenticated();
+    renderPage({ ...service, listSentFollowRequests: async () => { throw new AccountUnauthorizedError('unauthorized'); } });
+
+    expect(await screen.findByText('/login')).toBeInTheDocument();
+    expect(isAuthenticated()).toBe(false);
+  });
+
+  it('rejectedの送信済みフォローリクエスト取消が204ならカードと件数を更新する', async () => {
+    const user = userEvent.setup();
+    const rejectedAccount = { accountIdentifier: '22222222-2222-4222-8222-222222222222', bio: null, name: '却下済みの申請先' };
+    const followService: AccountFollowService = { create: vi.fn(), remove: vi.fn().mockResolvedValue(undefined) };
+    renderPage({ ...service, listSentFollowRequests: async () => [rejectedAccount] }, undefined, undefined, followService);
+
+    await user.click(await screen.findByRole('tab', { name: '1送信済みフォローリクエスト' }));
+    await user.click(await screen.findByRole('button', { name: '取り消す' }));
+
+    expect(followService.remove).toHaveBeenCalledWith(rejectedAccount.accountIdentifier);
+    expect(await screen.findByText('送信済みのフォローリクエストはまだありません')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '0送信済みフォローリクエスト' })).toBeInTheDocument();
+  });
+
+  it('送信済みフォローリクエスト取消が404ならカードと件数を維持する', async () => {
+    const user = userEvent.setup();
+    const sentAccount = { accountIdentifier: '22222222-2222-4222-8222-222222222222', bio: null, name: '送信先' };
+    const followService: AccountFollowService = { create: vi.fn(), remove: vi.fn().mockRejectedValue(new AccountFollowError('not found', 404)) };
+    renderPage({ ...service, listSentFollowRequests: async () => [sentAccount] }, undefined, undefined, followService);
+
+    await user.click(await screen.findByRole('tab', { name: '1送信済みフォローリクエスト' }));
+    await user.click(await screen.findByRole('button', { name: '取り消す' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('フォローリクエストが見つかりませんでした。画面を再読み込みしてください。');
+    expect(screen.getByRole('link', { name: '送信先' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '1送信済みフォローリクエスト' })).toBeInTheDocument();
+  });
+
+  it('送信済みフォローリクエスト取消が通信失敗ならカードと件数を維持する', async () => {
+    const user = userEvent.setup();
+    const sentAccount = { accountIdentifier: '22222222-2222-4222-8222-222222222222', bio: null, name: '送信先' };
+    const followService: AccountFollowService = { create: vi.fn(), remove: vi.fn().mockRejectedValue(new Error('network failure')) };
+    renderPage({ ...service, listSentFollowRequests: async () => [sentAccount] }, undefined, undefined, followService);
+
+    await user.click(await screen.findByRole('tab', { name: '1送信済みフォローリクエスト' }));
+    await user.click(await screen.findByRole('button', { name: '取り消す' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('フォローリクエストを取り消せませんでした。時間をおいて再試行してください。');
+    expect(screen.getByRole('link', { name: '送信先' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '1送信済みフォローリクエスト' })).toBeInTheDocument();
+  });
+
+  it('送信済みフォローリクエスト取消が401ならカードを維持してログインへ遷移する', async () => {
+    const user = userEvent.setup();
+    const sentAccount = { accountIdentifier: '22222222-2222-4222-8222-222222222222', bio: null, name: '送信先' };
+    let rejectRemove: (reason: Error) => void = () => {};
+    const followService: AccountFollowService = { create: vi.fn(), remove: vi.fn().mockImplementation(() => new Promise<void>((_resolve, reject) => { rejectRemove = reject; })) };
+    markAuthenticated();
+    renderPage({ ...service, listSentFollowRequests: async () => [sentAccount] }, undefined, undefined, followService);
+
+    await user.click(await screen.findByRole('tab', { name: '1送信済みフォローリクエスト' }));
+    await user.click(await screen.findByRole('button', { name: '取り消す' }));
+
+    expect(screen.getByRole('link', { name: '送信先' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '1送信済みフォローリクエスト' })).toBeInTheDocument();
+    rejectRemove(new AccountFollowUnauthorizedError());
+    expect(await screen.findByText('/login')).toBeInTheDocument();
+    expect(isAuthenticated()).toBe(false);
+  });
+
+  it('送信済みフォローリクエスト取得中はタブ内に読み込み状態を表示する', async () => {
+    const user = userEvent.setup();
+    let resolveSentFollowRequests: (accounts: typeof service extends { listSentFollowRequests: () => Promise<infer T> } ? T : never) => void = () => {};
+    renderPage({ ...service, listSentFollowRequests: () => new Promise((resolve) => { resolveSentFollowRequests = resolve; }) });
+
+    await user.click(await screen.findByRole('tab', { name: '-送信済みフォローリクエスト' }));
+    expect(screen.getByText('送信済みフォローリクエストを読み込んでいます…')).toBeInTheDocument();
+    resolveSentFollowRequests([]);
+    expect(await screen.findByText('送信済みのフォローリクエストはまだありません')).toBeInTheDocument();
   });
 
   it('鍵アカウントの受信フォローリクエスト取得失敗をタブ内に表示する', async () => {
@@ -116,7 +271,7 @@ describe('AccountPage', () => {
     });
 
     await screen.findByRole('heading', { name: '山田 由紀' });
-    await user.click(screen.getByRole('tab', { name: /フォローリクエスト/ }));
+    await user.click(screen.getByRole('tab', { name: '-フォローリクエスト' }));
 
     expect(await screen.findByText('フォローリクエストを読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
     expect(screen.getByRole('tabpanel')).toHaveClass('account-page__state--error');
@@ -246,7 +401,7 @@ describe('AccountPage', () => {
     expect(document.querySelector('.routine-card__avatar .account-avatar__image')).toHaveAttribute('src', 'https://example.com/icons/post-author.webp');
     expect(screen.getByRole('button', { name: '編集' })).toBeInTheDocument();
     expect(screen.queryByText('11111111-1111-4111-8111-111111111111')).not.toBeInTheDocument();
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['1投稿', '1いいね', '1実行履歴', '0ブロック中']);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['1投稿', '1いいね', '1実行履歴', '0ブロック中', '0送信済みフォローリクエスト']);
 
     await user.click(screen.getByRole('link', { name: '朝の集中ルーティン' }));
     expect(screen.getByText('/routines/routine-1')).toBeInTheDocument();

@@ -338,6 +338,14 @@
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
+.account-tabs--six {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.account-tabs--six .account-tabs__label {
+  overflow-wrap: anywhere;
+}
+
 .account-tabs__tab {
   background: transparent;
   border: 0;
@@ -374,7 +382,12 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .account-tabs--five .account-tabs__tab {
+  .account-tabs--six {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .account-tabs--five .account-tabs__tab,
+  .account-tabs--six .account-tabs__tab {
     min-width: 0;
   }
 
