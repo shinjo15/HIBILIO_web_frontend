@@ -238,7 +238,7 @@ describe('PublicAccountPage', () => {
     expect(screen.queryByText('アカウントが見つかりませんでした。')).not.toBeInTheDocument();
   });
 
-  it('未承認の鍵Accountでは名前とフォローリクエスト操作だけを表示する', async () => {
+  it('未承認の鍵Accountではデフォルト画像のプロフィールとフォローリクエスト操作を表示する', async () => {
     const service = createPublicAccountService({ get: async () => ({
       account_identifier: 'account-1',
       account_name: '鍵アカウント',
@@ -251,8 +251,13 @@ describe('PublicAccountPage', () => {
     expect(await screen.findByRole('heading', { name: '鍵アカウント' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '戻る' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'フォローリクエストを送信' })).toBeInTheDocument();
+    expect(document.querySelector('.account-profile__banner')).toBeInTheDocument();
+    expect(document.querySelector('.account-profile__banner .account-header-image')).not.toBeInTheDocument();
+    expect(document.querySelector('.account-profile__avatar')).toHaveTextContent('鍵');
     expect(screen.queryByText('アカウントが見つかりませんでした。')).not.toBeInTheDocument();
-    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(screen.getByText('このアカウントは鍵アカウントです')).toBeInTheDocument();
+    expect(document.querySelector('.account-profile__avatar .account-avatar__image')).not.toBeInTheDocument();
+    expect(screen.queryByText('鍵Accountの自己紹介')).not.toBeInTheDocument();
     expect(screen.queryByRole('tab')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'アカウントのメニュー' })).not.toBeInTheDocument();
   });
@@ -270,7 +275,7 @@ describe('PublicAccountPage', () => {
     expect(screen.getByRole('button', { name: 'フォローリクエスト送信済み' })).toBeDisabled();
   });
 
-  it('鍵Accountの再ロード時は最小レスポンスのpending状態を送信済み表示へ反映する', async () => {
+  it('未承認の鍵Accountで申請済みならデフォルト画像のプロフィールと送信済み表示を表示する', async () => {
     const service = createPublicAccountService({ get: async () => ({
       account_identifier: 'account-1',
       account_name: '鍵アカウント',
@@ -281,6 +286,12 @@ describe('PublicAccountPage', () => {
     renderPage(service);
 
     expect(await screen.findByRole('button', { name: 'フォローリクエスト送信済み' })).toBeDisabled();
+    expect(document.querySelector('.account-profile__banner')).toBeInTheDocument();
+    expect(document.querySelector('.account-profile__banner .account-header-image')).not.toBeInTheDocument();
+    expect(document.querySelector('.account-profile__avatar')).toHaveTextContent('鍵');
+    expect(document.querySelector('.account-profile__avatar .account-avatar__image')).not.toBeInTheDocument();
+    expect(screen.getByText('このアカウントは鍵アカウントです')).toBeInTheDocument();
+    expect(screen.queryByText('鍵Accountの自己紹介')).not.toBeInTheDocument();
     expect(screen.queryByRole('tab')).not.toBeInTheDocument();
   });
 
