@@ -128,6 +128,10 @@
   min-height: 36px;
 }
 
+.account-profile__actions--private {
+  flex-wrap: wrap;
+}
+
 .account-page__edit {
   background: transparent;
   border: 1px solid var(--hibilio-color-border);
@@ -167,6 +171,30 @@
 .account-page__follow--followed {
   background: var(--hibilio-color-primary);
   color: var(--hibilio-color-on-primary);
+}
+
+.account-page__follow-request-sent {
+  align-items: center;
+  background: var(--hibilio-color-primary);
+  border-radius: 999px;
+  color: var(--hibilio-color-on-primary);
+  display: inline-flex;
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.account-page__follow-request-cancel {
+  background: transparent;
+  border: 1px solid var(--hibilio-color-border);
+  border-radius: 999px;
+  color: var(--hibilio-color-muted-text);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.account-page__follow-request-cancel:disabled {
+  cursor: default;
 }
 
 .account-page__block {

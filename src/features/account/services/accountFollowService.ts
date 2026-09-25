@@ -16,6 +16,7 @@ export class AccountFollowUnauthorizedError extends AccountFollowError {
 
 export type AccountFollowService = {
   create: (accountIdentifier: string) => Promise<void>;
+  remove: (accountIdentifier: string) => Promise<void>;
 };
 
 const csrfTokenSchema = z.object({ csrf_token: z.string().min(1) });
@@ -35,5 +36,20 @@ export const accountFollowService: AccountFollowService = {
 
     if (response.status === 401) throw new AccountFollowUnauthorizedError();
     if (!response.ok) throw new AccountFollowError('Failed to create account follow', response.status);
+  },
+  remove: async (accountIdentifier) => {
+    const csrfResponse = await fetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
+    if (csrfResponse.status === 401) throw new AccountFollowUnauthorizedError();
+    if (!csrfResponse.ok) throw new AccountFollowError('Failed to fetch CSRF token', csrfResponse.status);
+
+    const csrfToken = csrfTokenSchema.parse(await csrfResponse.json()).csrf_token;
+    const response = await fetch(`/api/follow-requests/${accountIdentifier}`, {
+      credentials: 'include',
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      method: 'DELETE',
+    });
+
+    if (response.status === 401) throw new AccountFollowUnauthorizedError();
+    if (!response.ok) throw new AccountFollowError('Failed to remove account follow request', response.status);
   },
 };

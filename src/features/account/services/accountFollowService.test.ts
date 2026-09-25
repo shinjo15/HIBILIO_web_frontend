@@ -4,6 +4,22 @@ import { accountFollowService, AccountFollowUnauthorizedError } from './accountF
 afterEach(() => vi.unstubAllGlobals());
 
 describe('accountFollowService', () => {
+  it('CSRFトークンを添えて送信済みフォローリクエスト取消APIを呼び出す', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' })))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(accountFollowService.remove('11111111-1111-4111-8111-111111111111')).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/csrf-token', { credentials: 'include', method: 'GET' });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/follow-requests/11111111-1111-4111-8111-111111111111', {
+      credentials: 'include',
+      headers: { 'X-CSRF-TOKEN': 'csrf-token' },
+      method: 'DELETE',
+    });
+  });
+
   it('CSRFトークンと対象アカウントIDを含めてフォローAPIを呼び出す', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' })))
