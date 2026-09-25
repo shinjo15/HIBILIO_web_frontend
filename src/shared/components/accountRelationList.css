@@ -83,6 +83,29 @@
   cursor: default;
 }
 
+.account-relation-card-with-action__action,
+.account-relation-card-with-action__actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.account-relation-card-with-action__button--secondary {
+  border-color: var(--hibilio-color-border);
+  color: var(--hibilio-color-muted-text);
+}
+
+@media (max-width: 480px) {
+  .account-relation-card-with-action {
+    align-items: flex-start;
+  }
+
+  .account-relation-card-with-action__actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
 .account-relation-card__avatar {
   align-items: center;
   background-color: var(--hibilio-color-primary);

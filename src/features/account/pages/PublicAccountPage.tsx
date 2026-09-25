@@ -19,6 +19,7 @@ export function PublicAccountPage({ blockService = accountBlockService, currentA
     listExecutionHistories: async () => service.listExecutionHistories(accountId),
     listExecutionHistoriesPage: service.listExecutionHistoriesPage === undefined ? undefined : async (page) => service.listExecutionHistoriesPage?.(accountId, page) ?? { items: [], total: 0 },
     listBlockedAccounts: async () => [],
+    listReceivedFollowRequests: async () => [],
 
     listLikes: async () => service.listLikes(accountId),
     listLikesPage: service.listLikesPage === undefined ? undefined : async (page) => service.listLikesPage?.(accountId, page) ?? { items: [], total: 0 },

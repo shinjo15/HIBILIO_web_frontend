@@ -91,6 +91,7 @@ export function createPublicAccountService(adapter: PublicAccountAdapter = publi
         iconImageUrl: profile.icon_image_url,
         name: profile.account_name,
         socialLinks: profile.social_links.map((link) => ({ socialType: link.social_type, socialUrl: link.social_url })),
+        visibility: 'public',
       });
     },
     listLikes: async (accountIdentifier) => (await listLikesPage(accountIdentifier, 1)).items,

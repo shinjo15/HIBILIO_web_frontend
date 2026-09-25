@@ -27,6 +27,7 @@ describe('createPublicAccountService', () => {
       iconImageUrl: 'https://example.com/icons/public.webp',
       name: '公開アカウント',
       socialLinks: [{ socialType: 'x', socialUrl: 'https://x.com/example' }],
+      visibility: 'public',
     });
     expect(fetchMock).toHaveBeenCalledWith('/api/accounts/11111111-1111-4111-8111-111111111111', { method: 'GET' });
   });

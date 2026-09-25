@@ -58,7 +58,7 @@ describe('PublicAccountPage', () => {
     const likedByAccountOwner = { ...publicPost, liked: false, title: '公開アカウントがいいねした投稿' };
     const listLikesPage = vi.fn().mockResolvedValue({ items: [likedByAccountOwner], total: 4 });
     const service: PublicAccountService = {
-      get: async () => ({ accountIdentifier: 'account-1', bio: null, favoriteTags: [], initial: '公', name: '公開アカウント', socialLinks: [] }),
+      get: async () => ({ accountIdentifier: 'account-1', bio: null, favoriteTags: [], initial: '公', name: '公開アカウント', socialLinks: [], visibility: 'public' }),
       listExecutionHistories: async () => [],
       listLikes: async () => [],
       listLikesPage,
@@ -80,7 +80,7 @@ describe('PublicAccountPage', () => {
   it('ログイン中の自分の公開プロフィールではフォロー・ブロック操作を表示しない', async () => {
     const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '自分', favorite_tags: [], social_links: [] }) });
     const currentAccountService: Pick<AccountService, 'getProfile'> = {
-      getProfile: async () => ({ accountIdentifier: 'account-1', bio: null, favoriteTags: [], initial: '自', name: '自分', socialLinks: [] }),
+      getProfile: async () => ({ accountIdentifier: 'account-1', bio: null, favoriteTags: [], initial: '自', name: '自分', socialLinks: [], visibility: 'public' }),
     };
 
     renderPage(service, '/accounts/account-1', undefined, undefined, currentAccountService);
@@ -120,7 +120,7 @@ describe('PublicAccountPage', () => {
       .mockResolvedValueOnce({ items: [{ ...publicPost, title: '公開1' }], total: 2 })
       .mockResolvedValueOnce({ items: [{ ...publicPost, id: 'post-2', title: '公開2' }], total: 2 });
     const service: PublicAccountService = {
-      get: async () => ({ accountIdentifier: 'account-1', bio: null, favoriteTags: [], initial: '公', name: '公開アカウント', socialLinks: [] }),
+      get: async () => ({ accountIdentifier: 'account-1', bio: null, favoriteTags: [], initial: '公', name: '公開アカウント', socialLinks: [], visibility: 'public' }),
       listExecutionHistories: async () => [],
       listLikes: async () => [],
       listPosts: async () => [],
@@ -139,7 +139,7 @@ describe('PublicAccountPage', () => {
   it('投稿といいね一覧のハートはフォロー状態でなく閲覧者のlikedに従う', async () => {
     const user = userEvent.setup();
     const service: PublicAccountService = {
-      get: async () => ({ accountIdentifier: 'account-1', bio: null, favoriteTags: [], initial: '公', name: '公開アカウント', socialLinks: [] }),
+      get: async () => ({ accountIdentifier: 'account-1', bio: null, favoriteTags: [], initial: '公', name: '公開アカウント', socialLinks: [], visibility: 'public' }),
       listExecutionHistories: async () => [],
       listLikes: async () => [{ ...publicPost, id: 'post-2', liked: false, title: '対象のいいね投稿' }],
       listPosts: async () => [{ ...publicPost, liked: true }],

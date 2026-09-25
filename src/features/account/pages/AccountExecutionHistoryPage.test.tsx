@@ -21,9 +21,10 @@ const accountService: AccountService = {
     supportCount: 3,
     tags: [{ id: 'tag-1', name: '朝活' }],
   }),
-  getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: '', favoriteTags: [], initial: 'テ', name: 'テスト', socialLinks: [] }),
+  getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: '', favoriteTags: [], initial: 'テ', name: 'テスト', socialLinks: [], visibility: 'public' }),
   listExecutionHistories: async () => [],
   listBlockedAccounts: async () => [],
+  listReceivedFollowRequests: async () => [],
   listLikes: async () => [],
   listPosts: async () => [],
 };
