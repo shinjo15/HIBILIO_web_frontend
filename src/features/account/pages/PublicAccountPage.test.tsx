@@ -136,6 +136,24 @@ describe('PublicAccountPage', () => {
     expect(listPostsPage).toHaveBeenNthCalledWith(2, 'account-1', 2);
   });
 
+  it('投稿といいね一覧のハートはフォロー状態でなく閲覧者のlikedに従う', async () => {
+    const user = userEvent.setup();
+    const service: PublicAccountService = {
+      get: async () => ({ accountIdentifier: 'account-1', bio: null, favoriteTags: [], initial: '公', name: '公開アカウント', socialLinks: [] }),
+      listExecutionHistories: async () => [],
+      listLikes: async () => [{ ...publicPost, id: 'post-2', liked: false, title: '対象のいいね投稿' }],
+      listPosts: async () => [{ ...publicPost, liked: true }],
+    };
+    renderPage(service);
+
+    await screen.findByRole('heading', { name: '公開1' });
+    expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toHaveClass('routine-card__like--liked');
+
+    await user.click(screen.getByRole('tab', { name: /いいね/ }));
+    await screen.findByRole('heading', { name: '対象のいいね投稿' });
+    expect(screen.getByRole('button', { name: 'いいねする' })).not.toHaveClass('routine-card__like--liked');
+  });
+
   it('非表示または存在しない公開アカウントの状態を表示する', async () => {
     renderPage(createPublicAccountService({ get: async () => null }));
 
