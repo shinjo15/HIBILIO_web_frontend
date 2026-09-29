@@ -12,9 +12,9 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Link as RouterLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { isAuthenticated, markAuthenticated } from '../../features/auth/services/authSession';
+import { getAuthenticationStatus, restoreAuthentication, subscribeToAuthentication } from '../../features/auth/services/authSession';
 import { HibilioMark } from '../brand/HibilioMark';
 import messages from '../message/message.json';
 import './appShell.css';
@@ -50,38 +50,12 @@ export function AppShell() {
   const activePath = selectedPath(location.pathname);
   const isRoutineCreate = location.pathname === '/routines/new'
     || /^\/routines\/[^/]+\/customize$/.test(location.pathname);
-  const [authenticated, setAuthenticated] = useState(isAuthenticated);
+  const authenticationStatus = useSyncExternalStore(subscribeToAuthentication, getAuthenticationStatus, getAuthenticationStatus);
   const [canSubmitRoutineCreate, setCanSubmitRoutineCreate] = useState(false);
 
   useEffect(() => {
-    if (authenticated || location.pathname !== '/') {
-      return;
-    }
-
-    let cancelled = false;
-
-    async function hydrateAuthentication() {
-      try {
-        const response = await fetch('/api/my/account', {
-          credentials: 'include',
-          method: 'GET',
-        });
-
-        if (response.ok && !cancelled) {
-          markAuthenticated();
-          setAuthenticated(true);
-        }
-      } catch {
-        // Keep the unauthenticated state when the session cannot be verified.
-      }
-    }
-
-    void hydrateAuthentication();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [authenticated, location.pathname]);
+    if (authenticationStatus === 'loading') void restoreAuthentication();
+  }, [authenticationStatus]);
 
   useEffect(() => {
     function updateRoutineCreateSubmissionState(event: Event) {
@@ -93,7 +67,7 @@ export function AppShell() {
   }, []);
 
   function protectedPath(path: string): string {
-    return authenticated || path === '/' ? path : '/login';
+    return authenticationStatus !== 'unauthenticated' || path === '/' ? path : '/login';
   }
 
   return (

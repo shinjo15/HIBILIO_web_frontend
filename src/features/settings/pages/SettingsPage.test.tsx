@@ -1,7 +1,7 @@
 import { useTheme } from '@mui/material';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { AppThemeProvider } from '../../../app/AppThemeProvider';
 import { SettingsPage } from './SettingsPage';
@@ -30,6 +30,7 @@ function renderPage() {
 afterEach(() => {
   cleanup();
   document.documentElement.classList.remove('hibilio-theme-dark');
+  vi.unstubAllGlobals();
 });
 
 describe('SettingsPage', () => {
@@ -77,12 +78,21 @@ describe('SettingsPage', () => {
     expect(screen.getByText('/account')).toBeInTheDocument();
   });
 
-  it('ローカルのログアウト操作でログインへ遷移する', async () => {
+  it('CSRF と Cookie 付きのログアウト成功後にログインへ遷移する', async () => {
     const user = userEvent.setup();
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
     renderPage();
 
     await user.click(screen.getByRole('button', { name: 'ログアウト' }));
-    expect(screen.getByText('/login')).toBeInTheDocument();
+    expect(await screen.findByText('/login')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/logout', {
+      credentials: 'include',
+      headers: { 'X-CSRF-TOKEN': 'csrf-token' },
+      method: 'POST',
+    });
   });
 
   it('対象外のアプリアイコン画面への導線を表示しない', () => {

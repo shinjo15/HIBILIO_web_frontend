@@ -3,12 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from './AppShell';
-import { markAuthenticated } from '../../features/auth/services/authSession';
+import { markAuthenticated, resetAuthenticationForTesting } from '../../features/auth/services/authSession';
 
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   window.sessionStorage.clear();
+  resetAuthenticationForTesting();
 });
 
 describe('AppShell', () => {
@@ -70,7 +71,10 @@ describe('AppShell', () => {
 
   it('セッションマーカーがなくアカウント API が401ならログイン画面へ遷移する', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 401 }));
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 401 }));
     vi.stubGlobal('fetch', fetchMock);
     const router = createMemoryRouter([
       { element: <AppShell />, children: [{ element: <h1>一覧画面</h1>, index: true }] },
@@ -81,6 +85,11 @@ describe('AppShell', () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('/api/my/account', {
       credentials: 'include',
       method: 'GET',
+    }));
+    await waitFor(() => expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/persistent-login/restore', {
+      credentials: 'include',
+      headers: { 'X-CSRF-TOKEN': 'csrf-token' },
+      method: 'POST',
     }));
     await user.click(screen.getByRole('button', { name: 'アカウント' }));
     expect(screen.getByRole('heading', { name: 'ログイン画面' })).toBeInTheDocument();
