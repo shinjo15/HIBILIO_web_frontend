@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAppTheme } from '../../../app/appThemeContext';
-import { clearAuthenticated } from '../../auth/services/authSession';
+import { logout } from '../../auth/services/authSession';
 import { SettingsContent } from '../components/SettingsContent';
 import { useSettings } from '../hooks/useSettings';
 import '../settings.css';
@@ -15,16 +15,21 @@ export function SettingsPage() {
     setThemeMode(settings.settings.isDarkMode ? 'light' : 'dark');
   }
 
-  function signOut() {
+  async function signOut() {
+    try {
+      await logout();
+    } catch {
+      return;
+    }
+
     settings.signOut();
-    clearAuthenticated();
     navigate('/login');
   }
 
   return (
     <SettingsContent
       onBack={() => navigate('/account')}
-      onSignOut={signOut}
+      onSignOut={() => void signOut()}
       onToggleDarkMode={toggleDarkMode}
       onToggleLikeNotification={settings.toggleLikeNotification}
       onTogglePrivateAccount={settings.togglePrivateAccount}
