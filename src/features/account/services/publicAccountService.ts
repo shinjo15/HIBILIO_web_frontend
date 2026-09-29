@@ -24,9 +24,12 @@ const detailedPublicAccountResponseSchema = z.object({
 });
 
 const privateAccountResponseSchema = z.object({
+  account_bio: z.string().nullable(),
   account_identifier: z.string().min(1),
   account_name: z.string().min(1),
+  header_image_url: z.string().url().nullable(),
   has_pending_follow_request: z.boolean(),
+  icon_image_url: z.string().url().nullable(),
   visibility: z.literal('private'),
 });
 
@@ -36,7 +39,10 @@ type PublicAccountAdapter = {
 
 export type PrivateAccountProfile = {
   accountIdentifier: string;
+  bio: string | null;
+  headerImageUrl: string | null;
   hasPendingFollowRequest: boolean;
+  iconImageUrl: string | null;
   name: string;
   visibility: 'private';
 };
@@ -117,7 +123,10 @@ export function createPublicAccountService(adapter: PublicAccountAdapter = publi
       const privateProfile = privateAccountResponseSchema.parse(response);
       return {
         accountIdentifier: privateProfile.account_identifier,
+        bio: privateProfile.account_bio,
+        headerImageUrl: privateProfile.header_image_url,
         hasPendingFollowRequest: privateProfile.has_pending_follow_request,
+        iconImageUrl: privateProfile.icon_image_url,
         name: privateProfile.account_name,
         visibility: 'private',
       };

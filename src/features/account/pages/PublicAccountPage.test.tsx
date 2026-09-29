@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -238,11 +238,14 @@ describe('PublicAccountPage', () => {
     expect(screen.queryByText('アカウントが見つかりませんでした。')).not.toBeInTheDocument();
   });
 
-  it('未承認の鍵Accountではデフォルト画像のプロフィールとフォローリクエスト操作を表示する', async () => {
+  it('未承認の鍵Accountでは返却された自己紹介と画像、フォローリクエスト操作を表示する', async () => {
     const service = createPublicAccountService({ get: async () => ({
+      account_bio: '鍵Accountの自己紹介',
       account_identifier: 'account-1',
       account_name: '鍵アカウント',
+      header_image_url: 'https://example.com/headers/private.webp',
       has_pending_follow_request: false,
+      icon_image_url: 'https://example.com/icons/private.webp',
       visibility: 'private',
     }) });
 
@@ -252,20 +255,51 @@ describe('PublicAccountPage', () => {
     expect(screen.getByRole('button', { name: '戻る' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'フォローリクエストを送信' })).toBeInTheDocument();
     expect(document.querySelector('.account-profile__banner')).toBeInTheDocument();
-    expect(document.querySelector('.account-profile__banner .account-header-image')).not.toBeInTheDocument();
+    expect(document.querySelector('.account-profile__banner .account-header-image')).toHaveAttribute('src', 'https://example.com/headers/private.webp');
     expect(document.querySelector('.account-profile__avatar')).toHaveTextContent('鍵');
     expect(screen.queryByText('アカウントが見つかりませんでした。')).not.toBeInTheDocument();
     expect(screen.getByText('このアカウントは鍵アカウントです')).toBeInTheDocument();
-    expect(document.querySelector('.account-profile__avatar .account-avatar__image')).not.toBeInTheDocument();
-    expect(screen.queryByText('鍵Accountの自己紹介')).not.toBeInTheDocument();
+    expect(document.querySelector('.account-profile__avatar .account-avatar__image')).toHaveAttribute('src', 'https://example.com/icons/private.webp');
+    expect(screen.getByText('鍵Accountの自己紹介')).toHaveClass('account-profile__bio');
     expect(screen.queryByRole('tab')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'アカウントのメニュー' })).not.toBeInTheDocument();
+  });
+
+  it('未承認の鍵Accountで画像読み込みに失敗した場合は既存のデフォルト画像へ戻り、最小プロフィール以外を取得しない', async () => {
+    const listExecutionHistories = vi.fn().mockResolvedValue([]);
+    const listLikes = vi.fn().mockResolvedValue([]);
+    const listPosts = vi.fn().mockResolvedValue([]);
+    const service: PublicAccountService = {
+      get: async () => ({ accountIdentifier: 'account-1', bio: '鍵Accountの自己紹介', hasPendingFollowRequest: false, headerImageUrl: 'https://example.com/headers/private.webp', iconImageUrl: 'https://example.com/icons/private.webp', name: '鍵アカウント', visibility: 'private' }),
+      listExecutionHistories,
+      listLikes,
+      listPosts,
+    };
+
+    renderPage(service);
+
+    await screen.findByRole('heading', { name: '鍵アカウント' });
+    const banner = document.querySelector('.account-profile__banner')!;
+    const headerImage = banner.querySelector('.account-header-image')!;
+    const avatarImage = document.querySelector('.account-profile__avatar .account-avatar__image')!;
+    fireEvent.error(headerImage);
+    fireEvent.error(avatarImage);
+
+    expect(banner).toHaveClass('account-profile__banner');
+    expect(banner.querySelector('.account-header-image')).not.toBeInTheDocument();
+    expect(document.querySelector('.account-profile__avatar .account-avatar__image')).not.toBeInTheDocument();
+    expect(document.querySelector('.account-profile__avatar')).toHaveTextContent('鍵');
+    expect(screen.getByText('鍵Accountの自己紹介')).toHaveClass('account-profile__bio');
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+    expect(listExecutionHistories).not.toHaveBeenCalled();
+    expect(listLikes).not.toHaveBeenCalled();
+    expect(listPosts).not.toHaveBeenCalled();
   });
 
   it('鍵Accountの申請成功直後に送信済み表示へ反映する', async () => {
     const user = userEvent.setup();
     const followService: AccountFollowService = { create: vi.fn().mockResolvedValue(undefined), remove: vi.fn() };
-    const service = createPublicAccountService({ get: async () => ({ account_identifier: 'account-1', account_name: '鍵アカウント', has_pending_follow_request: false, visibility: 'private' }) });
+    const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '鍵アカウント', header_image_url: null, has_pending_follow_request: false, icon_image_url: null, visibility: 'private' }) });
 
     renderPage(service, '/accounts/account-1', undefined, followService);
 
@@ -278,9 +312,12 @@ describe('PublicAccountPage', () => {
 
   it('未承認の鍵Accountで申請済みならデフォルト画像のプロフィールと送信済み表示を表示する', async () => {
     const service = createPublicAccountService({ get: async () => ({
+      account_bio: null,
       account_identifier: 'account-1',
       account_name: '鍵アカウント',
+      header_image_url: null,
       has_pending_follow_request: true,
+      icon_image_url: null,
       visibility: 'private',
     }) });
 
@@ -306,9 +343,12 @@ describe('PublicAccountPage', () => {
     const user = userEvent.setup();
     const followService: AccountFollowService = { create: vi.fn().mockResolvedValue(undefined), remove: vi.fn().mockResolvedValue(undefined) };
     const service = createPublicAccountService({ get: async () => ({
+      account_bio: null,
       account_identifier: 'account-1',
       account_name: '鍵アカウント',
+      header_image_url: null,
       has_pending_follow_request: true,
+      icon_image_url: null,
       visibility: 'private',
     }) });
 
@@ -331,7 +371,7 @@ describe('PublicAccountPage', () => {
   it('送信済み鍵Accountの取消が404なら送信済み表示を維持して再読み込みを促す', async () => {
     const user = userEvent.setup();
     const followService: AccountFollowService = { create: vi.fn(), remove: vi.fn().mockRejectedValue(new AccountFollowError('not found', 404)) };
-    const service = createPublicAccountService({ get: async () => ({ account_identifier: 'account-1', account_name: '鍵アカウント', has_pending_follow_request: true, visibility: 'private' }) });
+    const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '鍵アカウント', header_image_url: null, has_pending_follow_request: true, icon_image_url: null, visibility: 'private' }) });
 
     renderPage(service, '/accounts/account-1', undefined, followService);
 
@@ -344,7 +384,7 @@ describe('PublicAccountPage', () => {
   it('送信済み鍵Accountの取消が409なら送信済み表示を維持して再読み込みを促す', async () => {
     const user = userEvent.setup();
     const followService: AccountFollowService = { create: vi.fn(), remove: vi.fn().mockRejectedValue(new AccountFollowError('conflict', 409)) };
-    const service = createPublicAccountService({ get: async () => ({ account_identifier: 'account-1', account_name: '鍵アカウント', has_pending_follow_request: true, visibility: 'private' }) });
+    const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '鍵アカウント', header_image_url: null, has_pending_follow_request: true, icon_image_url: null, visibility: 'private' }) });
 
     renderPage(service, '/accounts/account-1', undefined, followService);
 
@@ -357,7 +397,7 @@ describe('PublicAccountPage', () => {
   it('送信済み鍵Accountの取消が通信エラーなら送信済み表示を維持して再試行を促す', async () => {
     const user = userEvent.setup();
     const followService: AccountFollowService = { create: vi.fn(), remove: vi.fn().mockRejectedValue(new Error('network failure')) };
-    const service = createPublicAccountService({ get: async () => ({ account_identifier: 'account-1', account_name: '鍵アカウント', has_pending_follow_request: true, visibility: 'private' }) });
+    const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '鍵アカウント', header_image_url: null, has_pending_follow_request: true, icon_image_url: null, visibility: 'private' }) });
 
     renderPage(service, '/accounts/account-1', undefined, followService);
 
@@ -370,7 +410,7 @@ describe('PublicAccountPage', () => {
   it('送信済み鍵Accountの取消が401なら認証状態を削除してログインへ遷移する', async () => {
     const user = userEvent.setup();
     const followService: AccountFollowService = { create: vi.fn(), remove: vi.fn().mockRejectedValue(new AccountFollowUnauthorizedError()) };
-    const service = createPublicAccountService({ get: async () => ({ account_identifier: 'account-1', account_name: '鍵アカウント', has_pending_follow_request: true, visibility: 'private' }) });
+    const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '鍵アカウント', header_image_url: null, has_pending_follow_request: true, icon_image_url: null, visibility: 'private' }) });
     markAuthenticated();
 
     renderPage(service, '/accounts/account-1', undefined, followService);
@@ -384,7 +424,7 @@ describe('PublicAccountPage', () => {
     const user = userEvent.setup();
     let resolveRemove: () => void = () => {};
     const followService: AccountFollowService = { create: vi.fn(), remove: vi.fn().mockImplementation(() => new Promise<void>((resolve) => { resolveRemove = resolve; })) };
-    const service = createPublicAccountService({ get: async () => ({ account_identifier: 'account-1', account_name: '鍵アカウント', has_pending_follow_request: true, visibility: 'private' }) });
+    const service = createPublicAccountService({ get: async () => ({ account_bio: null, account_identifier: 'account-1', account_name: '鍵アカウント', header_image_url: null, has_pending_follow_request: true, icon_image_url: null, visibility: 'private' }) });
 
     renderPage(service, '/accounts/account-1', undefined, followService);
     const cancelButton = await screen.findByRole('button', { name: 'フォローリクエスト送信済み。取り消す' });
@@ -401,8 +441,8 @@ describe('PublicAccountPage', () => {
     const user = userEvent.setup();
     const followService: AccountFollowService = { create: vi.fn().mockRejectedValue(new AccountFollowError('duplicate', 409)), remove: vi.fn() };
     const get = vi.fn()
-      .mockResolvedValueOnce({ accountIdentifier: 'account-1', hasPendingFollowRequest: false, name: '鍵アカウント', visibility: 'private' })
-      .mockResolvedValueOnce({ accountIdentifier: 'account-1', hasPendingFollowRequest: true, name: '鍵アカウント', visibility: 'private' });
+      .mockResolvedValueOnce({ accountIdentifier: 'account-1', bio: null, hasPendingFollowRequest: false, headerImageUrl: null, iconImageUrl: null, name: '鍵アカウント', visibility: 'private' })
+      .mockResolvedValueOnce({ accountIdentifier: 'account-1', bio: null, hasPendingFollowRequest: true, headerImageUrl: null, iconImageUrl: null, name: '鍵アカウント', visibility: 'private' });
     const service: PublicAccountService = { get, listExecutionHistories: async () => [], listLikes: async () => [], listPosts: async () => [] };
 
     renderPage(service, '/accounts/account-1', undefined, followService);
@@ -418,7 +458,7 @@ describe('PublicAccountPage', () => {
   it('鍵Accountの409後もpendingでなければフォローリクエスト失敗を表示する', async () => {
     const user = userEvent.setup();
     const followService: AccountFollowService = { create: vi.fn().mockRejectedValue(new AccountFollowError('duplicate', 409)), remove: vi.fn() };
-    const get = vi.fn().mockResolvedValue({ accountIdentifier: 'account-1', hasPendingFollowRequest: false, name: '鍵アカウント', visibility: 'private' });
+    const get = vi.fn().mockResolvedValue({ accountIdentifier: 'account-1', bio: null, hasPendingFollowRequest: false, headerImageUrl: null, iconImageUrl: null, name: '鍵アカウント', visibility: 'private' });
     const service: PublicAccountService = { get, listExecutionHistories: async () => [], listLikes: async () => [], listPosts: async () => [] };
 
     renderPage(service, '/accounts/account-1', undefined, followService);
@@ -432,7 +472,7 @@ describe('PublicAccountPage', () => {
     const user = userEvent.setup();
     const followService: AccountFollowService = { create: vi.fn().mockRejectedValue(new AccountFollowError('duplicate', 409)), remove: vi.fn() };
     const get = vi.fn()
-      .mockResolvedValueOnce({ accountIdentifier: 'account-1', hasPendingFollowRequest: false, name: '鍵アカウント', visibility: 'private' })
+      .mockResolvedValueOnce({ accountIdentifier: 'account-1', bio: null, hasPendingFollowRequest: false, headerImageUrl: null, iconImageUrl: null, name: '鍵アカウント', visibility: 'private' })
       .mockResolvedValue({ accountIdentifier: 'account-1', bio: '鍵Accountの自己紹介', favoriteTags: [], initial: '鍵', isFollowing: true, name: '鍵アカウント', socialLinks: [], visibility: 'private' });
     const service: PublicAccountService = { get, listExecutionHistories: async () => [], listLikes: async () => [], listPosts: async () => [] };
 

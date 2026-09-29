@@ -40,15 +40,21 @@ describe('createPublicAccountService', () => {
 
   it('未承認の鍵Account詳細レスポンスを最小表示モデルへ変換する', async () => {
     const service = createPublicAccountService({ get: async () => ({
+      account_bio: '鍵Accountの自己紹介',
       account_identifier: 'private-account',
       account_name: '鍵アカウント',
+      header_image_url: 'https://example.com/headers/private.webp',
       has_pending_follow_request: true,
+      icon_image_url: 'https://example.com/icons/private.webp',
       visibility: 'private',
     }) });
 
     await expect(service.get('private-account')).resolves.toEqual({
       accountIdentifier: 'private-account',
+      bio: '鍵Accountの自己紹介',
+      headerImageUrl: 'https://example.com/headers/private.webp',
       hasPendingFollowRequest: true,
+      iconImageUrl: 'https://example.com/icons/private.webp',
       name: '鍵アカウント',
       visibility: 'private',
     });
