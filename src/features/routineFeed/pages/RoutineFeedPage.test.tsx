@@ -69,6 +69,15 @@ describe('RoutineFeedPage', () => {
     expect(await screen.findByRole('heading', { name: 'ルーティンが見つかりません' })).toBeInTheDocument();
   });
 
+  it('フィード右上の検索アイコンから検索画面へ遷移できる', async () => {
+    const user = userEvent.setup();
+    renderPage({ list: async () => [] });
+
+    await user.click(screen.getByRole('button', { name: 'ルーティンを検索' }));
+
+    expect(screen.getByText('/search')).toBeInTheDocument();
+  });
+
   it('末尾カードの表示で2ページ目を末尾へ追加し、total到達後は追加取得しない', async () => {
     let notifyIntersection: (() => void) | undefined;
     vi.stubGlobal('IntersectionObserver', class {

@@ -146,6 +146,7 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
             <IconButton
               aria-label={messages.routineFeed.search}
               className="routine-feed-search"
+              onClick={() => navigate('/search')}
             >
               <SearchOutlinedIcon className="routine-feed-search__icon" />
             </IconButton>

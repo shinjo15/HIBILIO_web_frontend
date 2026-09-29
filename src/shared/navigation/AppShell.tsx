@@ -1,6 +1,7 @@
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import SendIcon from '@mui/icons-material/Send';
 import {
   Box,
@@ -29,6 +30,7 @@ type NavigationItem = {
 
 const navigationItems: NavigationItem[] = [
   { icon: <HomeOutlinedIcon fontSize="small" />, label: messages.navigation.feed, path: '/' },
+  { icon: <SearchOutlinedIcon fontSize="small" />, label: messages.navigation.search, path: '/search' },
   { icon: <AccountCircleOutlinedIcon fontSize="small" />, label: messages.navigation.account, path: '/account' },
 ];
 
@@ -39,6 +41,10 @@ function selectedPath(pathname: string): string {
 
   if (pathname === '/routines/new') {
     return '/routines/new';
+  }
+
+  if (pathname === '/search') {
+    return '/search';
   }
 
   return '/';
@@ -67,7 +73,7 @@ export function AppShell() {
   }, []);
 
   function protectedPath(path: string): string {
-    return authenticationStatus !== 'unauthenticated' || path === '/' ? path : '/login';
+    return authenticationStatus !== 'unauthenticated' || path === '/' || path === '/search' ? path : '/login';
   }
 
   return (

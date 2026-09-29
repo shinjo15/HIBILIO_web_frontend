@@ -6,8 +6,26 @@
   "navigation": {
     "ariaLabel": "メインナビゲーション",
     "feed": "一覧",
+    "search": "検索",
     "account": "アカウント",
     "createRoutine": "ルーティンを投稿"
+  },
+  "search": {
+    "title": "検索",
+    "inputLabel": "検索語",
+    "inputPlaceholder": "投稿またはAccountを検索",
+    "submit": "検索",
+    "tabsAriaLabel": "検索対象の切り替え",
+    "tabs": { "routines": "投稿", "accounts": "Account" },
+    "loading": "検索しています…",
+    "routinesEmpty": "該当する投稿はありません",
+    "accountsEmpty": "該当するAccountはありません",
+    "error": "検索に失敗しました。時間をおいて再試行してください。",
+    "routinePost": "ルーティン投稿",
+    "routineExecutionPost": "実行投稿",
+    "retry": "再試行",
+    "loadMore": "続きを見る",
+    "loadMoreLoading": "さらに読み込んでいます…"
   },
   "auth": {
     "accountName": "アカウント名",

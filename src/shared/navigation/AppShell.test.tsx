@@ -43,6 +43,26 @@ describe('AppShell', () => {
     expect(screen.getByRole('heading', { name: 'アカウント画面' })).toBeInTheDocument();
   });
 
+  it('PCサイドメニューとモバイルメニューの検索から公開検索画面へ遷移できる', async () => {
+    const user = userEvent.setup();
+    const router = createMemoryRouter([
+      {
+        element: <AppShell />,
+        children: [
+          { element: <h1>一覧画面</h1>, index: true },
+          { element: <h1>検索画面</h1>, path: 'search' },
+        ],
+      },
+    ]);
+
+    render(<RouterProvider router={router} />);
+
+    expect(screen.getAllByRole('link', { name: '検索' })).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: '検索' }));
+
+    expect(screen.getByRole('heading', { name: '検索画面' })).toBeInTheDocument();
+  });
+
   it('セッションマーカーがなくてもアカウント API が200ならアカウント画面へ遷移する', async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));

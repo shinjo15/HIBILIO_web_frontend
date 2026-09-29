@@ -12,6 +12,7 @@ import { RoutineCreatePage } from '../features/routineCreate/pages/RoutineCreate
 import { CustomizedRoutineCreatePage } from '../features/routineCreate/pages/CustomizedRoutineCreatePage';
 import { RoutineDetailPage } from '../features/routineDetail/pages/RoutineDetailPage';
 import { RoutineExecutionPage } from '../features/routineExecution/pages/RoutineExecutionPage';
+import { SearchPage } from '../features/search/pages/SearchPage';
 import { AppShell } from '../shared/navigation/AppShell';
 import { ScrollManager } from './ScrollManager';
 
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
           },
           { element: <RoutineDetailPage />, path: 'routines/:routineId' },
           { element: <PublicAccountPage />, path: 'accounts/:accountId' },
+          { element: <SearchPage />, path: 'search' },
         ],
       },
     ],
