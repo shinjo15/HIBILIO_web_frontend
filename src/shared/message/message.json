@@ -18,7 +18,6 @@
     "tabs": { "routines": "投稿", "accounts": "Account" },
     "loading": "検索しています…",
     "tagsLabel": "タグを絞り込む",
-    "tagsTitle": "タグ",
     "tagsLoading": "タグを読み込んでいます…",
     "tagsError": "タグを読み込めませんでした。",
     "showAllTags": "一覧を見る↓",

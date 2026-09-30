@@ -33,16 +33,34 @@ async function typeAndDebounce(user: ReturnType<typeof setupUser>, value: string
 }
 
 describe('SearchPage', () => {
-  it('タグ見出しと全件候補を閉じる操作を表示する', async () => {
+  it('全件候補を閉じる操作を表示する', async () => {
     const user = setupUser();
     renderPage({ listAllTags: vi.fn().mockResolvedValue([{ identifier: 'all', label: '読書' }]), listTags: vi.fn().mockResolvedValue([{ identifier: 'pickup', label: '朝活' }]), searchPage: vi.fn() });
-    expect(await screen.findByRole('heading', { name: 'タグ' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
+    expect(screen.queryByRole('heading', { name: 'タグ' })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: '一覧を見る↓' }));
     expect(await screen.findByRole('button', { name: '閉じる↑' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '閉じる↑' }));
     expect(screen.getByRole('button', { name: '一覧を見る↓' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
     expect(screen.getByRole('button', { name: '閉じる↑' })).toBeInTheDocument();
+  });
+
+  it('タグ候補の読込中は見出しや読込テキストを表示せず、アクセシブルな進捗表示を使う', () => {
+    renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockImplementation(() => new Promise(() => {})), searchPage: vi.fn() });
+
+    expect(screen.queryByRole('heading', { name: 'タグ' })).not.toBeInTheDocument();
+    expect(screen.queryByText('タグを読み込んでいます…')).not.toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: 'タグを読み込んでいます…' })).toBeInTheDocument();
+  });
+
+  it('全件候補を読み込んでいる間もpickupタグを選択できる', async () => {
+    const user = setupUser();
+    renderPage({ listAllTags: vi.fn().mockImplementation(() => new Promise(() => {})), listTags: vi.fn().mockResolvedValue([{ identifier: 'pickup', label: '朝活' }]), searchPage: vi.fn().mockResolvedValue({ items: [], total: 0 }) });
+    await user.click(await screen.findByRole('button', { name: '朝活' }));
+    await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
+    expect(screen.queryByText('タグを読み込んでいます…')).not.toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: 'タグを読み込んでいます…' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '朝活' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('タグ取得失敗後に再試行して候補を表示する', async () => {
@@ -52,7 +70,7 @@ describe('SearchPage', () => {
     const user = setupUser();
     renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listTags, searchPage: vi.fn() });
 
-    expect(screen.getByText('タグを読み込んでいます…')).toHaveAttribute('aria-live', 'polite');
+    expect(screen.getByRole('progressbar', { name: 'タグを読み込んでいます…' })).toBeInTheDocument();
     expect(await screen.findByText('タグを読み込めませんでした。')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '再試行' }));
     expect(await screen.findByRole('button', { name: '朝活' })).toBeInTheDocument();
