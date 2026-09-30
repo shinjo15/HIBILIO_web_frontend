@@ -45,12 +45,13 @@ describe('SearchPage', () => {
     expect(screen.getByRole('button', { name: '閉じる↑' })).toBeInTheDocument();
   });
 
-  it('タグ候補の読込中は見出しや読込テキストを表示せず、アクセシブルな進捗表示を使う', () => {
+  it('タグ候補の読込中は見出し、読込テキスト、spinnerを表示せずタグ領域をbusyにする', () => {
     renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockImplementation(() => new Promise(() => {})), searchPage: vi.fn() });
 
     expect(screen.queryByRole('heading', { name: 'タグ' })).not.toBeInTheDocument();
     expect(screen.queryByText('タグを読み込んでいます…')).not.toBeInTheDocument();
-    expect(screen.getByRole('progressbar', { name: 'タグを読み込んでいます…' })).toBeInTheDocument();
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('タグを絞り込む')).toHaveAttribute('aria-busy', 'true');
   });
 
   it('全件候補を読み込んでいる間もpickupタグを選択できる', async () => {
@@ -59,7 +60,8 @@ describe('SearchPage', () => {
     await user.click(await screen.findByRole('button', { name: '朝活' }));
     await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
     expect(screen.queryByText('タグを読み込んでいます…')).not.toBeInTheDocument();
-    expect(screen.getByRole('progressbar', { name: 'タグを読み込んでいます…' })).toBeInTheDocument();
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('タグを絞り込む')).toHaveAttribute('aria-busy', 'true');
     expect(screen.getByRole('button', { name: '朝活' })).toHaveAttribute('aria-pressed', 'true');
   });
 
@@ -70,7 +72,7 @@ describe('SearchPage', () => {
     const user = setupUser();
     renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listTags, searchPage: vi.fn() });
 
-    expect(screen.getByRole('progressbar', { name: 'タグを読み込んでいます…' })).toBeInTheDocument();
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     expect(await screen.findByText('タグを読み込めませんでした。')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '再試行' }));
     expect(await screen.findByRole('button', { name: '朝活' })).toBeInTheDocument();

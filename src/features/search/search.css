@@ -36,10 +36,6 @@
   padding-bottom: 12px;
 }
 
-.search-page__tags-loading {
-  display: block;
-  margin: 4px 0 12px;
-}
 
 .search-page__content {
   box-sizing: border-box;
