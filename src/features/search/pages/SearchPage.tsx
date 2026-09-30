@@ -3,6 +3,7 @@ import { Alert, Box, Button, CircularProgress, Stack, Tab, Tabs, TextField, Typo
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AccountAvatar } from '../../../shared/components/AccountImage';
+import { AppBrandHeader } from '../../../shared/components/AppBrandHeader';
 import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
 import messages from '../../../shared/message/message.json';
 import { formatPostedAt } from '../../routineFeed/domain/routine';
@@ -33,6 +34,7 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
   const [allTagsReloadVersion, setAllTagsReloadVersion] = useState(0);
   const [isInputPending, setIsInputPending] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const tagIdentifiers = useMemo(() => selectedTags.map((tag) => tag.identifier), [selectedTags]);
   const displayedTags = showAllTags && allTags !== null ? allTags : pickupTags;
   const visibleTags = useMemo(() => [...displayedTags, ...selectedTags.filter((selectedTag) => !displayedTags.some((tag) => tag.identifier === selectedTag.identifier))], [displayedTags, selectedTags]);
@@ -123,16 +125,17 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
   return (
     <Box component="section" className="search-page">
       <Box className="search-page__header">
-        <Typography component="h1" className="search-page__title">{messages.search.title}</Typography>
+        <AppBrandHeader onSearchClick={() => inputRef.current?.focus()} />
         <Tabs aria-label={messages.search.tabsAriaLabel} onChange={(_, value: SearchTab) => changeTab(value)} value={activeTab}>
           {tabs.map((tab) => <Tab key={tab.value} label={tab.label} value={tab.value} />)}
         </Tabs>
         <Box className="search-page__form">
           <TextField
             fullWidth
-            label={messages.search.inputLabel}
+            inputRef={inputRef}
+            label={activeTab === 'routines' ? messages.search.routinesInputLabel : messages.search.accountsInputLabel}
             onChange={(event) => changeInput(event.target.value)}
-            placeholder={messages.search.inputPlaceholder}
+            placeholder={activeTab === 'routines' ? messages.search.routinesInputPlaceholder : messages.search.accountsInputPlaceholder}
             value={input}
           />
         </Box>

@@ -28,11 +28,27 @@ function setupUser() {
 }
 
 async function typeAndDebounce(user: ReturnType<typeof setupUser>, value: string) {
-  await user.type(screen.getByRole('textbox', { name: '検索語' }), value);
+  await user.type(screen.getByRole('textbox', { name: 'ルーティン名' }), value);
   await vi.advanceTimersByTimeAsync(300);
 }
 
 describe('SearchPage', () => {
+  it('一覧と共通のブランドヘッダーから検索入力へフォーカスし、検索対象に応じて入力の説明を切り替える', async () => {
+    const user = setupUser();
+    renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockResolvedValue([{ identifier: 'tag-1', label: '朝活' }]), searchPage: vi.fn().mockResolvedValue({ items: [], total: 0 }) });
+
+    expect(screen.getByRole('heading', { name: 'HIBILIO' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'ルーティンを検索' }));
+    expect(screen.getByRole('textbox', { name: 'ルーティン名' })).toHaveFocus();
+    expect(screen.getByRole('textbox', { name: 'ルーティン名' })).toHaveAttribute('placeholder', 'ルーティン名を入力');
+    await user.click(screen.getByRole('button', { name: '朝活' }));
+    await user.type(screen.getByRole('textbox', { name: 'ルーティン名' }), '朝');
+    await user.click(screen.getByRole('tab', { name: 'Account' }));
+    expect(screen.getByRole('textbox', { name: 'アカウント名' })).toHaveValue('朝');
+    expect(screen.getByRole('textbox', { name: 'アカウント名' })).toHaveAttribute('placeholder', 'アカウント名を入力');
+    expect(screen.getByRole('button', { name: '朝活' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
   it('全件候補を閉じる操作を表示する', async () => {
     const user = setupUser();
     renderPage({ listAllTags: vi.fn().mockResolvedValue([{ identifier: 'all', label: '読書' }]), listTags: vi.fn().mockResolvedValue([{ identifier: 'pickup', label: '朝活' }]), searchPage: vi.fn() });
@@ -194,7 +210,7 @@ describe('SearchPage', () => {
     renderPage({ listTags, searchPage } as unknown as SearchService);
     await user.click(await screen.findByRole('button', { name: '朝活' }));
     await screen.findByRole('heading', { name: '朝のストレッチ' });
-    await user.type(screen.getByRole('textbox', { name: '検索語' }), '朝');
+    await user.type(screen.getByRole('textbox', { name: 'ルーティン名' }), '朝');
     expect(screen.queryByRole('heading', { name: '朝のストレッチ' })).not.toBeInTheDocument();
     expect(searchPage).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(300);
@@ -205,7 +221,7 @@ describe('SearchPage', () => {
     const searchPage = vi.fn().mockResolvedValue({ items: [accountResult], total: 1 });
     const user = setupUser();
     renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockResolvedValue([]), searchPage });
-    await user.type(screen.getByRole('textbox', { name: '検索語' }), 'アリ');
+    await user.type(screen.getByRole('textbox', { name: 'ルーティン名' }), 'アリ');
     await user.click(screen.getByRole('tab', { name: 'Account' }));
     expect(searchPage).toHaveBeenCalledWith('accounts', 'アリ', 1);
     expect(await screen.findByRole('link', { name: 'アリス' })).toBeInTheDocument();
@@ -217,10 +233,10 @@ describe('SearchPage', () => {
     renderPage({ searchPage } as unknown as SearchService);
 
     expect(screen.queryByRole('button', { name: '検索' })).not.toBeInTheDocument();
-    await user.type(screen.getByRole('textbox', { name: '検索語' }), '朝');
+    await user.type(screen.getByRole('textbox', { name: 'ルーティン名' }), '朝');
     await vi.advanceTimersByTimeAsync(299);
     expect(searchPage).not.toHaveBeenCalled();
-    await user.type(screen.getByRole('textbox', { name: '検索語' }), '活');
+    await user.type(screen.getByRole('textbox', { name: 'ルーティン名' }), '活');
     await vi.advanceTimersByTimeAsync(350);
     await vi.runOnlyPendingTimersAsync();
 
@@ -234,13 +250,13 @@ describe('SearchPage', () => {
     const user = setupUser();
     renderPage({ searchPage } as unknown as SearchService);
 
-    await user.type(screen.getByRole('textbox', { name: '検索語' }), '   ');
+    await user.type(screen.getByRole('textbox', { name: 'ルーティン名' }), '   ');
     await vi.advanceTimersByTimeAsync(300);
     expect(searchPage).not.toHaveBeenCalled();
 
     await typeAndDebounce(user, '朝');
     expect(await screen.findByRole('heading', { name: '朝のストレッチ' })).toBeInTheDocument();
-    await user.clear(screen.getByRole('textbox', { name: '検索語' }));
+    await user.clear(screen.getByRole('textbox', { name: 'ルーティン名' }));
 
     expect(screen.queryByRole('heading', { name: '朝のストレッチ' })).not.toBeInTheDocument();
     await vi.advanceTimersByTimeAsync(300);

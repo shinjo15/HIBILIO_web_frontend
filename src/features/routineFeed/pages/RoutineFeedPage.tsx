@@ -1,8 +1,7 @@
 /* eslint-disable react-hooks/refs */
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
-import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
-import { Alert, Box, Button, CircularProgress, IconButton, Stack, Tab, Tabs, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RoutineCard } from '../components/RoutineCard';
@@ -16,7 +15,7 @@ import { clearAuthenticated, isAuthenticated as hasAuthenticatedSession } from '
 import { AccountUnauthorizedError, accountService } from '../../account/services/accountService';
 import { AccountRelationList } from '../../../shared/components/AccountRelationList';
 import { ExecutionHistoryCard } from '../../../shared/components/ExecutionHistoryCard';
-import { HibilioMark } from '../../../shared/brand/HibilioMark';
+import { AppBrandHeader } from '../../../shared/components/AppBrandHeader';
 import messages from '../../../shared/message/message.json';
 import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
 import '../routineFeed.css';
@@ -136,21 +135,7 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
   return (
     <Box component="section" className="routine-feed-page">
       <Box className="routine-feed-header">
-          <Stack className="routine-feed-header__top">
-            <Stack className="routine-feed-brand">
-              <HibilioMark />
-              <Typography component="h1" className="routine-feed-brand__name">
-                {messages.app.name}
-              </Typography>
-            </Stack>
-            <IconButton
-              aria-label={messages.routineFeed.search}
-              className="routine-feed-search"
-              onClick={() => navigate('/search')}
-            >
-              <SearchOutlinedIcon className="routine-feed-search__icon" />
-            </IconButton>
-          </Stack>
+          <AppBrandHeader onSearchClick={() => navigate('/search')} />
           <Tabs
             aria-label={messages.routineFeed.tabs.ariaLabel}
             className="routine-feed-tabs"
