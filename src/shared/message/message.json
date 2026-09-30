@@ -14,7 +14,6 @@
     "title": "検索",
     "inputLabel": "検索語",
     "inputPlaceholder": "投稿またはAccountを検索",
-    "submit": "検索",
     "tabsAriaLabel": "検索対象の切り替え",
     "tabs": { "routines": "投稿", "accounts": "Account" },
     "loading": "検索しています…",

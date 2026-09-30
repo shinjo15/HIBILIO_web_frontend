@@ -1,7 +1,6 @@
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
-import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import { Alert, Box, Button, CircularProgress, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AccountAvatar } from '../../../shared/components/AccountImage';
 import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
@@ -22,30 +21,48 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
   const [input, setInput] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
   const [searchVersion, setSearchVersion] = useState(0);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const normalizedQuery = submittedQuery?.trim() ?? '';
   const resultsKey = `${activeTab}:${normalizedQuery}:${searchVersion}`;
 
-  function submitSearch(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  useEffect(() => {
     const query = input.trim();
     if (query.length === 0) return;
-    setSubmittedQuery(query);
-    setSearchVersion((version) => version + 1);
-  }
+    debounceTimer.current = setTimeout(() => {
+      debounceTimer.current = null;
+      setSubmittedQuery(query);
+      setSearchVersion((version) => version + 1);
+    }, 300);
+    return () => {
+      if (debounceTimer.current !== null) clearTimeout(debounceTimer.current);
+    };
+  }, [input]);
 
   function changeInput(value: string) {
     setInput(value);
-    if (submittedQuery !== null && value.trim() !== submittedQuery) setSubmittedQuery(null);
+    setSubmittedQuery(null);
+  }
+
+  function changeTab(tab: SearchTab) {
+    const query = input.trim();
+    if (debounceTimer.current !== null) clearTimeout(debounceTimer.current);
+    setActiveTab(tab);
+    if (query.length === 0) {
+      setSubmittedQuery(null);
+      return;
+    }
+    setSubmittedQuery(query);
+    setSearchVersion((version) => version + 1);
   }
 
   return (
     <Box component="section" className="search-page">
       <Box className="search-page__header">
         <Typography component="h1" className="search-page__title">{messages.search.title}</Typography>
-        <Tabs aria-label={messages.search.tabsAriaLabel} onChange={(_, value: SearchTab) => setActiveTab(value)} value={activeTab}>
+        <Tabs aria-label={messages.search.tabsAriaLabel} onChange={(_, value: SearchTab) => changeTab(value)} value={activeTab}>
           {tabs.map((tab) => <Tab key={tab.value} label={tab.label} value={tab.value} />)}
         </Tabs>
-        <Box component="form" className="search-page__form" onSubmit={submitSearch}>
+        <Box className="search-page__form">
           <TextField
             fullWidth
             label={messages.search.inputLabel}
@@ -53,7 +70,6 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
             placeholder={messages.search.inputPlaceholder}
             value={input}
           />
-          <Button startIcon={<SearchOutlinedIcon />} type="submit" variant="contained">{messages.search.submit}</Button>
         </Box>
       </Box>
 
