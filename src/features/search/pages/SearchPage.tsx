@@ -1,12 +1,12 @@
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import { Alert, Box, Button, CircularProgress, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AccountAvatar } from '../../../shared/components/AccountImage';
 import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
 import messages from '../../../shared/message/message.json';
 import { formatPostedAt } from '../../routineFeed/domain/routine';
-import { searchService, type AccountSearchResult, type RoutineSearchResult, type SearchResult, type SearchService, type SearchTab } from '../services/searchService';
+import { searchService, type AccountSearchResult, type RoutineSearchResult, type SearchResult, type SearchService, type SearchTab, type SearchTag } from '../services/searchService';
 import '../search.css';
 
 type SearchPageProps = { service?: SearchService };
@@ -21,9 +21,32 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
   const [input, setInput] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
   const [searchVersion, setSearchVersion] = useState(0);
+  const [selectedTags, setSelectedTags] = useState<SearchTag[]>([]);
+  const [tags, setTags] = useState<SearchTag[]>([]);
+  const [isTagsLoading, setIsTagsLoading] = useState(true);
+  const [tagsError, setTagsError] = useState(false);
+  const [tagsReloadVersion, setTagsReloadVersion] = useState(0);
+  const [isInputPending, setIsInputPending] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tagIdentifiers = useMemo(() => selectedTags.map((tag) => tag.identifier), [selectedTags]);
   const normalizedQuery = submittedQuery?.trim() ?? '';
-  const resultsKey = `${activeTab}:${normalizedQuery}:${searchVersion}`;
+  const resultsKey = `${activeTab}:${normalizedQuery}:${tagIdentifiers.join(':')}:${searchVersion}`;
+
+  useEffect(() => {
+    if (typeof service.listTags !== 'function') return;
+    let active = true;
+    service.listTags().then((loadedTags) => {
+      if (!active) return;
+      setTags(loadedTags);
+      setTagsError(false);
+      setIsTagsLoading(false);
+    }).catch(() => {
+      if (!active) return;
+      setTagsError(true);
+      setIsTagsLoading(false);
+    });
+    return () => { active = false; };
+  }, [service, tagsReloadVersion]);
 
   useEffect(() => {
     const query = input.trim();
@@ -31,6 +54,7 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
     debounceTimer.current = setTimeout(() => {
       debounceTimer.current = null;
       setSubmittedQuery(query);
+      setIsInputPending(false);
       setSearchVersion((version) => version + 1);
     }, 300);
     return () => {
@@ -39,19 +63,37 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
   }, [input]);
 
   function changeInput(value: string) {
+    const query = value.trim();
     setInput(value);
+    if (query.length === 0 && selectedTags.length > 0) {
+      setSubmittedQuery('');
+      setIsInputPending(false);
+      setSearchVersion((version) => version + 1);
+      return;
+    }
+    setIsInputPending(true);
     setSubmittedQuery(null);
   }
 
   function changeTab(tab: SearchTab) {
     const query = input.trim();
     if (debounceTimer.current !== null) clearTimeout(debounceTimer.current);
+    setIsInputPending(false);
     setActiveTab(tab);
-    if (query.length === 0) {
+    if (query.length === 0 && selectedTags.length === 0) {
       setSubmittedQuery(null);
       return;
     }
     setSubmittedQuery(query);
+    setSearchVersion((version) => version + 1);
+  }
+
+  function toggleTag(tag: SearchTag) {
+    if (debounceTimer.current !== null) clearTimeout(debounceTimer.current);
+    setIsInputPending(false);
+    const nextTags = selectedTags.some((selected) => selected.identifier === tag.identifier) ? selectedTags.filter((selected) => selected.identifier !== tag.identifier) : [...selectedTags, tag];
+    setSelectedTags(nextTags);
+    setSubmittedQuery(input.trim());
     setSearchVersion((version) => version + 1);
   }
 
@@ -71,17 +113,18 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
             value={input}
           />
         </Box>
+        {isTagsLoading ? <Typography aria-live="polite">{messages.search.tagsLoading}</Typography> : tagsError ? <Alert action={<Button onClick={() => setTagsReloadVersion((version) => version + 1)}>{messages.search.retry}</Button>} severity="error">{messages.search.tagsError}</Alert> : <Stack aria-label={messages.search.tagsLabel} className="search-page__tags" direction="row">{tags.map((tag) => <Button aria-pressed={selectedTags.some((selected) => selected.identifier === tag.identifier)} key={tag.identifier} onClick={() => toggleTag(tag)} variant={selectedTags.some((selected) => selected.identifier === tag.identifier) ? 'contained' : 'outlined'}>{tag.label}</Button>)}</Stack>}
       </Box>
 
       <Box className="search-page__content">
-        {normalizedQuery.length > 0 && <SearchResults activeTab={activeTab} key={resultsKey} query={normalizedQuery} service={service} />}
+        {!isInputPending && (normalizedQuery.length > 0 || selectedTags.length > 0) && <SearchResults activeTab={activeTab} key={resultsKey} query={normalizedQuery} service={service} tagIdentifiers={tagIdentifiers} />}
       </Box>
     </Box>
   );
 }
 
-function SearchResults({ activeTab, query, service }: { activeTab: SearchTab; query: string; service: SearchService }) {
-  const fetchPage = useCallback((page: number) => service.searchPage(activeTab, query, page), [activeTab, query, service]);
+function SearchResults({ activeTab, query, service, tagIdentifiers }: { activeTab: SearchTab; query: string; service: SearchService; tagIdentifiers: string[] }) {
+  const fetchPage = useCallback((page: number) => tagIdentifiers.length > 0 ? service.searchPage(activeTab, query, page, tagIdentifiers) : service.searchPage(activeTab, query, page), [activeTab, query, service, tagIdentifiers]);
   const list = useInfiniteList<SearchResult>({ fetchPage, key: `${activeTab}:${query}` });
   const hasMore = list.total !== null && list.items.length < list.total;
 

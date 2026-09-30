@@ -4,8 +4,21 @@ import { createSearchService, searchService } from './searchService';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('searchService', () => {
+  it('利用可能タグを取得し、タグだけのAND検索を配列識別子付きで送信する', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ tags: [{ tag_identifier: 'tag-1', tag_name: '朝活' }] })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [], total: 0 })));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(searchService.listTags()).resolves.toEqual([{ identifier: 'tag-1', label: '朝活' }]);
+    await searchService.searchPage('routines', '', 1, ['tag-1', 'tag-2']);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/tags', { credentials: 'include', method: 'GET' });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines/search?page=1&number_of_items_per_page=40&tag_identifiers%5B%5D=tag-1&tag_identifiers%5B%5D=tag-2', { credentials: 'include', method: 'GET' });
+  });
   it('投稿検索APIのDTOを検索専用カードの表示モデルへ変換する', async () => {
     const service = createSearchService({
+      listTags: async () => ({ tags: [] }),
       searchAccounts: async () => ({ accounts: [], total: 0 }),
       searchRoutines: async () => ({
         items: [{
@@ -52,8 +65,22 @@ describe('searchService', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/accounts/search?account_name=%E3%82%A2%E3%83%AA&page=3&number_of_items_per_page=40', { credentials: 'include', method: 'GET' });
   });
 
+  it('Account検索へタグのみ・名前と複数タグを送信する', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ accounts: [], total: 0 })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ accounts: [], total: 0 })));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await searchService.searchPage('accounts', '', 1, ['tag-1']);
+    await searchService.searchPage('accounts', 'アリ', 2, ['tag-1', 'tag-2']);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/accounts/search?page=1&number_of_items_per_page=40&tag_identifiers%5B%5D=tag-1', { credentials: 'include', method: 'GET' });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/accounts/search?account_name=%E3%82%A2%E3%83%AA&page=2&number_of_items_per_page=40&tag_identifiers%5B%5D=tag-1&tag_identifiers%5B%5D=tag-2', { credentials: 'include', method: 'GET' });
+  });
+
   it('HTTP失敗と契約外レスポンスをエラーとして扱う', async () => {
     const service = createSearchService({
+      listTags: async () => ({ tags: [] }),
       searchAccounts: async () => ({ accounts: [], total: 'invalid' }),
       searchRoutines: async () => { throw new Error('network error'); },
     });
