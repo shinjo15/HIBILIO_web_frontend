@@ -71,7 +71,7 @@ function createSearchParams(queryName: string, query: string, page: number, tagI
 
 const searchApiAdapter: SearchAdapter = {
   listTags: async () => {
-    const response = await fetch('/api/tags', { credentials: 'include', method: 'GET' });
+    const response = await fetch('/api/tags/pickup', { credentials: 'include', method: 'GET' });
     if (!response.ok) throw new Error(`Failed to fetch tags: ${response.status}`);
     return response.json();
   },

@@ -13,7 +13,7 @@ describe('searchService', () => {
     await expect(searchService.listTags()).resolves.toEqual([{ identifier: 'tag-1', label: '朝活' }]);
     await searchService.searchPage('routines', '', 1, ['tag-1', 'tag-2']);
 
-    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/tags', { credentials: 'include', method: 'GET' });
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/tags/pickup', { credentials: 'include', method: 'GET' });
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines/search?page=1&number_of_items_per_page=40&tag_identifiers%5B%5D=tag-1&tag_identifiers%5B%5D=tag-2', { credentials: 'include', method: 'GET' });
   });
   it('投稿検索APIのDTOを検索専用カードの表示モデルへ変換する', async () => {
