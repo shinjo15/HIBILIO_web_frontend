@@ -33,6 +33,18 @@ async function typeAndDebounce(user: ReturnType<typeof setupUser>, value: string
 }
 
 describe('SearchPage', () => {
+  it('タグ見出しと全件候補を閉じる操作を表示する', async () => {
+    const user = setupUser();
+    renderPage({ listAllTags: vi.fn().mockResolvedValue([{ identifier: 'all', label: '読書' }]), listTags: vi.fn().mockResolvedValue([{ identifier: 'pickup', label: '朝活' }]), searchPage: vi.fn() });
+    expect(await screen.findByRole('heading', { name: 'タグ' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
+    expect(await screen.findByRole('button', { name: '閉じる↑' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '閉じる↑' }));
+    expect(screen.getByRole('button', { name: '一覧を見る↓' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
+    expect(screen.getByRole('button', { name: '閉じる↑' })).toBeInTheDocument();
+  });
+
   it('タグ取得失敗後に再試行して候補を表示する', async () => {
     const listTags = vi.fn()
       .mockRejectedValueOnce(new Error('network error'))
@@ -45,6 +57,48 @@ describe('SearchPage', () => {
     await user.click(screen.getByRole('button', { name: '再試行' }));
     expect(await screen.findByRole('button', { name: '朝活' })).toBeInTheDocument();
     expect(listTags).toHaveBeenCalledTimes(2);
+  });
+
+  it('閉じるとpickup候補へ即時復帰し、選択済み全件タグと検索結果を維持する', async () => {
+    const listTags = vi.fn().mockResolvedValue([{ identifier: 'pickup', label: '朝活' }]);
+    const listAllTags = vi.fn().mockResolvedValue([{ identifier: 'pickup', label: '朝活' }, { identifier: 'book', label: '読書' }, { identifier: 'diary', label: '日記' }]);
+    const searchPage = vi.fn().mockResolvedValue({ items: [routineExecutionResult], total: 1 });
+    const user = setupUser();
+    renderPage({ listAllTags, listTags, searchPage });
+    await screen.findByRole('button', { name: '朝活' });
+    expect(listTags).toHaveBeenCalledTimes(1);
+    expect(listAllTags).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
+    await user.click(await screen.findByRole('button', { name: '読書' }));
+    await screen.findByRole('heading', { name: '朝のストレッチ' });
+    const before = searchPage.mock.calls.length;
+    await user.click(screen.getByRole('button', { name: '閉じる↑' }));
+    expect(screen.queryByRole('button', { name: '日記' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '朝活' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '読書' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('heading', { name: '朝のストレッチ' })).toBeInTheDocument();
+    expect(searchPage).toHaveBeenCalledTimes(before);
+    expect(listTags).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
+    expect(await screen.findByRole('button', { name: '日記' })).toBeInTheDocument();
+    expect(listAllTags).toHaveBeenCalledTimes(1);
+  });
+
+  it('閉じた後に古い全件応答を隔離し、再展開時だけ再取得する', async () => {
+    let resolveFirst: ((tags: Array<{ identifier: string; label: string }>) => void) | undefined;
+    const listAllTags = vi.fn()
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveFirst = resolve; }))
+      .mockResolvedValueOnce([{ identifier: 'pickup', label: '朝活' }, { identifier: 'diary', label: '日記' }]);
+    const user = setupUser();
+    renderPage({ listAllTags, listTags: vi.fn().mockResolvedValue([{ identifier: 'pickup', label: '朝活' }]), searchPage: vi.fn() });
+    await screen.findByRole('button', { name: '朝活' });
+    await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
+    await user.click(screen.getByRole('button', { name: '閉じる↑' }));
+    resolveFirst?.([{ identifier: 'pickup', label: '朝活' }, { identifier: 'diary', label: '日記' }]);
+    expect(screen.queryByRole('button', { name: '日記' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
+    expect(await screen.findByRole('button', { name: '日記' })).toBeInTheDocument();
+    expect(listAllTags).toHaveBeenCalledTimes(2);
   });
 
   it('一覧を見る操作でpickup候補を残したまま全件候補へ切り替える', async () => {

@@ -22,43 +22,54 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
   const [searchVersion, setSearchVersion] = useState(0);
   const [selectedTags, setSelectedTags] = useState<SearchTag[]>([]);
-  const [tags, setTags] = useState<SearchTag[]>([]);
+  const [pickupTags, setPickupTags] = useState<SearchTag[]>([]);
+  const [allTags, setAllTags] = useState<SearchTag[] | null>(null);
   const [isTagsLoading, setIsTagsLoading] = useState(true);
   const [isAllTagsLoading, setIsAllTagsLoading] = useState(false);
   const [tagsError, setTagsError] = useState(false);
   const [allTagsError, setAllTagsError] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
   const [tagsReloadVersion, setTagsReloadVersion] = useState(0);
+  const [allTagsReloadVersion, setAllTagsReloadVersion] = useState(0);
   const [isInputPending, setIsInputPending] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tagIdentifiers = useMemo(() => selectedTags.map((tag) => tag.identifier), [selectedTags]);
-  const visibleTags = useMemo(() => [...tags, ...selectedTags.filter((selectedTag) => !tags.some((tag) => tag.identifier === selectedTag.identifier))], [selectedTags, tags]);
+  const displayedTags = showAllTags && allTags !== null ? allTags : pickupTags;
+  const visibleTags = useMemo(() => [...displayedTags, ...selectedTags.filter((selectedTag) => !displayedTags.some((tag) => tag.identifier === selectedTag.identifier))], [displayedTags, selectedTags]);
   const normalizedQuery = submittedQuery?.trim() ?? '';
   const resultsKey = `${activeTab}:${normalizedQuery}:${tagIdentifiers.join(':')}:${searchVersion}`;
 
   useEffect(() => {
     if (typeof service.listTags !== 'function') return;
     let active = true;
-    const loadTags = showAllTags ? service.listAllTags : service.listTags;
-    loadTags().then((loadedTags) => {
+    service.listTags().then((loadedTags) => {
       if (!active) return;
-      setTags(loadedTags);
+      setPickupTags(loadedTags);
       setTagsError(false);
-      setAllTagsError(false);
-      if (showAllTags) setIsAllTagsLoading(false);
-      else setIsTagsLoading(false);
+      setIsTagsLoading(false);
     }).catch(() => {
       if (!active) return;
-      if (showAllTags) {
-        setAllTagsError(true);
-        setIsAllTagsLoading(false);
-      } else {
-        setTagsError(true);
-        setIsTagsLoading(false);
-      }
+      setTagsError(true);
+      setIsTagsLoading(false);
     });
     return () => { active = false; };
-  }, [service, showAllTags, tagsReloadVersion]);
+  }, [service, tagsReloadVersion]);
+
+  useEffect(() => {
+    if (!showAllTags || allTags !== null) return;
+    let active = true;
+    service.listAllTags().then((loadedTags) => {
+      if (!active) return;
+      setAllTags(loadedTags);
+      setAllTagsError(false);
+      setIsAllTagsLoading(false);
+    }).catch(() => {
+      if (!active) return;
+      setAllTagsError(true);
+      setIsAllTagsLoading(false);
+    });
+    return () => { active = false; };
+  }, [allTags, allTagsReloadVersion, service, showAllTags]);
 
   useEffect(() => {
     const query = input.trim();
@@ -125,7 +136,8 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
             value={input}
           />
         </Box>
-        {isTagsLoading ? <Typography aria-live="polite">{messages.search.tagsLoading}</Typography> : tagsError ? <Alert action={<Button onClick={() => setTagsReloadVersion((version) => version + 1)}>{messages.search.retry}</Button>} severity="error">{messages.search.tagsError}</Alert> : <><Stack aria-label={messages.search.tagsLabel} className="search-page__tags" direction="row">{visibleTags.map((tag) => <Button aria-pressed={selectedTags.some((selected) => selected.identifier === tag.identifier)} key={tag.identifier} onClick={() => toggleTag(tag)} size="small" variant={selectedTags.some((selected) => selected.identifier === tag.identifier) ? 'contained' : 'outlined'}>{tag.label}</Button>)}</Stack>{showAllTags ? <>{isAllTagsLoading && <Typography aria-live="polite">{messages.search.tagsLoading}</Typography>}{allTagsError && <Alert action={<Button onClick={() => { setAllTagsError(false); setIsAllTagsLoading(true); setTagsReloadVersion((version) => version + 1); }}>{messages.search.retry}</Button>} severity="error">{messages.search.tagsError}</Alert>}</> : <Button onClick={() => { setIsAllTagsLoading(true); setShowAllTags(true); }} size="small">{messages.search.showAllTags}</Button>}</>}
+        <Typography component="h2" className="search-page__tags-title">{messages.search.tagsTitle}</Typography>
+        {isTagsLoading ? <Typography aria-live="polite">{messages.search.tagsLoading}</Typography> : tagsError ? <Alert action={<Button onClick={() => setTagsReloadVersion((version) => version + 1)}>{messages.search.retry}</Button>} severity="error">{messages.search.tagsError}</Alert> : <><Stack aria-label={messages.search.tagsLabel} className="search-page__tags" direction="row">{visibleTags.map((tag) => <Button aria-pressed={selectedTags.some((selected) => selected.identifier === tag.identifier)} key={tag.identifier} onClick={() => toggleTag(tag)} size="small" variant={selectedTags.some((selected) => selected.identifier === tag.identifier) ? 'contained' : 'outlined'}>{tag.label}</Button>)}</Stack>{showAllTags ? <><Button onClick={() => setShowAllTags(false)} size="small">{messages.search.closeAllTags}</Button>{isAllTagsLoading && <Typography aria-live="polite">{messages.search.tagsLoading}</Typography>}{allTagsError && <Alert action={<Button onClick={() => { setAllTagsError(false); setIsAllTagsLoading(true); setAllTagsReloadVersion((version) => version + 1); }}>{messages.search.retry}</Button>} severity="error">{messages.search.tagsError}</Alert>}</> : <Button onClick={() => { setIsAllTagsLoading(true); setShowAllTags(true); }} size="small">{messages.search.showAllTags}</Button>}</>}
       </Box>
 
       <Box className="search-page__content">
