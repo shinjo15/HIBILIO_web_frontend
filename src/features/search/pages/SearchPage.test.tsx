@@ -38,13 +38,67 @@ describe('SearchPage', () => {
       .mockRejectedValueOnce(new Error('network error'))
       .mockResolvedValueOnce([{ identifier: 'tag-1', label: '朝活' }]);
     const user = setupUser();
-    renderPage({ listTags, searchPage: vi.fn() });
+    renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listTags, searchPage: vi.fn() });
 
     expect(screen.getByText('タグを読み込んでいます…')).toHaveAttribute('aria-live', 'polite');
     expect(await screen.findByText('タグを読み込めませんでした。')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '再試行' }));
     expect(await screen.findByRole('button', { name: '朝活' })).toBeInTheDocument();
     expect(listTags).toHaveBeenCalledTimes(2);
+  });
+
+  it('一覧を見る操作でpickup候補を残したまま全件候補へ切り替える', async () => {
+    let resolveAllTags: ((tags: Array<{ identifier: string; label: string }>) => void) | undefined;
+    const listAllTags = vi.fn().mockImplementation(() => new Promise((resolve) => { resolveAllTags = resolve; }));
+    const searchPage = vi.fn().mockResolvedValue({ items: [routineExecutionResult], total: 1 });
+    const user = setupUser();
+    renderPage({ listAllTags, listTags: vi.fn().mockResolvedValue([{ identifier: 'pickup', label: '朝活' }]), searchPage });
+    await user.click(await screen.findByRole('button', { name: '朝活' }));
+    expect(listAllTags).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
+    expect(listAllTags).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: '朝活' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: '朝活' })).toBeEnabled();
+    resolveAllTags?.([{ identifier: 'pickup', label: '朝活' }, { identifier: 'all', label: '読書' }]);
+    expect(await screen.findByRole('button', { name: '読書' })).toBeInTheDocument();
+    expect(searchPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('全件候補にない選択pickupタグを表示して解除できる', async () => {
+    const searchPage = vi.fn().mockResolvedValue({ items: [routineExecutionResult], total: 1 });
+    const user = setupUser();
+    renderPage({ listAllTags: vi.fn().mockResolvedValue([{ identifier: 'all', label: '読書' }]), listTags: vi.fn().mockResolvedValue([{ identifier: 'pickup', label: '朝活' }]), searchPage });
+    await user.click(await screen.findByRole('button', { name: '朝活' }));
+    await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
+    expect(await screen.findByRole('button', { name: '読書' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '朝活' })).toHaveAttribute('aria-pressed', 'true');
+    await user.click(screen.getByRole('button', { name: '朝活' }));
+    expect(screen.queryByRole('button', { name: '朝活' })).not.toBeInTheDocument();
+  });
+
+  it('全件取得失敗後もpickup候補を維持し、再試行で全件候補を表示する', async () => {
+    const listAllTags = vi.fn().mockRejectedValueOnce(new Error('network')).mockResolvedValueOnce([{ identifier: 'all', label: '読書' }]);
+    const user = setupUser();
+    renderPage({ listAllTags, listTags: vi.fn().mockResolvedValue([{ identifier: 'pickup', label: '朝活' }]), searchPage: vi.fn() });
+    await screen.findByRole('button', { name: '朝活' });
+    await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
+    expect(await screen.findByText('タグを読み込めませんでした。')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '朝活' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '再試行' }));
+    expect(await screen.findByRole('button', { name: '読書' })).toBeInTheDocument();
+  });
+
+  it('文字列とタグ選択後の全件候補取得で検索を再実行しない', async () => {
+    const searchPage = vi.fn().mockResolvedValue({ items: [routineExecutionResult], total: 1 });
+    const user = setupUser();
+    renderPage({ listAllTags: vi.fn().mockResolvedValue([{ identifier: 'all', label: '読書' }]), listTags: vi.fn().mockResolvedValue([{ identifier: 'pickup', label: '朝活' }]), searchPage });
+    await user.click(await screen.findByRole('button', { name: '朝活' }));
+    await typeAndDebounce(user, '朝');
+    await vi.runOnlyPendingTimersAsync();
+    const before = searchPage.mock.calls.length;
+    await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
+    await screen.findByRole('button', { name: '読書' });
+    expect(searchPage).toHaveBeenCalledTimes(before);
   });
 
   it('タグ候補を表示し、選択時に文字列なしでも即時検索する', async () => {
@@ -76,7 +130,7 @@ describe('SearchPage', () => {
   it('入力debounce中にタブを切り替えると確定語でAccount検索する', async () => {
     const searchPage = vi.fn().mockResolvedValue({ items: [accountResult], total: 1 });
     const user = setupUser();
-    renderPage({ listTags: vi.fn().mockResolvedValue([]), searchPage });
+    renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockResolvedValue([]), searchPage });
     await user.type(screen.getByRole('textbox', { name: '検索語' }), 'アリ');
     await user.click(screen.getByRole('tab', { name: 'Account' }));
     expect(searchPage).toHaveBeenCalledWith('accounts', 'アリ', 1);

@@ -24,29 +24,41 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
   const [selectedTags, setSelectedTags] = useState<SearchTag[]>([]);
   const [tags, setTags] = useState<SearchTag[]>([]);
   const [isTagsLoading, setIsTagsLoading] = useState(true);
+  const [isAllTagsLoading, setIsAllTagsLoading] = useState(false);
   const [tagsError, setTagsError] = useState(false);
+  const [allTagsError, setAllTagsError] = useState(false);
+  const [showAllTags, setShowAllTags] = useState(false);
   const [tagsReloadVersion, setTagsReloadVersion] = useState(0);
   const [isInputPending, setIsInputPending] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tagIdentifiers = useMemo(() => selectedTags.map((tag) => tag.identifier), [selectedTags]);
+  const visibleTags = useMemo(() => [...tags, ...selectedTags.filter((selectedTag) => !tags.some((tag) => tag.identifier === selectedTag.identifier))], [selectedTags, tags]);
   const normalizedQuery = submittedQuery?.trim() ?? '';
   const resultsKey = `${activeTab}:${normalizedQuery}:${tagIdentifiers.join(':')}:${searchVersion}`;
 
   useEffect(() => {
     if (typeof service.listTags !== 'function') return;
     let active = true;
-    service.listTags().then((loadedTags) => {
+    const loadTags = showAllTags ? service.listAllTags : service.listTags;
+    loadTags().then((loadedTags) => {
       if (!active) return;
       setTags(loadedTags);
       setTagsError(false);
-      setIsTagsLoading(false);
+      setAllTagsError(false);
+      if (showAllTags) setIsAllTagsLoading(false);
+      else setIsTagsLoading(false);
     }).catch(() => {
       if (!active) return;
-      setTagsError(true);
-      setIsTagsLoading(false);
+      if (showAllTags) {
+        setAllTagsError(true);
+        setIsAllTagsLoading(false);
+      } else {
+        setTagsError(true);
+        setIsTagsLoading(false);
+      }
     });
     return () => { active = false; };
-  }, [service, tagsReloadVersion]);
+  }, [service, showAllTags, tagsReloadVersion]);
 
   useEffect(() => {
     const query = input.trim();
@@ -113,7 +125,7 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
             value={input}
           />
         </Box>
-        {isTagsLoading ? <Typography aria-live="polite">{messages.search.tagsLoading}</Typography> : tagsError ? <Alert action={<Button onClick={() => setTagsReloadVersion((version) => version + 1)}>{messages.search.retry}</Button>} severity="error">{messages.search.tagsError}</Alert> : <Stack aria-label={messages.search.tagsLabel} className="search-page__tags" direction="row">{tags.map((tag) => <Button aria-pressed={selectedTags.some((selected) => selected.identifier === tag.identifier)} key={tag.identifier} onClick={() => toggleTag(tag)} variant={selectedTags.some((selected) => selected.identifier === tag.identifier) ? 'contained' : 'outlined'}>{tag.label}</Button>)}</Stack>}
+        {isTagsLoading ? <Typography aria-live="polite">{messages.search.tagsLoading}</Typography> : tagsError ? <Alert action={<Button onClick={() => setTagsReloadVersion((version) => version + 1)}>{messages.search.retry}</Button>} severity="error">{messages.search.tagsError}</Alert> : <><Stack aria-label={messages.search.tagsLabel} className="search-page__tags" direction="row">{visibleTags.map((tag) => <Button aria-pressed={selectedTags.some((selected) => selected.identifier === tag.identifier)} key={tag.identifier} onClick={() => toggleTag(tag)} size="small" variant={selectedTags.some((selected) => selected.identifier === tag.identifier) ? 'contained' : 'outlined'}>{tag.label}</Button>)}</Stack>{showAllTags ? <>{isAllTagsLoading && <Typography aria-live="polite">{messages.search.tagsLoading}</Typography>}{allTagsError && <Alert action={<Button onClick={() => { setAllTagsError(false); setIsAllTagsLoading(true); setTagsReloadVersion((version) => version + 1); }}>{messages.search.retry}</Button>} severity="error">{messages.search.tagsError}</Alert>}</> : <Button onClick={() => { setIsAllTagsLoading(true); setShowAllTags(true); }} size="small">{messages.search.showAllTags}</Button>}</>}
       </Box>
 
       <Box className="search-page__content">

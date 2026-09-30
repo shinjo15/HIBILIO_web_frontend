@@ -30,7 +30,9 @@
 
 .search-page__tags {
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
+  max-height: 176px;
+  overflow-y: auto;
   padding-bottom: 12px;
 }
 

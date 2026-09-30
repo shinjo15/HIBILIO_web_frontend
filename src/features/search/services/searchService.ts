@@ -51,12 +51,14 @@ export type AccountSearchResult = { accountId: string; accountName: string; bio:
 export type SearchResult = RoutineSearchResult | AccountSearchResult;
 
 export type SearchAdapter = {
+  listAllTags: () => Promise<unknown>;
   listTags: () => Promise<unknown>;
   searchAccounts: (accountName: string, page: number, tagIdentifiers: string[]) => Promise<unknown>;
   searchRoutines: (title: string, page: number, tagIdentifiers: string[]) => Promise<unknown>;
 };
 
 export type SearchService = {
+  listAllTags: () => Promise<SearchTag[]>;
   listTags: () => Promise<SearchTag[]>;
   searchPage: (tab: SearchTab, query: string, page: number, tagIdentifiers?: string[]) => Promise<{ items: SearchResult[]; total: number }>;
 };
@@ -70,6 +72,11 @@ function createSearchParams(queryName: string, query: string, page: number, tagI
 }
 
 const searchApiAdapter: SearchAdapter = {
+  listAllTags: async () => {
+    const response = await fetch('/api/tags', { credentials: 'include', method: 'GET' });
+    if (!response.ok) throw new Error(`Failed to fetch tags: ${response.status}`);
+    return response.json();
+  },
   listTags: async () => {
     const response = await fetch('/api/tags/pickup', { credentials: 'include', method: 'GET' });
     if (!response.ok) throw new Error(`Failed to fetch tags: ${response.status}`);
@@ -90,11 +97,19 @@ const searchApiAdapter: SearchAdapter = {
 };
 
 export function createSearchService(adapter: SearchAdapter = searchApiAdapter): SearchService {
-  async function listTags(): Promise<SearchTag[]> {
-    return tagResponseSchema.parse(await adapter.listTags()).tags.map((tag) => ({
+  function toSearchTags(response: unknown): SearchTag[] {
+    return tagResponseSchema.parse(response).tags.map((tag) => ({
       identifier: tag.tag_identifier,
       label: tag.tag_name,
     }));
+  }
+
+  async function listAllTags(): Promise<SearchTag[]> {
+    return toSearchTags(await adapter.listAllTags());
+  }
+
+  async function listTags(): Promise<SearchTag[]> {
+    return toSearchTags(await adapter.listTags());
   }
 
   async function searchPage(tab: SearchTab, query: string, page: number, tagIdentifiers: string[] = []): Promise<{ items: SearchResult[]; total: number }> {
@@ -123,7 +138,7 @@ export function createSearchService(adapter: SearchAdapter = searchApiAdapter): 
     };
   }
 
-  return { listTags, searchPage };
+  return { listAllTags, listTags, searchPage };
 }
 
 export const searchService = createSearchService();

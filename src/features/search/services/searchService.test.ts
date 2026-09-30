@@ -16,8 +16,18 @@ describe('searchService', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/tags/pickup', { credentials: 'include', method: 'GET' });
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines/search?page=1&number_of_items_per_page=40&tag_identifiers%5B%5D=tag-1&tag_identifiers%5B%5D=tag-2', { credentials: 'include', method: 'GET' });
   });
+
+  it('全件タグ候補を要求したときだけ全件endpointを呼ぶ', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ tags: [{ tag_identifier: 'tag-2', tag_name: '読書' }] })));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(searchService.listAllTags()).resolves.toEqual([{ identifier: 'tag-2', label: '読書' }]);
+    expect(fetchMock).toHaveBeenCalledWith('/api/tags', { credentials: 'include', method: 'GET' });
+  });
+
   it('投稿検索APIのDTOを検索専用カードの表示モデルへ変換する', async () => {
     const service = createSearchService({
+      listAllTags: async () => ({ tags: [] }),
       listTags: async () => ({ tags: [] }),
       searchAccounts: async () => ({ accounts: [], total: 0 }),
       searchRoutines: async () => ({
@@ -80,6 +90,7 @@ describe('searchService', () => {
 
   it('HTTP失敗と契約外レスポンスをエラーとして扱う', async () => {
     const service = createSearchService({
+      listAllTags: async () => ({ tags: [] }),
       listTags: async () => ({ tags: [] }),
       searchAccounts: async () => ({ accounts: [], total: 'invalid' }),
       searchRoutines: async () => { throw new Error('network error'); },
