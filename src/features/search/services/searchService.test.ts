@@ -25,6 +25,14 @@ describe('searchService', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/tags', { credentials: 'include', method: 'GET' });
   });
 
+  it('人気タグをルーティン件数付きで取得し、契約外の件数を拒否する', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ tags: [{ routine_count: 12, tag_identifier: 'tag-3', tag_name: '朝活' }] })));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(searchService.listPopularTags()).resolves.toEqual([{ identifier: 'tag-3', label: '朝活', routineCount: 12 }]);
+    expect(fetchMock).toHaveBeenCalledWith('/api/tags/popular', { credentials: 'include', method: 'GET' });
+  });
+
   it('投稿検索APIのDTOを検索専用カードの表示モデルへ変換する', async () => {
     const service = createSearchService({
       listAllTags: async () => ({ tags: [] }),

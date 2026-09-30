@@ -9,6 +9,14 @@ const tagResponseSchema = z.object({
   })),
 });
 
+const popularTagResponseSchema = z.object({
+  tags: z.array(z.object({
+    routine_count: z.number().int().nonnegative(),
+    tag_identifier: z.string().min(1),
+    tag_name: z.string().min(1),
+  })),
+});
+
 const routineSearchResponseSchema = z.object({
   items: z.array(z.object({
     account_identifier: z.string().min(1),
@@ -36,6 +44,7 @@ const accountSearchResponseSchema = z.object({
 
 export type SearchTab = 'routines' | 'accounts';
 export type SearchTag = { identifier: string; label: string };
+export type PopularSearchTag = SearchTag & { routineCount: number };
 export type RoutineSearchResult = {
   accountId: string;
   accountName: string;
@@ -52,6 +61,7 @@ export type SearchResult = RoutineSearchResult | AccountSearchResult;
 
 export type SearchAdapter = {
   listAllTags: () => Promise<unknown>;
+  listPopularTags?: () => Promise<unknown>;
   listTags: () => Promise<unknown>;
   searchAccounts: (accountName: string, page: number, tagIdentifiers: string[]) => Promise<unknown>;
   searchRoutines: (title: string, page: number, tagIdentifiers: string[]) => Promise<unknown>;
@@ -59,6 +69,7 @@ export type SearchAdapter = {
 
 export type SearchService = {
   listAllTags: () => Promise<SearchTag[]>;
+  listPopularTags: () => Promise<PopularSearchTag[]>;
   listTags: () => Promise<SearchTag[]>;
   searchPage: (tab: SearchTab, query: string, page: number, tagIdentifiers?: string[]) => Promise<{ items: SearchResult[]; total: number }>;
 };
@@ -75,6 +86,11 @@ const searchApiAdapter: SearchAdapter = {
   listAllTags: async () => {
     const response = await fetch('/api/tags', { credentials: 'include', method: 'GET' });
     if (!response.ok) throw new Error(`Failed to fetch tags: ${response.status}`);
+    return response.json();
+  },
+  listPopularTags: async () => {
+    const response = await fetch('/api/tags/popular', { credentials: 'include', method: 'GET' });
+    if (!response.ok) throw new Error(`Failed to fetch popular tags: ${response.status}`);
     return response.json();
   },
   listTags: async () => {
@@ -108,6 +124,11 @@ export function createSearchService(adapter: SearchAdapter = searchApiAdapter): 
     return toSearchTags(await adapter.listAllTags());
   }
 
+  async function listPopularTags(): Promise<PopularSearchTag[]> {
+    if (typeof adapter.listPopularTags !== 'function') throw new Error('Popular tags adapter is unavailable');
+    return popularTagResponseSchema.parse(await adapter.listPopularTags()).tags.map((tag) => ({ identifier: tag.tag_identifier, label: tag.tag_name, routineCount: tag.routine_count }));
+  }
+
   async function listTags(): Promise<SearchTag[]> {
     return toSearchTags(await adapter.listTags());
   }
@@ -138,7 +159,7 @@ export function createSearchService(adapter: SearchAdapter = searchApiAdapter): 
     };
   }
 
-  return { listAllTags, listTags, searchPage };
+  return { listAllTags, listPopularTags, listTags, searchPage };
 }
 
 export const searchService = createSearchService();

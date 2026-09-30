@@ -19,8 +19,8 @@ beforeEach(() => {
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
-function renderPage(service: SearchService) {
-  return render(<MemoryRouter><SearchPage service={service} /></MemoryRouter>);
+function renderPage(service: Omit<SearchService, 'listPopularTags'> & Partial<Pick<SearchService, 'listPopularTags'>>) {
+  return render(<MemoryRouter><SearchPage service={{ listPopularTags: async () => [], ...service }} /></MemoryRouter>);
 }
 
 function setupUser() {
@@ -33,6 +33,42 @@ async function typeAndDebounce(user: ReturnType<typeof setupUser>, value: string
 }
 
 describe('SearchPage', () => {
+  it('人気タグを件数順で表示し、クリック検索後に解除すると復帰する', async () => {
+    const searchPage = vi.fn().mockResolvedValue({ items: [routineExecutionResult], total: 1 });
+    const user = setupUser();
+    renderPage({
+      listAllTags: vi.fn().mockResolvedValue([]),
+      listPopularTags: vi.fn().mockResolvedValue([{ identifier: 'first', label: '朝活', routineCount: 12 }, { identifier: 'second', label: '読書', routineCount: 4 }, { identifier: 'zero', label: '日記', routineCount: 0 }]),
+      listTags: vi.fn().mockResolvedValue([{ identifier: 'first', label: '朝活' }]),
+      searchPage,
+    });
+
+    expect(await screen.findByRole('heading', { name: '人気のタグ' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /#(朝活|読書)/ }).map((button) => button.getAttribute('aria-label'))).toEqual(['#朝活 ルーティン 12件', '#読書 ルーティン 4件']);
+    expect(screen.queryByRole('button', { name: /#日記/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'Account' }));
+    expect(screen.getByRole('heading', { name: '人気のタグ' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '#朝活 ルーティン 12件' }));
+    expect(searchPage).toHaveBeenCalledWith('accounts', '', 1, ['first']);
+    expect(screen.queryByRole('heading', { name: '人気のタグ' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '朝活' }));
+    expect(await screen.findByRole('heading', { name: '人気のタグ' })).toBeInTheDocument();
+  });
+
+  it('人気タグが0件なら表示しない', async () => {
+    renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listPopularTags: vi.fn().mockResolvedValue([{ identifier: 'zero', label: '日記', routineCount: 0 }]), listTags: vi.fn().mockResolvedValue([]), searchPage: vi.fn() });
+
+    expect(await screen.findByRole('textbox', { name: 'ルーティン名' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '人気のタグ' })).not.toBeInTheDocument();
+  });
+
+  it('人気タグの取得失敗時は表示しない', async () => {
+    renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listPopularTags: vi.fn().mockRejectedValue(new Error('network')), listTags: vi.fn().mockResolvedValue([]), searchPage: vi.fn() });
+
+    expect(await screen.findByRole('textbox', { name: 'ルーティン名' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '人気のタグ' })).not.toBeInTheDocument();
+  });
+
   it('一覧と共通のブランドヘッダーから検索入力へフォーカスし、検索対象に応じて入力の説明を切り替える', async () => {
     const user = setupUser();
     renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockResolvedValue([{ identifier: 'tag-1', label: '朝活' }]), searchPage: vi.fn().mockResolvedValue({ items: [], total: 0 }) });

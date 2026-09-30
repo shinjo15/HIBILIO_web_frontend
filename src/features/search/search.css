@@ -39,6 +39,39 @@
   padding: 16px;
 }
 
+.search-page__popular {
+  border-bottom: 1px solid var(--hibilio-color-border);
+  margin: 0 auto;
+  max-width: 672px;
+  padding: 16px;
+}
+
+.search-page__popular h2 {
+  font-size: 16px;
+  margin: 0 0 8px;
+}
+
+.search-page__popular-tag.MuiButton-root {
+  align-items: center;
+  color: var(--hibilio-color-on-background);
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  justify-content: start;
+  padding: 8px 0;
+  text-align: left;
+  text-transform: none;
+}
+
+.search-page__popular-rank {
+  color: var(--hibilio-color-muted-text);
+}
+
+.search-page__popular-count {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+  grid-column: 2;
+}
+
 .search-page__loading,
 .search-page__empty {
   align-items: center;

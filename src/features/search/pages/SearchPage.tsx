@@ -7,7 +7,7 @@ import { AppBrandHeader } from '../../../shared/components/AppBrandHeader';
 import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
 import messages from '../../../shared/message/message.json';
 import { formatPostedAt } from '../../routineFeed/domain/routine';
-import { searchService, type AccountSearchResult, type RoutineSearchResult, type SearchResult, type SearchService, type SearchTab, type SearchTag } from '../services/searchService';
+import { searchService, type AccountSearchResult, type PopularSearchTag, type RoutineSearchResult, type SearchResult, type SearchService, type SearchTab, type SearchTag } from '../services/searchService';
 import '../search.css';
 
 type SearchPageProps = { service?: SearchService };
@@ -25,6 +25,7 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
   const [selectedTags, setSelectedTags] = useState<SearchTag[]>([]);
   const [pickupTags, setPickupTags] = useState<SearchTag[]>([]);
   const [allTags, setAllTags] = useState<SearchTag[] | null>(null);
+  const [popularTags, setPopularTags] = useState<PopularSearchTag[]>([]);
   const [isTagsLoading, setIsTagsLoading] = useState(true);
   const [isAllTagsLoading, setIsAllTagsLoading] = useState(false);
   const [tagsError, setTagsError] = useState(false);
@@ -72,6 +73,15 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
     });
     return () => { active = false; };
   }, [allTags, allTagsReloadVersion, service, showAllTags]);
+
+  useEffect(() => {
+    if (typeof service.listPopularTags !== 'function') return;
+    let active = true;
+    service.listPopularTags().then((loadedTags) => {
+      if (active) setPopularTags(loadedTags);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [service]);
 
   useEffect(() => {
     const query = input.trim();
@@ -141,6 +151,11 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
         </Box>
         <Box aria-busy={isTagsLoading || isAllTagsLoading} aria-label={messages.search.tagsLabel}>{isTagsLoading ? null : tagsError ? <Alert action={<Button onClick={() => setTagsReloadVersion((version) => version + 1)}>{messages.search.retry}</Button>} severity="error">{messages.search.tagsError}</Alert> : <><Stack className="search-page__tags" direction="row">{visibleTags.map((tag) => <Button aria-pressed={selectedTags.some((selected) => selected.identifier === tag.identifier)} key={tag.identifier} onClick={() => toggleTag(tag)} size="small" variant={selectedTags.some((selected) => selected.identifier === tag.identifier) ? 'contained' : 'outlined'}>{tag.label}</Button>)}</Stack>{showAllTags ? <><Button onClick={() => setShowAllTags(false)} size="small">{messages.search.closeAllTags}</Button>{allTagsError && <Alert action={<Button onClick={() => { setAllTagsError(false); setIsAllTagsLoading(true); setAllTagsReloadVersion((version) => version + 1); }}>{messages.search.retry}</Button>} severity="error">{messages.search.tagsError}</Alert>}</> : <Button onClick={() => { setIsAllTagsLoading(true); setShowAllTags(true); }} size="small">{messages.search.showAllTags}</Button>}</>}</Box>
       </Box>
+
+      {!isInputPending && normalizedQuery.length === 0 && selectedTags.length === 0 && popularTags.filter((tag) => tag.routineCount > 0).length > 0 && <Box className="search-page__popular">
+        <Typography component="h2">{messages.search.popularTagsTitle}</Typography>
+        <Stack>{popularTags.filter((tag) => tag.routineCount > 0).slice(0, 5).map((tag, index) => <Button aria-label={`${messages.search.popularTagLabel.replace('{tag}', tag.label)} ${messages.search.popularTagRoutineCount.replace('{count}', String(tag.routineCount))}`} className="search-page__popular-tag" key={tag.identifier} onClick={() => toggleTag(tag)}><Typography aria-hidden="true" component="span" className="search-page__popular-rank">{index + 1}</Typography><Typography component="span">{messages.search.popularTagLabel.replace('{tag}', tag.label)}</Typography><Typography component="span" className="search-page__popular-count">{messages.search.popularTagRoutineCount.replace('{count}', String(tag.routineCount))}</Typography></Button>)}</Stack>
+      </Box>}
 
       <Box className="search-page__content">
         {!isInputPending && (normalizedQuery.length > 0 || selectedTags.length > 0) && <SearchResults activeTab={activeTab} key={resultsKey} query={normalizedQuery} service={service} tagIdentifiers={tagIdentifiers} />}
