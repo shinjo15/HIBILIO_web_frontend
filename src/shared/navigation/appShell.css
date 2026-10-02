@@ -3,13 +3,17 @@
   background-color: var(--hibilio-color-card);
   border-top: 1px solid var(--hibilio-color-border);
   bottom: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   height: 64px;
-  justify-content: space-around;
   left: 0;
   position: fixed;
   right: 0;
   z-index: 1100;
+}
+
+.hibilio-mobile-nav__spacer {
+  height: 100%;
 }
 
 .hibilio-mobile-nav__create-trigger--disabled.MuiButtonBase-root {

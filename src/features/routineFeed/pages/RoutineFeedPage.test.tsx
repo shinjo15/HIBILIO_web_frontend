@@ -51,7 +51,8 @@ describe('RoutineFeedPage', () => {
 
     renderPage(service);
     expect(screen.getByRole('heading', { name: 'HIBILIO' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'ルーティンを検索' })).toBeInTheDocument();
+    expect(screen.getByText('今日を重ねるSNS')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ルーティンを検索' })).not.toBeInTheDocument();
     expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['フォロー中', 'おすすめ', '人気', 'フォロー中アカウント']);
     expect(screen.getByText('ルーティンを読み込んでいます…')).toBeInTheDocument();
 
@@ -67,6 +68,12 @@ describe('RoutineFeedPage', () => {
     renderPage({ list: async () => [] });
 
     expect(await screen.findByRole('heading', { name: 'ルーティンが見つかりません' })).toBeInTheDocument();
+  });
+
+  it('フィード上部に検索アイコンを表示しない', async () => {
+    renderPage({ list: async () => [] });
+
+    expect(screen.queryByRole('button', { name: 'ルーティンを検索' })).not.toBeInTheDocument();
   });
 
   it('末尾カードの表示で2ページ目を末尾へ追加し、total到達後は追加取得しない', async () => {

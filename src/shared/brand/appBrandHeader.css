@@ -1,0 +1,36 @@
+.app-brand-header.app-brand-header {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.app-brand-header .app-brand-header__brand {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.app-brand-header .app-brand-header__name {
+  color: var(--hibilio-color-on-background);
+  font-family: Fraunces, serif;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.app-brand-header .app-brand-header__tagline {
+  color: var(--hibilio-color-muted-text);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 4px 0 0;
+}
+
+@media (min-width: 1200px) {
+  .app-brand-header.app-brand-header {
+    display: none;
+  }
+}
