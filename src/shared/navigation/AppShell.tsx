@@ -157,7 +157,7 @@ export function AppShell() {
       </Box>
 
       <Box aria-label={messages.navigation.ariaLabel} className="hibilio-mobile-nav" component="nav">
-        {navigationItems.slice(0, 1).map((item) => {
+        {navigationItems.slice(0, 2).map((item) => {
           const isSelected = activePath === item.path;
           return (
             <ButtonBase
@@ -168,7 +168,7 @@ export function AppShell() {
               sx={{
                 color: isSelected ? 'primary.main' : 'text.secondary',
                 display: 'flex', flexDirection: 'column', fontSize: 10, fontWeight: 500,
-                gap: 0.25, height: '100%', justifyContent: 'center', minWidth: 76,
+                gap: 0.25, height: '100%', justifyContent: 'center', minWidth: 0, width: '100%',
               }}
             >
               {item.icon}
@@ -184,7 +184,7 @@ export function AppShell() {
           form={isRoutineCreate ? 'routine-create-form' : undefined}
           onClick={isRoutineCreate ? undefined : () => navigate(protectedPath('/routines/new'))}
           type={isRoutineCreate ? 'submit' : 'button'}
-          sx={{ alignItems: 'center', display: 'flex', height: '100%', justifyContent: 'center', minWidth: 76 }}
+          sx={{ alignItems: 'center', display: 'flex', height: '100%', justifyContent: 'center', minWidth: 0, width: '100%' }}
         >
           <Box
             className="hibilio-mobile-nav__create-icon"
@@ -196,7 +196,7 @@ export function AppShell() {
             {isRoutineCreate ? <SendIcon fontSize="small" /> : <AddIcon />}
           </Box>
         </ButtonBase>
-        {navigationItems.slice(1).map((item) => {
+        {navigationItems.slice(2).map((item) => {
           const isSelected = activePath === item.path;
           return (
             <ButtonBase
@@ -207,7 +207,7 @@ export function AppShell() {
               sx={{
                 color: isSelected ? 'primary.main' : 'text.secondary',
                 display: 'flex', flexDirection: 'column', fontSize: 10, fontWeight: 500,
-                gap: 0.25, height: '100%', justifyContent: 'center', minWidth: 76,
+                gap: 0.25, height: '100%', justifyContent: 'center', minWidth: 0, width: '100%',
               }}
             >
               {item.icon}
@@ -215,6 +215,7 @@ export function AppShell() {
             </ButtonBase>
           );
         })}
+        <Box aria-hidden="true" className="hibilio-mobile-nav__spacer" />
       </Box>
     </Box>
   );
