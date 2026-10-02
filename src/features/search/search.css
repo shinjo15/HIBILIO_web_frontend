@@ -1,4 +1,6 @@
 .search-page {
+  display: flex;
+  flex-direction: column;
   min-height: 100dvh;
 }
 
@@ -32,17 +34,23 @@
 }
 
 
-.search-page__content {
+.search-page__main-column {
+  background-color: var(--hibilio-color-card);
+  border-left: 1px solid var(--hibilio-color-border);
+  border-right: 1px solid var(--hibilio-color-border);
   box-sizing: border-box;
+  flex: 1;
   margin: 0 auto;
   max-width: 672px;
+  width: 100%;
+}
+
+.search-page__content {
   padding: 16px;
 }
 
 .search-page__popular {
   border-bottom: 1px solid var(--hibilio-color-border);
-  margin: 0 auto;
-  max-width: 672px;
   padding: 16px;
 }
 
