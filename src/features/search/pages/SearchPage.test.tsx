@@ -100,7 +100,7 @@ describe('SearchPage', () => {
     renderPage({ listAllTags: vi.fn().mockResolvedValue([{ identifier: 'all', label: '読書' }]), listTags: vi.fn().mockResolvedValue([{ identifier: 'pickup', label: '朝活' }]), searchPage: vi.fn() });
     expect(screen.queryByRole('heading', { name: 'タグ' })).not.toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: '一覧を見る↓' }));
-    expect(await screen.findByRole('button', { name: '閉じる↑' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: '閉じる↑' })).toHaveClass('search-page__close-tags');
     await user.click(screen.getByRole('button', { name: '閉じる↑' }));
     expect(screen.getByRole('button', { name: '一覧を見る↓' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));

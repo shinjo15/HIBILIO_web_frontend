@@ -27,10 +27,22 @@
 
 .search-page__tags {
   flex-wrap: wrap;
-  gap: 6px;
-  max-height: 176px;
+  gap: 8px;
+  max-height: min(45vh, 320px);
   overflow-y: auto;
   padding-bottom: 12px;
+}
+
+.search-page__tags .MuiButton-root {
+  min-height: 40px;
+  padding: 6px 12px;
+}
+
+.search-page__close-tags.MuiButton-root {
+  font-weight: 600;
+  margin-top: 8px;
+  min-height: 44px;
+  padding: 10px 16px;
 }
 
 @media (min-width: 1200px) {

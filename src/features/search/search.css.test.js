@@ -18,4 +18,10 @@ describe('search page central column styles', () => {
     expect(styles).not.toContain('min-height: calc(100dvh - 1px);');
   });
 
+  it('keeps an expanded tag list scrollable while making chips and its close control easy to use', () => {
+    expect(styles).toContain('.search-page__tags {\n  flex-wrap: wrap;\n  gap: 8px;\n  max-height: min(45vh, 320px);\n  overflow-y: auto;');
+    expect(styles).toContain('.search-page__tags .MuiButton-root {\n  min-height: 40px;\n  padding: 6px 12px;');
+    expect(styles).toContain('.search-page__close-tags.MuiButton-root {\n  font-weight: 600;\n  margin-top: 8px;\n  min-height: 44px;\n  padding: 10px 16px;');
+  });
+
 });
