@@ -151,9 +151,9 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
       </Box>
 
       <Box className="search-page__main-column">
-        {!isInputPending && normalizedQuery.length === 0 && selectedTags.length === 0 && popularTags.filter((tag) => tag.routineCount > 0).length > 0 && <Box className="search-page__popular">
+        {!isInputPending && normalizedQuery.length === 0 && selectedTags.length === 0 && popularTags.length > 0 && <Box className="search-page__popular">
           <Typography component="h2">{messages.search.popularTagsTitle}</Typography>
-          <Stack>{popularTags.filter((tag) => tag.routineCount > 0).slice(0, 5).map((tag, index) => <Button aria-label={`${messages.search.popularTagLabel.replace('{tag}', tag.label)} ${messages.search.popularTagRoutineCount.replace('{count}', String(tag.routineCount))}`} className="search-page__popular-tag" key={tag.identifier} onClick={() => toggleTag(tag)}><Typography aria-hidden="true" component="span" className="search-page__popular-rank">{index + 1}</Typography><Typography component="span">{messages.search.popularTagLabel.replace('{tag}', tag.label)}</Typography><Typography component="span" className="search-page__popular-count">{messages.search.popularTagRoutineCount.replace('{count}', String(tag.routineCount))}</Typography></Button>)}</Stack>
+          <Stack>{popularTags.map((tag, index) => <Button aria-label={`${messages.search.popularTagLabel.replace('{tag}', tag.label)} ${messages.search.popularTagRoutineCount.replace('{count}', String(tag.routineCount))}`} className="search-page__popular-tag" key={tag.identifier} onClick={() => toggleTag(tag)}><Typography aria-hidden="true" component="span" className="search-page__popular-rank">{index + 1}</Typography><Typography component="span">{messages.search.popularTagLabel.replace('{tag}', tag.label)}</Typography><Typography component="span" className="search-page__popular-count">{messages.search.popularTagRoutineCount.replace('{count}', String(tag.routineCount))}</Typography></Button>)}</Stack>
         </Box>}
 
         <Box className="search-page__content">

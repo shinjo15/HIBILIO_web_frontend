@@ -33,7 +33,7 @@ async function typeAndDebounce(user: ReturnType<typeof setupUser>, value: string
 }
 
 describe('SearchPage', () => {
-  it('人気タグを件数順で表示し、クリック検索後に解除すると復帰する', async () => {
+  it('人気タグをAPI順で0件を含めて表示し、クリック検索後に解除すると復帰する', async () => {
     const searchPage = vi.fn().mockResolvedValue({ items: [routineExecutionResult], total: 1 });
     const user = setupUser();
     renderPage({
@@ -44,8 +44,7 @@ describe('SearchPage', () => {
     });
 
     expect(await screen.findByRole('heading', { name: '人気のタグ' })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /#(朝活|読書)/ }).map((button) => button.getAttribute('aria-label'))).toEqual(['#朝活 ルーティン 12件', '#読書 ルーティン 4件']);
-    expect(screen.queryByRole('button', { name: /#日記/ })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /#(朝活|読書|日記)/ }).map((button) => button.getAttribute('aria-label'))).toEqual(['#朝活 ルーティン 12件', '#読書 ルーティン 4件', '#日記 ルーティン 0件']);
     await user.click(screen.getByRole('tab', { name: 'Account' }));
     expect(screen.getByRole('heading', { name: '人気のタグ' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '#朝活 ルーティン 12件' }));
@@ -55,11 +54,22 @@ describe('SearchPage', () => {
     expect(await screen.findByRole('heading', { name: '人気のタグ' })).toBeInTheDocument();
   });
 
-  it('人気タグが0件なら表示しない', async () => {
+  it('人気タグが0件だけでも表示する', async () => {
     renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listPopularTags: vi.fn().mockResolvedValue([{ identifier: 'zero', label: '日記', routineCount: 0 }]), listTags: vi.fn().mockResolvedValue([]), searchPage: vi.fn() });
 
     expect(await screen.findByRole('textbox', { name: 'ルーティン名' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: '人気のタグ' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '人気のタグ' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '#日記 ルーティン 0件' })).toBeInTheDocument();
+  });
+
+  it('人気タグAPIの全60件を0件を含めてレスポンス順で表示する', async () => {
+    const popularTags = Array.from({ length: 60 }, (_, index) => ({ identifier: `tag-${index + 1}`, label: `タグ${index + 1}`, routineCount: index === 59 ? 0 : 60 - index }));
+    renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listPopularTags: vi.fn().mockResolvedValue(popularTags), listTags: vi.fn().mockResolvedValue([]), searchPage: vi.fn() });
+
+    expect(await screen.findByRole('heading', { name: '人気のタグ' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /#タグ/ })).toHaveLength(60);
+    expect(screen.getAllByRole('button', { name: /#タグ/ }).map((button) => button.getAttribute('aria-label'))).toEqual(popularTags.map((tag) => `#${tag.label} ルーティン ${tag.routineCount}件`));
+    expect(screen.getByRole('button', { name: '#タグ60 ルーティン 0件' })).toBeInTheDocument();
   });
 
   it('人気タグの取得失敗時は表示しない', async () => {
