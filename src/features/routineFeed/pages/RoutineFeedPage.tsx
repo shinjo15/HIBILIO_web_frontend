@@ -135,7 +135,7 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
   return (
     <Box component="section" className="routine-feed-page">
       <Box className="routine-feed-header">
-          <AppBrandHeader onSearchClick={() => navigate('/search')} />
+          <AppBrandHeader />
           <Tabs
             aria-label={messages.routineFeed.tabs.ariaLabel}
             className="routine-feed-tabs"
