@@ -11,8 +11,8 @@ describe('appBrandHeader styles', () => {
 
   it('resets typography margins so the sidebar-equivalent row and tagline spacing are explicit', () => {
     expect(styles).toContain('.app-brand-header .app-brand-header__name {\n  color: var(--hibilio-color-on-background);');
-    expect(styles).toMatch(/\.app-brand-header \.app-brand-header__name \{[\s\S]*?font-family: Fraunces, serif;[\s\S]*?font-size: 20px;[\s\S]*?font-weight: 600;[\s\S]*?letter-spacing: 0\.04em;[\s\S]*?line-height: normal;[\s\S]*?margin: 0;[\s\S]*?\}/);
-    expect(styles).toMatch(/\.app-brand-header \.app-brand-header__tagline \{[\s\S]*?font-size: 12px;[\s\S]*?line-height: normal;[\s\S]*?margin: 4px 0 0;[\s\S]*?\}/);
+    expect(styles).toMatch(/\.app-brand-header \.app-brand-header__name \{[\s\S]*?font-family: Fraunces, serif;[\s\S]*?font-size: 20px;[\s\S]*?font-weight: 600;[\s\S]*?letter-spacing: 0\.04em;[\s\S]*?line-height: 1\.5;[\s\S]*?margin: 0;[\s\S]*?\}/);
+    expect(styles).toMatch(/\.app-brand-header \.app-brand-header__tagline \{[\s\S]*?font-size: 12px;[\s\S]*?line-height: 1\.5;[\s\S]*?margin: 4px 0 0;[\s\S]*?\}/);
   });
 
   it('overrides MUI Stack defaults for the outer shell and horizontal brand row', () => {

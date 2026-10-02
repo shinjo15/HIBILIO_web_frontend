@@ -18,14 +18,14 @@
   font-size: 20px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  line-height: normal;
+  line-height: 1.5;
   margin: 0;
 }
 
 .app-brand-header .app-brand-header__tagline {
   color: var(--hibilio-color-muted-text);
   font-size: 12px;
-  line-height: normal;
+  line-height: 1.5;
   margin: 4px 0 0;
 }
 
