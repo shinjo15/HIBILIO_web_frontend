@@ -51,6 +51,7 @@ describe('RoutineFeedPage', () => {
 
     renderPage(service);
     expect(screen.getByRole('heading', { name: 'HIBILIO' })).toBeInTheDocument();
+    expect(screen.getByText('今日を重ねるSNS')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'ルーティンを検索' })).toBeInTheDocument();
     expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['フォロー中', 'おすすめ', '人気', 'フォロー中アカウント']);
     expect(screen.getByText('ルーティンを読み込んでいます…')).toBeInTheDocument();

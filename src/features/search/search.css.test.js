@@ -17,4 +17,8 @@ describe('search page central column styles', () => {
     expect(styles).toMatch(/\.search-page__main-column \{(?=[\s\S]*?flex: 1;)(?=[\s\S]*?width: 100%;)[\s\S]*?\}/);
     expect(styles).not.toContain('min-height: calc(100dvh - 1px);');
   });
+
+  it('removes the empty shared-header row on desktop when search has no search control', () => {
+    expect(styles).toContain('@media (min-width: 1200px) {\n  .search-page__header .app-brand-header {\n    display: none;');
+  });
 });

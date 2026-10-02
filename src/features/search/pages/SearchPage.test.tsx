@@ -69,15 +69,15 @@ describe('SearchPage', () => {
     expect(screen.queryByRole('heading', { name: '人気のタグ' })).not.toBeInTheDocument();
   });
 
-  it('一覧と共通のブランドヘッダーから検索入力へフォーカスし、検索対象に応じて入力の説明を切り替える', async () => {
+  it('スマホ用の共有ブランドヘッダーにタグラインを表示し、検索アイコンなしで検索対象の説明を切り替える', async () => {
     const user = setupUser();
     renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockResolvedValue([{ identifier: 'tag-1', label: '朝活' }]), searchPage: vi.fn().mockResolvedValue({ items: [], total: 0 }) });
 
     expect(screen.getByRole('heading', { name: 'HIBILIO' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'ルーティンを検索' }));
-    expect(screen.getByRole('textbox', { name: 'ルーティン名' })).toHaveFocus();
+    expect(screen.getByText('今日を重ねるSNS')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ルーティンを検索' })).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'ルーティン名' })).toHaveAttribute('placeholder', 'ルーティン名を入力');
-    await user.click(screen.getByRole('button', { name: '朝活' }));
+    await user.click(await screen.findByRole('button', { name: '朝活' }));
     await user.type(screen.getByRole('textbox', { name: 'ルーティン名' }), '朝');
     await user.click(screen.getByRole('tab', { name: 'Account' }));
     expect(screen.getByRole('textbox', { name: 'アカウント名' })).toHaveValue('朝');

@@ -35,7 +35,6 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
   const [allTagsReloadVersion, setAllTagsReloadVersion] = useState(0);
   const [isInputPending, setIsInputPending] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const tagIdentifiers = useMemo(() => selectedTags.map((tag) => tag.identifier), [selectedTags]);
   const displayedTags = showAllTags && allTags !== null ? allTags : pickupTags;
   const visibleTags = useMemo(() => [...displayedTags, ...selectedTags.filter((selectedTag) => !displayedTags.some((tag) => tag.identifier === selectedTag.identifier))], [displayedTags, selectedTags]);
@@ -135,14 +134,13 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
   return (
     <Box component="section" className="search-page">
       <Box className="search-page__header">
-        <AppBrandHeader onSearchClick={() => inputRef.current?.focus()} />
+        <AppBrandHeader />
         <Tabs aria-label={messages.search.tabsAriaLabel} onChange={(_, value: SearchTab) => changeTab(value)} value={activeTab}>
           {tabs.map((tab) => <Tab key={tab.value} label={tab.label} value={tab.value} />)}
         </Tabs>
         <Box className="search-page__form">
           <TextField
             fullWidth
-            inputRef={inputRef}
             label={activeTab === 'routines' ? messages.search.routinesInputLabel : messages.search.accountsInputLabel}
             onChange={(event) => changeInput(event.target.value)}
             placeholder={activeTab === 'routines' ? messages.search.routinesInputPlaceholder : messages.search.accountsInputPlaceholder}

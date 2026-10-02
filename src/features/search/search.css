@@ -33,6 +33,11 @@
   padding-bottom: 12px;
 }
 
+@media (min-width: 1200px) {
+  .search-page__header .app-brand-header {
+    display: none;
+  }
+}
 
 .search-page__main-column {
   background-color: var(--hibilio-color-card);
