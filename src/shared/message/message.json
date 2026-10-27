@@ -281,6 +281,25 @@
     "notFound": "アカウントが見つかりませんでした。",
     "privateAccountNotice": "このアカウントは鍵アカウントです"
   },
+  "contactSupport": {
+    "back": "アカウントに戻る",
+    "contentLabel": "内容",
+    "networkError": "ネットワークに接続できませんでした。通信環境を確認して再試行してください。",
+    "rateLimitError": "送信回数が上限に達しました。時間をおいてからお試しください。",
+    "serverError": "お問い合わせを送信できませんでした。時間をおいて再試行してください。",
+    "submit": "送信する",
+    "success": "お問い合わせを受け付けました。",
+    "title": "お問い合わせ",
+    "titleLabel": "件名",
+    "unauthorizedError": "ログイン状態を確認してから、もう一度お試しください。",
+    "validation": {
+      "contentRequired": "内容を入力してください。",
+      "contentTooLong": "内容は500文字以内で入力してください。",
+      "titleNewline": "件名に改行は入力できません。",
+      "titleRequired": "件名を入力してください。",
+      "titleTooLong": "件名は50文字以内で入力してください。"
+    }
+  },
   "profileEdit": {
     "apiUnavailable": "更新APIは未提供のため、この画面では変更内容を画面内で確認できます。",
     "add": "追加",
@@ -307,6 +326,7 @@
   },
   "settings": {
     "backToAccount": "アカウントに戻る",
+    "contactSupport": "お問い合わせ",
     "darkMode": "ダークモード",
     "likeNotification": "いいね通知",
     "privateAccount": "鍵アカウント",

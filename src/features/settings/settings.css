@@ -14,6 +14,7 @@
 }
 
 .settings-page__back,
+.settings-page__contact-support,
 .settings-page__sign-out,
 .settings-toggle {
   font: inherit;
@@ -79,6 +80,7 @@
 }
 
 .settings-toggle-row__label,
+.settings-page__contact-support,
 .settings-page__sign-out {
   align-items: center;
   display: flex;
@@ -123,6 +125,7 @@
   margin-top: 24px;
 }
 
+.settings-page__contact-support,
 .settings-page__sign-out {
   background: transparent;
   border: 0;
@@ -132,6 +135,12 @@
   width: 100%;
 }
 
+.settings-page__contact-support + .settings-page__sign-out {
+  border-top: 1px solid var(--hibilio-color-border);
+}
+
+.settings-page__contact-support:hover,
+.settings-page__contact-support:focus-visible,
 .settings-page__sign-out:hover,
 .settings-page__sign-out:focus-visible {
   background-color: var(--hibilio-color-muted);

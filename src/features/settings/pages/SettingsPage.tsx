@@ -29,6 +29,7 @@ export function SettingsPage() {
   return (
     <SettingsContent
       onBack={() => navigate('/account')}
+      onContactSupport={() => navigate('/contact-support')}
       onSignOut={() => void signOut()}
       onToggleDarkMode={toggleDarkMode}
       onToggleLikeNotification={settings.toggleLikeNotification}
