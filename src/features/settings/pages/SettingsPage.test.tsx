@@ -78,6 +78,17 @@ describe('SettingsPage', () => {
     expect(screen.getByText('/account')).toBeInTheDocument();
   });
 
+  it('ログアウトセクションにお問い合わせを表示し、選択するとお問い合わせ画面へ遷移する', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const contactSupport = screen.getByRole('button', { name: 'お問い合わせ' });
+    expect(contactSupport.closest('.settings-page__sign-out-section')).toBeInTheDocument();
+
+    await user.click(contactSupport);
+    expect(screen.getByText('/contact-support')).toBeInTheDocument();
+  });
+
   it('CSRF と Cookie 付きのログアウト成功後にログインへ遷移する', async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn()

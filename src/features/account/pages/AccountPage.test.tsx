@@ -407,6 +407,22 @@ describe('AccountPage', () => {
     expect(screen.getByText('/routines/routine-1')).toBeInTheDocument();
   });
 
+  it('本人のアカウントにはお問い合わせ画面へのリンクを表示しない', async () => {
+    renderPage();
+
+    await screen.findByRole('heading', { name: '山田 由紀' });
+
+    expect(screen.queryByRole('link', { name: 'お問い合わせ' })).not.toBeInTheDocument();
+  });
+
+  it('公開アカウントにはお問い合わせ画面へのリンクを表示しない', async () => {
+    render(<MemoryRouter><AccountPage isOwnAccount={false} service={service} /><Location /></MemoryRouter>);
+
+    await screen.findByRole('heading', { name: '山田 由紀' });
+
+    expect(screen.queryByRole('link', { name: 'お問い合わせ' })).not.toBeInTheDocument();
+  });
+
   it('投稿といいねのページを末尾へ追加し、タブごとの一覧を保持する', async () => {
     const user = userEvent.setup();
     let notifyIntersection: (() => void) | undefined;

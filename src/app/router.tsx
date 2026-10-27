@@ -6,6 +6,7 @@ import { AccountPage } from '../features/account/pages/AccountPage';
 import { ProfileEditPage } from '../features/account/pages/ProfileEditPage';
 import { AccountExecutionHistoryPage } from '../features/account/pages/AccountExecutionHistoryPage';
 import { PublicAccountPage } from '../features/account/pages/PublicAccountPage';
+import { ContactSupportPage } from '../features/contactSupport/pages/ContactSupportPage';
 import { SettingsPage } from '../features/settings/pages/SettingsPage';
 import { RoutineFeedPage } from '../features/routineFeed/pages/RoutineFeedPage';
 import { RoutineCreatePage } from '../features/routineCreate/pages/RoutineCreatePage';
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
             element: <RequireAuthentication />,
             children: [
               { element: <AccountPage />, path: 'account' },
+              { element: <ContactSupportPage />, path: 'contact-support' },
               { element: <ProfileEditPage />, path: 'account/edit' },
               { element: <SettingsPage />, path: 'account/settings' },
               { element: <RoutineCreatePage />, path: 'routines/new' },

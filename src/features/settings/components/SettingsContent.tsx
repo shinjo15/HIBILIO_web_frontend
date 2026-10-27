@@ -3,12 +3,14 @@ import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
+import SupportAgentOutlinedIcon from '@mui/icons-material/SupportAgentOutlined';
 import type { ReactNode } from 'react';
 import type { Settings } from '../domain/settings';
 import messages from '../../../shared/message/message.json';
 
 type SettingsContentProps = {
   onBack: () => void;
+  onContactSupport: () => void;
   onSignOut: () => void;
   onToggleDarkMode: () => void;
   onToggleLikeNotification: () => void;
@@ -26,6 +28,7 @@ type SettingToggleRowProps = {
 
 export function SettingsContent({
   onBack,
+  onContactSupport,
   onSignOut,
   onToggleDarkMode,
   onToggleLikeNotification,
@@ -54,6 +57,10 @@ export function SettingsContent({
           <SettingToggleRow checked={settings.isSupportNotificationEnabled} icon={<NotificationsOutlinedIcon fontSize="small" />} label={messages.settings.supportNotification} onChange={onToggleSupportNotification} />
         </SettingsSection>
         <div className="settings-page__sign-out-section">
+          <button className="settings-page__contact-support" onClick={onContactSupport} type="button">
+            <SupportAgentOutlinedIcon fontSize="small" />
+            {messages.settings.contactSupport}
+          </button>
           <button className="settings-page__sign-out" onClick={onSignOut} type="button">
             <LogoutOutlinedIcon fontSize="small" />
             {messages.settings.signOut}
