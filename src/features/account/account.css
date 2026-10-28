@@ -378,21 +378,23 @@
 }
 
 @media (max-width: 480px) {
-  .account-tabs--five {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
+  .account-tabs--five,
   .account-tabs--six {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
+    overflow-x: auto;
   }
 
   .account-tabs--five .account-tabs__tab,
   .account-tabs--six .account-tabs__tab {
-    min-width: 0;
+    flex: 0 0 auto;
+    min-width: 96px;
+    width: max-content;
   }
 
-  .account-tabs--five .account-tabs__label {
-    overflow-wrap: anywhere;
+  .account-tabs--five .account-tabs__label,
+  .account-tabs--six .account-tabs__label {
+    overflow-wrap: normal;
+    white-space: nowrap;
   }
 }
 

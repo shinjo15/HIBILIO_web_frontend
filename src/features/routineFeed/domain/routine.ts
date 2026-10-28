@@ -10,6 +10,12 @@ export const routineSchema = z.object({
   authorName: z.string().min(1),
   createdAt: z.string().datetime({ offset: true }),
   customizations: z.number().int().nonnegative(),
+  customizationOrigin: z.object({
+    accountName: z.string().min(1),
+    iconImageUrl: z.string().url().nullable(),
+    routineId: z.string().min(1),
+    routineName: z.string().min(1),
+  }).nullable().optional(),
   durationMinutes: z.number().int().positive().nullable(),
   executions: z.number().int().nonnegative(),
   executedActionCount: z.number().int().nonnegative().optional(),

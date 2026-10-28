@@ -7,6 +7,12 @@ const routineFeedResponseSchema = z.object({
   posts: z.array(z.object({
     account_identifier: z.string().uuid(),
     account_name: z.string().min(1),
+    customization_origin: z.object({
+      account_name: z.string().min(1),
+      icon_image_url: z.string().url().nullish().transform((url) => url ?? null),
+      routine_identifier: z.string().min(1),
+      routine_name: z.string().min(1),
+    }).nullable().optional(),
     icon_image_url: z.string().url().nullish().transform((url) => url ?? null),
     customization_count: z.number().int().nonnegative(),
     execution_count: z.number().int().nonnegative(),
@@ -112,6 +118,14 @@ function toRoutine(post: RoutineFeedResponse['posts'][number]): Routine {
     authorName: post.account_name,
     createdAt: post.posted_at,
     customizations: post.customization_count,
+    ...(post.post_category === 'routine' && post.customization_origin !== undefined ? {
+      customizationOrigin: post.customization_origin === null ? null : {
+        accountName: post.customization_origin.account_name,
+        iconImageUrl: post.customization_origin.icon_image_url,
+        routineId: post.customization_origin.routine_identifier,
+        routineName: post.customization_origin.routine_name,
+      },
+    } : {}),
     durationMinutes: post.routine_execution_minutes,
     executions: post.execution_count,
     executedActionCount: post.executed_action_count,

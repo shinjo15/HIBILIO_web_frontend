@@ -1,15 +1,23 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchPage } from './SearchPage';
 import type { SearchService } from '../services/searchService';
+import type { RoutineLikeService } from '../../routineFeed/services/routineLikeService';
+import { accountService } from '../../account/services/accountService';
+import { isAuthenticated, markAuthenticated } from '../../auth/services/authSession';
+import { RoutineLikeUnauthorizedError } from '../../routineFeed/services/routineLikeService';
 
 const routineExecutionResult = {
-  accountId: 'account-1', accountName: '実行者', iconImageUrl: null, itemType: 'routine_execution' as const,
-  publishedAt: '2026-09-03T00:00:00+00:00', routineExecutionId: 'execution-1', routineId: 'routine-1', routineName: '朝のストレッチ', tags: ['朝活'],
+  accountId: 'account-1', accountName: '実行者', customizations: 0, executedActionCount: 2, executionMemo: '完了', executions: 3, iconImageUrl: null, itemType: 'routine_execution' as const, likes: 0,
+  postedAt: '2026-09-03T00:00:00+00:00', postId: 'post-execution-1', publishedAt: '2026-09-03T00:00:00+00:00', routineActions: [], routineExecutionId: 'execution-1', routineExecutionMinutes: 15, routineId: 'routine-1', routineName: '朝のストレッチ', supportCount: 4, supported: false, tags: ['朝活'],
 };
-const routinePostResult = { ...routineExecutionResult, accountName: '作成者', itemType: 'routine' as const, publishedAt: '2026-09-04T00:00:00+00:00', routineExecutionId: null, routineName: '夜の読書' };
+const routinePostResult = {
+  accountId: 'account-2', accountName: '作成者', customizationOrigin: { accountName: '親作者', iconImageUrl: null, routineId: 'parent-routine-1', routineName: '親の朝活ルーティン' }, customizations: 1, executions: 2, iconImageUrl: null, itemType: 'routine' as const, liked: false, likes: 3,
+  postedAt: '2026-09-04T00:00:00+00:00', postId: 'post-routine-1', publishedAt: '2026-09-03T00:00:00+00:00', routineActions: [{ action: '読書', durationMinutes: 15 }], routineExecutionId: null, routineExecutionMinutes: 15, routineId: 'routine-1', routineName: '夜の読書', tags: ['読書'],
+};
+const routinePostResult2 = { ...routinePostResult, postId: 'post-routine-2', routineId: 'routine-2', routineName: '朝の読書' };
 const accountResult = { accountId: 'account-2', accountName: 'アリス', bio: '朝を大切にしています', iconImageUrl: null };
 
 beforeEach(() => {
@@ -17,7 +25,7 @@ beforeEach(() => {
   vi.setSystemTime(new Date('2026-09-05T00:00:00+00:00'));
 });
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); window.sessionStorage.clear(); });
 
 function renderPage(service: Omit<SearchService, 'listPopularTags'> & Partial<Pick<SearchService, 'listPopularTags'>>) {
   return render(<MemoryRouter><SearchPage service={{ listPopularTags: async () => [], ...service }} /></MemoryRouter>);
@@ -27,12 +35,160 @@ function setupUser() {
   return userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 }
 
+function LocationProbe() {
+  return <output>{useLocation().pathname}</output>;
+}
+
+function deferred<T>() {
+  let reject!: (error: unknown) => void;
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => { resolve = resolvePromise; reject = rejectPromise; });
+  return { promise, reject, resolve };
+}
+
 async function typeAndDebounce(user: ReturnType<typeof setupUser>, value: string) {
   await user.type(screen.getByRole('textbox', { name: 'ルーティン名' }), value);
   await vi.advanceTimersByTimeAsync(300);
 }
 
 describe('SearchPage', () => {
+  it('投稿ありroutineと実行投稿はフィードと同じカードで表示し、投稿なしroutineには投稿操作を表示しない', async () => {
+    const noPostRoutine = { ...routinePostResult, liked: null, likes: null, postedAt: null, postId: null, routineId: 'routine-3', routineName: '投稿なしルーティン' };
+    const user = setupUser();
+    renderPage({
+      listAllTags: vi.fn().mockResolvedValue([]),
+      listTags: vi.fn().mockResolvedValue([{ identifier: 'tag-1', label: '朝活' }]),
+      searchPage: vi.fn().mockResolvedValue({ items: [routinePostResult, routineExecutionResult, noPostRoutine], total: 3 }),
+    });
+
+    await user.click(await screen.findByRole('button', { name: '朝活' }));
+
+    expect(await screen.findByRole('button', { name: 'いいねする' })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: '親の朝活ルーティン' })).toSatisfy((links: HTMLElement[]) => links.every((link) => link.getAttribute('href') === '/routines/parent-routine-1'));
+    expect(document.querySelectorAll('.routine-card__origin-connector')).not.toHaveLength(0);
+    expect(screen.getByRole('button', { name: '投稿のメニュー' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '朝のストレッチ' })).toBeInTheDocument();
+    expect(screen.getByText('応援')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '投稿なしルーティン' }).closest('article')).toHaveClass('routine-card');
+    expect(screen.getAllByRole('button', { name: 'いいねする' })).toHaveLength(1);
+    const results = screen.getByRole('heading', { name: '投稿なしルーティン' }).closest('.search-page__results');
+    expect(results).toHaveClass('routine-feed-card-scope');
+    expect(screen.getByRole('button', { name: '朝のストレッチ' }).parentElement).toHaveClass('routine-feed-execution-post');
+  });
+
+  it('匿名検索でも投稿ありroutineにはフィードと同じいいね・投稿通報導線を使う', async () => {
+    const likeService: RoutineLikeService = { create: vi.fn().mockResolvedValue(undefined), remove: vi.fn().mockResolvedValue(undefined) };
+    const user = setupUser();
+    render(<MemoryRouter><SearchPage isAuthenticated={false} likeService={likeService} service={{ listAllTags: vi.fn().mockResolvedValue([]), listPopularTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockResolvedValue([{ identifier: 'tag-1', label: '朝活' }]), searchPage: vi.fn().mockResolvedValue({ items: [routinePostResult], total: 1 }) }} /></MemoryRouter>);
+
+    await user.click(await screen.findByRole('button', { name: '朝活' }));
+    await user.click(await screen.findByRole('button', { name: 'いいねする' }));
+    expect(likeService.create).toHaveBeenCalledWith('post-routine-1');
+    await user.click(screen.getByRole('button', { name: '投稿のメニュー' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'この投稿を通報' }));
+    expect(await screen.findByRole('heading', { name: 'この投稿を通報' })).toBeInTheDocument();
+  });
+
+  it('アカウントタブと空状態を日本語で表示する', async () => {
+    const user = setupUser();
+    renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockResolvedValue([{ identifier: 'tag-1', label: '朝活' }]), searchPage: vi.fn().mockResolvedValue({ items: [], total: 0 }) });
+
+    await user.click(await screen.findByRole('button', { name: '朝活' }));
+    await user.click(screen.getByRole('tab', { name: 'アカウント' }));
+
+    expect(await screen.findByText('該当するアカウントはありません')).toBeInTheDocument();
+  });
+
+  it('認証済みの本人投稿には通報メニューを表示しない', async () => {
+    const profile = deferred<never>();
+    vi.spyOn(accountService, 'getProfile').mockReturnValue(profile.promise);
+    const user = setupUser();
+    render(<MemoryRouter><SearchPage isAuthenticated service={{ listAllTags: vi.fn().mockResolvedValue([]), listPopularTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockResolvedValue([{ identifier: 'tag-1', label: '朝活' }]), searchPage: vi.fn().mockResolvedValue({ items: [routinePostResult], total: 1 }) }} /></MemoryRouter>);
+
+    await user.click(await screen.findByRole('button', { name: '朝活' }));
+    await waitFor(() => expect(accountService.getProfile).toHaveBeenCalled());
+    profile.resolve({ accountIdentifier: 'account-2' } as never);
+    await profile.promise;
+    await waitFor(() => expect(screen.queryByRole('button', { name: '投稿のメニュー' })).not.toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: '投稿のメニュー' })).not.toBeInTheDocument();
+  });
+
+  it('認証済みの他人投稿には通報メニューを表示する', async () => {
+    const profile = deferred<never>();
+    vi.spyOn(accountService, 'getProfile').mockReturnValue(profile.promise);
+    const user = setupUser();
+    render(<MemoryRouter><SearchPage isAuthenticated service={{ listAllTags: vi.fn().mockResolvedValue([]), listPopularTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockResolvedValue([{ identifier: 'tag-1', label: '朝活' }]), searchPage: vi.fn().mockResolvedValue({ items: [routinePostResult], total: 1 }) }} /></MemoryRouter>);
+
+    await user.click(await screen.findByRole('button', { name: '朝活' }));
+    profile.resolve({ accountIdentifier: 'another-account' } as never);
+    await profile.promise;
+    expect(await screen.findByRole('button', { name: '投稿のメニュー' })).toBeInTheDocument();
+  });
+
+  it('プロフィール取得に失敗した認証済み検索では通報メニューを安全側で非表示にする', async () => {
+    const profile = deferred<never>();
+    vi.spyOn(accountService, 'getProfile').mockReturnValue(profile.promise);
+    const user = setupUser();
+    render(<MemoryRouter><SearchPage isAuthenticated service={{ listAllTags: vi.fn().mockResolvedValue([]), listPopularTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockResolvedValue([{ identifier: 'tag-1', label: '朝活' }]), searchPage: vi.fn().mockResolvedValue({ items: [routinePostResult], total: 1 }) }} /></MemoryRouter>);
+
+    await user.click(await screen.findByRole('button', { name: '朝活' }));
+    await waitFor(() => expect(accountService.getProfile).toHaveBeenCalled());
+    profile.reject(new Error('network'));
+    await expect(profile.promise).rejects.toThrow('network');
+    await waitFor(() => expect(screen.queryByRole('button', { name: '投稿のメニュー' })).not.toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: '投稿のメニュー' })).not.toBeInTheDocument();
+  });
+
+  it('いいね失敗時は検索カードを元の状態に戻してエラーを表示する', async () => {
+    const likeService: RoutineLikeService = { create: vi.fn().mockRejectedValue(new Error('network')), remove: vi.fn().mockResolvedValue(undefined) };
+    const user = setupUser();
+    render(<MemoryRouter><SearchPage isAuthenticated={false} likeService={likeService} service={{ listAllTags: vi.fn().mockResolvedValue([]), listPopularTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockResolvedValue([{ identifier: 'tag-1', label: '朝活' }]), searchPage: vi.fn().mockResolvedValue({ items: [routinePostResult], total: 1 }) }} /></MemoryRouter>);
+
+    await user.click(await screen.findByRole('button', { name: '朝活' }));
+    await user.click(await screen.findByRole('button', { name: 'いいねする' }));
+    expect(likeService.create).toHaveBeenCalledWith('post-routine-1');
+    expect(await screen.findByText('いいねできませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'いいねする' })).toHaveTextContent('3');
+  });
+
+  it('検索の複数投稿いいねで先に完了した投稿は、後の投稿を再送可能にしない', async () => {
+    const resolveCreates = new Map<string, () => void>();
+    const likeService: RoutineLikeService = {
+      create: vi.fn((postIdentifier: string) => new Promise<void>((resolve) => { resolveCreates.set(postIdentifier, resolve); })),
+      remove: vi.fn().mockResolvedValue(undefined),
+    };
+    const user = setupUser();
+    render(<MemoryRouter><SearchPage isAuthenticated={false} likeService={likeService} service={{ listAllTags: vi.fn().mockResolvedValue([]), listPopularTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockResolvedValue([{ identifier: 'tag-1', label: '朝活' }]), searchPage: vi.fn().mockResolvedValue({ items: [routinePostResult, routinePostResult2], total: 2 }) }} /></MemoryRouter>);
+
+    await user.click(await screen.findByRole('button', { name: '朝活' }));
+    const likeButtons = await screen.findAllByRole('button', { name: 'いいねする' });
+    await user.click(likeButtons[0]);
+    await user.click(likeButtons[1]);
+    expect(likeService.create).toHaveBeenCalledTimes(2);
+    expect(screen.getAllByRole('button', { name: 'いいねを取り消す' })).toHaveLength(2);
+
+    resolveCreates.get('post-routine-1')?.();
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'いいねを取り消す' })[0]).toBeEnabled());
+    expect(screen.getAllByRole('button', { name: 'いいねを取り消す' })[1]).toBeDisabled();
+    await user.click(screen.getAllByRole('button', { name: 'いいねを取り消す' })[1]);
+    expect(likeService.create).toHaveBeenCalledTimes(2);
+
+    resolveCreates.get('post-routine-2')?.();
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'いいねを取り消す' })[1]).toBeEnabled());
+  });
+
+  it('いいねAPIが401なら認証状態を解除してログインへ遷移する', async () => {
+    markAuthenticated();
+    const likeService: RoutineLikeService = { create: vi.fn().mockRejectedValue(new RoutineLikeUnauthorizedError()), remove: vi.fn().mockResolvedValue(undefined) };
+    const user = setupUser();
+    render(<MemoryRouter><SearchPage isAuthenticated likeService={likeService} service={{ listAllTags: vi.fn().mockResolvedValue([]), listPopularTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockResolvedValue([{ identifier: 'tag-1', label: '朝活' }]), searchPage: vi.fn().mockResolvedValue({ items: [routinePostResult], total: 1 }) }} /><LocationProbe /></MemoryRouter>);
+
+    await user.click(await screen.findByRole('button', { name: '朝活' }));
+    await user.click(await screen.findByRole('button', { name: 'いいねする' }));
+    await waitFor(() => expect(screen.getByText('/login')).toBeInTheDocument());
+    expect(isAuthenticated()).toBe(false);
+  });
+
   it('人気タグをAPI順で0件を含めて表示し、クリック検索後に解除すると復帰する', async () => {
     const searchPage = vi.fn().mockResolvedValue({ items: [routineExecutionResult], total: 1 });
     const user = setupUser();
@@ -45,7 +201,7 @@ describe('SearchPage', () => {
 
     expect(await screen.findByRole('heading', { name: '人気のタグ' })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /#(朝活|読書|日記)/ }).map((button) => button.getAttribute('aria-label'))).toEqual(['#朝活 ルーティン 12件', '#読書 ルーティン 4件', '#日記 ルーティン 0件']);
-    await user.click(screen.getByRole('tab', { name: 'Account' }));
+    await user.click(screen.getByRole('tab', { name: 'アカウント' }));
     expect(screen.getByRole('heading', { name: '人気のタグ' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '#朝活 ルーティン 12件' }));
     expect(searchPage).toHaveBeenCalledWith('accounts', '', 1, ['first']);
@@ -89,7 +245,7 @@ describe('SearchPage', () => {
     expect(screen.getByRole('textbox', { name: 'ルーティン名' })).toHaveAttribute('placeholder', 'ルーティン名を入力');
     await user.click(await screen.findByRole('button', { name: '朝活' }));
     await user.type(screen.getByRole('textbox', { name: 'ルーティン名' }), '朝');
-    await user.click(screen.getByRole('tab', { name: 'Account' }));
+    await user.click(screen.getByRole('tab', { name: 'アカウント' }));
     expect(screen.getByRole('textbox', { name: 'アカウント名' })).toHaveValue('朝');
     expect(screen.getByRole('textbox', { name: 'アカウント名' })).toHaveAttribute('placeholder', 'アカウント名を入力');
     expect(screen.getByRole('button', { name: '朝活' })).toHaveAttribute('aria-pressed', 'true');
@@ -105,6 +261,19 @@ describe('SearchPage', () => {
     expect(screen.getByRole('button', { name: '一覧を見る↓' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
     expect(screen.getByRole('button', { name: '閉じる↑' })).toBeInTheDocument();
+  });
+
+  it('pickupタグは横スクロール用の1行表示で、一覧の表示中だけ展開レイアウトへ切り替える', async () => {
+    const user = setupUser();
+    renderPage({ listAllTags: vi.fn().mockResolvedValue([{ identifier: 'all', label: '読書' }]), listTags: vi.fn().mockResolvedValue([{ identifier: 'pickup', label: '朝活' }]), searchPage: vi.fn() });
+
+    const tagList = (await screen.findByRole('button', { name: '朝活' })).parentElement;
+    expect(tagList).toHaveClass('search-page__tags');
+    expect(tagList).not.toHaveClass('search-page__tags--expanded');
+    await user.click(screen.getByRole('button', { name: '一覧を見る↓' }));
+    expect(tagList).toHaveClass('search-page__tags--expanded');
+    await user.click(screen.getByRole('button', { name: '閉じる↑' }));
+    expect(tagList).not.toHaveClass('search-page__tags--expanded');
   });
 
   it('タグ候補の読込中は見出し、読込テキスト、spinnerを表示せずタグ領域をbusyにする', () => {
@@ -268,7 +437,7 @@ describe('SearchPage', () => {
     const user = setupUser();
     renderPage({ listAllTags: vi.fn().mockResolvedValue([]), listTags: vi.fn().mockResolvedValue([]), searchPage });
     await user.type(screen.getByRole('textbox', { name: 'ルーティン名' }), 'アリ');
-    await user.click(screen.getByRole('tab', { name: 'Account' }));
+    await user.click(screen.getByRole('tab', { name: 'アカウント' }));
     expect(searchPage).toHaveBeenCalledWith('accounts', 'アリ', 1);
     expect(await screen.findByRole('link', { name: 'アリス' })).toBeInTheDocument();
   });
@@ -309,7 +478,7 @@ describe('SearchPage', () => {
     expect(searchPage).toHaveBeenCalledTimes(1);
   });
 
-  it('投稿種別と公開日時を表示し、種別ごとの詳細へリンクする', async () => {
+  it('実行投稿はフィードと同じ実行カード、ルーティン投稿はRoutineCardで表示する', async () => {
     const searchPage = vi.fn().mockResolvedValue({ items: [routineExecutionResult, routinePostResult], total: 2 });
     const user = setupUser();
     renderPage({ searchPage } as unknown as SearchService);
@@ -317,11 +486,8 @@ describe('SearchPage', () => {
     await typeAndDebounce(user, '朝');
 
     expect(await screen.findByRole('heading', { name: '朝のストレッチ' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '朝のストレッチ' })).toHaveAttribute('href', '/routines/routine-1/executions/execution-1');
+    expect(screen.getByRole('button', { name: '朝のストレッチ' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '夜の読書' })).toHaveAttribute('href', '/routines/routine-1');
-    expect(screen.getByText('実行投稿')).toBeInTheDocument();
-    expect(screen.getByText('ルーティン投稿')).toBeInTheDocument();
-    expect(screen.getByText('2日前')).toBeInTheDocument();
     expect(screen.getByText('昨日')).toBeInTheDocument();
   });
 
@@ -335,7 +501,7 @@ describe('SearchPage', () => {
     renderPage({ searchPage } as unknown as SearchService);
 
     await typeAndDebounce(user, 'アリ');
-    await user.click(screen.getByRole('tab', { name: 'Account' }));
+    await user.click(screen.getByRole('tab', { name: 'アカウント' }));
     expect(searchPage).toHaveBeenLastCalledWith('accounts', 'アリ', 1);
     resolveRoutine?.({ items: [routineExecutionResult], total: 1 });
     expect(screen.queryByRole('heading', { name: '朝のストレッチ' })).not.toBeInTheDocument();

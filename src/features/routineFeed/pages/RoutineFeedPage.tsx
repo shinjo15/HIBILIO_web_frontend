@@ -38,8 +38,8 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
   const [activeTab, setActiveTab] = useState<FeedTab>(authenticated ? 'recommended' : 'popular');
   const [followingAccounts, setFollowingAccounts] = useState<FollowingAccount[]>([]);
   const [hasError, setHasError] = useState(false);
-  const [likingPostIdentifier, setLikingPostIdentifier] = useState<string | null>(null);
-  const [likeAnimation, setLikeAnimation] = useState<{ postIdentifier: string; type: 'like' | 'unlike' } | null>(null);
+  const [likingPostIdentifiers, setLikingPostIdentifiers] = useState<ReadonlySet<string>>(() => new Set());
+  const [likeAnimations, setLikeAnimations] = useState<ReadonlyMap<string, 'like' | 'unlike'>>(() => new Map());
   const [likeError, setLikeError] = useState(false);
   const [reportingRoutine, setReportingRoutine] = useState<Routine | null>(null);
   const [currentAccountIdentifier, setCurrentAccountIdentifier] = useState<string | null | undefined>(authenticated ? undefined : null);
@@ -106,9 +106,9 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
     const routine = routines.find((item) => item.id === postIdentifier);
     if (routine === undefined) return;
     const type = routine.liked ? 'unlike' : 'like';
-    setLikingPostIdentifier(postIdentifier);
+    setLikingPostIdentifiers((current) => new Set(current).add(postIdentifier));
     setLikeError(false);
-    setLikeAnimation({ postIdentifier, type });
+    setLikeAnimations((current) => new Map(current).set(postIdentifier, type));
     const updateRoutine = (item: Routine) => item.id === postIdentifier ? { ...item, liked: !routine.liked, likes: item.likes + (routine.liked ? -1 : 1) } : item;
     setRoutines((current) => current.map(updateRoutine));
     try {
@@ -126,8 +126,16 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
         setLikeError(true);
       }
     } finally {
-      setLikingPostIdentifier(null);
-      setLikeAnimation(null);
+      setLikingPostIdentifiers((current) => {
+        const next = new Set(current);
+        next.delete(postIdentifier);
+        return next;
+      });
+      setLikeAnimations((current) => {
+        const next = new Map(current);
+        next.delete(postIdentifier);
+        return next;
+      });
     }
   }
 
@@ -187,7 +195,7 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
             {likeError && <Alert severity="error">{messages.routineFeed.likeError}</Alert>}
             {routines.map((routine, index) => <div className={isExecutionPost(routine) ? 'routine-feed-execution-post' : undefined} key={routine.id}>{isExecutionPost(routine)
               ? <ExecutionHistoryCard author={{ iconImageUrl: routine.iconImageUrl ?? null, name: routine.authorName }} execution={{ executedActionCount: routine.executedActionCount, id: routine.routineExecutionId, memo: routine.executionMemo, postedAt: routine.createdAt, routineId: routine.routineId, routineTitle: routine.title, supportCount: routine.supportCount }} onSelect={(execution) => navigate(`/routines/${execution.routineId}/executions/${execution.id}`)} />
-              : <RoutineCard isLiking={likingPostIdentifier === routine.id} likeAnimation={likeAnimation?.postIdentifier === routine.id ? likeAnimation.type : null} onLike={toggleLike} onReport={!authenticated || currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId) ? setReportingRoutine : undefined} routine={routine} />}{shouldInsertFeedAdvertisement(index, true) && <FeedAdvertisement />}</div>)}
+              : <RoutineCard isLiking={likingPostIdentifiers.has(routine.id)} likeAnimation={likeAnimations.get(routine.id) ?? null} onLike={toggleLike} onReport={!authenticated || currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId) ? setReportingRoutine : undefined} routine={routine} />}{shouldInsertFeedAdvertisement(index, true) && <FeedAdvertisement />}</div>)}
             <Box aria-label="さらに読み込む" ref={routineList.sentinelRef} />
             <Box className="routine-feed-list__spacer" />
           </Stack>

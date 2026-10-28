@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import messages from '../../../shared/message/message.json';
 import {
   createEmptyAction,
@@ -26,6 +26,7 @@ export function useRoutineCreate(service: RoutineCreateService = routineCreateSe
   const [form, setForm] = useState<RoutineCreateViewModel>(() => initialForm ?? createInitialRoutineCreateViewModel());
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [status, setStatus] = useState<RoutineCreateStatus>('idle');
+  const isSubmittingRef = useRef(false);
 
   function updateField(field: keyof Omit<RoutineCreateViewModel, 'actions'>, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -64,6 +65,8 @@ export function useRoutineCreate(service: RoutineCreateService = routineCreateSe
   }
 
   async function submit(): Promise<void> {
+    if (isSubmittingRef.current) return;
+
     const validation = validateRoutineCreateForm(form);
 
     if (!validation.success) {
@@ -72,6 +75,7 @@ export function useRoutineCreate(service: RoutineCreateService = routineCreateSe
       return;
     }
 
+    isSubmittingRef.current = true;
     setErrorMessage(null);
     setStatus('submitting');
 
@@ -101,6 +105,7 @@ export function useRoutineCreate(service: RoutineCreateService = routineCreateSe
 
       setStatus('success');
     } catch (error) {
+      isSubmittingRef.current = false;
       setErrorMessage(error instanceof RoutineCreateApiError ? error.message : messages.routineCreate.error);
       setStatus('error');
     }

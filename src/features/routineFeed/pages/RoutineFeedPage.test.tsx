@@ -141,6 +141,35 @@ describe('RoutineFeedPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toBeEnabled());
   });
 
+  it('複数投稿のいいねが同時進行中でも、先に完了した投稿は他方を再送可能にしない', async () => {
+    const resolveCreates = new Map<string, () => void>();
+    const user = userEvent.setup();
+    const likeService: RoutineLikeService = {
+      create: vi.fn((postIdentifier: string) => new Promise<void>((resolve) => { resolveCreates.set(postIdentifier, resolve); })),
+      remove: vi.fn().mockResolvedValue(undefined),
+    };
+    renderPage({ list: async () => [routine, routinePage2] }, likeService);
+    await screen.findByRole('heading', { name: '朝の集中ルーティン' });
+
+    const likeButtons = screen.getAllByRole('button', { name: 'いいねする' });
+    await user.click(likeButtons[0]);
+    await user.click(likeButtons[1]);
+    expect(likeService.create).toHaveBeenCalledTimes(2);
+    const pendingButtons = screen.getAllByRole('button', { name: 'いいねを取り消す' });
+    expect(pendingButtons).toHaveLength(2);
+    expect(pendingButtons[0]).toBeDisabled();
+    expect(pendingButtons[1]).toBeDisabled();
+
+    resolveCreates.get('post-1')?.();
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'いいねを取り消す' })[0]).toBeEnabled());
+    expect(screen.getAllByRole('button', { name: 'いいねを取り消す' })[1]).toBeDisabled();
+    await user.click(screen.getAllByRole('button', { name: 'いいねを取り消す' })[1]);
+    expect(likeService.create).toHaveBeenCalledTimes(2);
+
+    resolveCreates.get('post-2')?.();
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'いいねを取り消す' })[1]).toBeEnabled());
+  });
+
   it('未認証時は人気タブだけを表示して人気一覧を取得する', async () => {
     const list = vi.fn().mockResolvedValue([routine]);
     render(<MemoryRouter><RoutineFeedPage isAuthenticated={false} service={{ list, listFollowingAccounts: async () => [] }} /></MemoryRouter>);
