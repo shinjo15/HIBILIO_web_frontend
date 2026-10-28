@@ -12,7 +12,7 @@ import type { FollowingAccount, Routine, RoutineFeedTab } from '../domain/routin
 import { routineFeedService, RoutineFeedUnauthorizedError, type RoutineFeedService } from '../services/routineFeedService';
 import { routineLikeService, RoutineLikeUnauthorizedError, type RoutineLikeService } from '../services/routineLikeService';
 import { clearAuthenticated, isAuthenticated as hasAuthenticatedSession } from '../../auth/services/authSession';
-import { AccountUnauthorizedError, accountService } from '../../account/services/accountService';
+import { accountService } from '../../account/services/accountService';
 import { AccountRelationList } from '../../../shared/components/AccountRelationList';
 import { ExecutionHistoryCard } from '../../../shared/components/ExecutionHistoryCard';
 import { AppBrandHeader } from '../../../shared/components/AppBrandHeader';
@@ -48,9 +48,9 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
     if (!authenticated) return;
     let cancelled = false;
     accountService.getProfile().then((profile) => {
-      if (!cancelled) setCurrentAccountIdentifier(profile?.accountIdentifier ?? null);
-    }).catch((error: unknown) => {
-      if (!cancelled && error instanceof AccountUnauthorizedError) setCurrentAccountIdentifier(null);
+      if (!cancelled) setCurrentAccountIdentifier(profile?.accountIdentifier);
+    }).catch(() => {
+      if (!cancelled) setCurrentAccountIdentifier(undefined);
     });
     return () => { cancelled = true; };
   }, [authenticated]);
@@ -194,8 +194,8 @@ export function RoutineFeedPage({ isAuthenticated, likeService = routineLikeServ
           <Stack className="routine-feed-list">
             {likeError && <Alert severity="error">{messages.routineFeed.likeError}</Alert>}
             {routines.map((routine, index) => <div className={isExecutionPost(routine) ? 'routine-feed-execution-post' : undefined} key={routine.id}>{isExecutionPost(routine)
-              ? <ExecutionHistoryCard author={{ iconImageUrl: routine.iconImageUrl ?? null, name: routine.authorName }} execution={{ executedActionCount: routine.executedActionCount, id: routine.routineExecutionId, memo: routine.executionMemo, postedAt: routine.createdAt, routineId: routine.routineId, routineTitle: routine.title, supportCount: routine.supportCount }} onSelect={(execution) => navigate(`/routines/${execution.routineId}/executions/${execution.id}`)} />
-              : <RoutineCard isLiking={likingPostIdentifiers.has(routine.id)} likeAnimation={likeAnimations.get(routine.id) ?? null} onLike={toggleLike} onReport={!authenticated || currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId) ? setReportingRoutine : undefined} routine={routine} />}{shouldInsertFeedAdvertisement(index, true) && <FeedAdvertisement />}</div>)}
+              ? <ExecutionHistoryCard author={{ iconImageUrl: routine.iconImageUrl ?? null, name: routine.authorName }} execution={{ executedActionCount: routine.executedActionCount, id: routine.routineExecutionId, memo: routine.executionMemo, postedAt: routine.createdAt, routineId: routine.routineId, routineTitle: routine.title, supportCount: routine.supportCount }} onReport={!authenticated || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId) ? () => setReportingRoutine(routine) : undefined} onSelect={(execution) => navigate(`/routines/${execution.routineId}/executions/${execution.id}`)} />
+              : <RoutineCard isLiking={likingPostIdentifiers.has(routine.id)} likeAnimation={likeAnimations.get(routine.id) ?? null} onLike={toggleLike} onReport={!authenticated || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId) ? setReportingRoutine : undefined} routine={routine} />}{shouldInsertFeedAdvertisement(index, true) && <FeedAdvertisement />}</div>)}
             <Box aria-label="さらに読み込む" ref={routineList.sentinelRef} />
             <Box className="routine-feed-list__spacer" />
           </Stack>

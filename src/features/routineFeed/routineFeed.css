@@ -134,7 +134,7 @@
 .routine-feed-page .MuiPaper-root.routine-card,
 .routine-feed-card-scope .MuiPaper-root.routine-card {
   background-color: var(--hibilio-color-card);
-  border: 1px solid var(--hibilio-color-border);
+  border: 2px solid var(--hibilio-color-border);
   border-radius: 12px;
   box-shadow: none;
   color: var(--hibilio-color-on-background);
@@ -155,6 +155,10 @@
 
 .routine-card__content {
   padding: 16px;
+}
+
+.routine-card__author {
+  min-width: 0;
 }
 
 .routine-feed-page .routine-card__header,
@@ -221,8 +225,24 @@
   line-height: 16px;
 }
 
+.routine-card__handle {
+  display: flex;
+  min-width: 0;
+  white-space: nowrap;
+}
+
 .routine-card__author-link {
   color: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.routine-card__activity-label {
+  color: var(--hibilio-color-primary);
+  flex: 0 0 auto;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .routine-feed-page .routine-card__metadata,
@@ -272,9 +292,9 @@
 
 .routine-card__title {
   color: var(--hibilio-color-on-background);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
-  line-height: 1.375;
+  line-height: 1.4;
   margin-bottom: 8px;
 }
 

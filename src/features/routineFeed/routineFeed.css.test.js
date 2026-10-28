@@ -6,6 +6,21 @@ const styles = readFileSync(resolve(globalThis.process.cwd(), 'src/features/rout
 const typography = readFileSync(resolve(globalThis.process.cwd(), 'src/features/routineFeed/routineFeedTypography.css'), 'utf8');
 
 describe('routine feed card customization origin styles', () => {
+  it('投稿種別の文言に既存のアクセント色を適用する', () => {
+    expect(styles).toMatch(/\.routine-card__activity-label\s*\{[^}]*color:\s*var\(--hibilio-color-primary\)/);
+  });
+
+  it('RoutineCardだけを既存色の2px枠線にする', () => {
+    expect(styles).toMatch(/\.MuiPaper-root\.routine-card \{[\s\S]*border: 2px solid var\(--hibilio-color-border\)/);
+  });
+
+  it('カード利用画面のscopeに依存せず、タイトルと投稿者行の横並び・省略を定義する', () => {
+    expect(styles).toMatch(/\.routine-card__title \{[\s\S]*font-size: 18px[\s\S]*line-height: 1\.4/);
+    expect(styles).toMatch(/\.routine-card__author \{[\s\S]*min-width: 0/);
+    expect(styles).toMatch(/\.routine-card__handle \{[\s\S]*display: flex[\s\S]*min-width: 0/);
+    expect(styles).toMatch(/\.routine-card__author-link \{[\s\S]*overflow: hidden[\s\S]*text-overflow: ellipsis/);
+  });
+
   it('共通スコープで親から子へ向かうL字装飾と長文折返しを定義する', () => {
     expect(styles).toContain('.routine-feed-card-scope .routine-card__origin-connector');
     expect(styles).toMatch(/\.routine-card__title-row[\s\S]*align-items: center/);

@@ -54,7 +54,7 @@ export function RoutineCard<T extends RoutineCardDisplay>({ isLiking = false, li
           <Stack className="routine-card__header">
             <Stack className="routine-card__author">
               <AccountAvatar className={`routine-card__avatar ${avatarClass}`} iconImageUrl={routine.iconImageUrl ?? null} initial={avatarInitial} />
-              <Typography className="routine-card__handle"><Link className="routine-card__author-link" to={`/accounts/${routine.accountId}`}>{routine.authorName}</Link></Typography>
+              <Typography className="routine-card__handle"><Link className="routine-card__author-link" to={`/accounts/${routine.accountId}`}>{routine.authorName}</Link><span className="routine-card__activity-label"> がルーティンを投稿</span></Typography>
             </Stack>
             <Stack className="routine-card__metadata">
               <Stack className="routine-card__metadata-top">
@@ -78,7 +78,6 @@ export function RoutineCard<T extends RoutineCardDisplay>({ isLiking = false, li
               </Typography>
             </Box>
           </Box>
-
           <Stack className="routine-card__tags">
             {routine.tags.slice(0, 3).map((tag) => <Box component="span" className="routine-card__tag" key={tag}>{tag}</Box>)}
           </Stack>

@@ -8,6 +8,7 @@ import { RoutineFeedUnauthorizedError } from '../services/routineFeedService';
 import type { Routine } from '../domain/routine';
 import type { RoutineFeedService } from '../services/routineFeedService';
 import type { RoutineLikeService } from '../services/routineLikeService';
+import { accountService } from '../../account/services/accountService';
 
 const routine: Routine = {
   accountId: '10000000-0000-4000-8000-000000000001',
@@ -30,6 +31,7 @@ const executionRoutine: Routine = { ...routine, executedActionCount: 1, executio
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   window.sessionStorage.clear();
 });
 
@@ -231,10 +233,11 @@ describe('RoutineFeedPage', () => {
     await user.click(screen.getByRole('tab', { name: 'フォロー中' }));
     const executionCard = await screen.findByRole('button', { name: '朝の集中ルーティン' });
     expect(executionCard.closest('.routine-feed-execution-post')).toBeInTheDocument();
-    expect(executionCard).toHaveClass('account-page__card');
-    expect(executionCard.querySelector('.routine-card__author')).toHaveTextContent('田中 陽介');
-    expect(executionCard.querySelector('.routine-card__avatar')).toContainElement(executionCard.querySelector('.account-avatar__image'));
-    expect(executionCard.querySelector('.account-avatar__image')).toHaveAttribute('src', 'https://example.com/icons/tanaka.webp');
+    const executionCardRoot = executionCard.closest('.account-page__card');
+    expect(executionCardRoot).not.toBeNull();
+    expect(executionCardRoot?.querySelector('.routine-card__author')).toHaveTextContent('田中 陽介');
+    expect(executionCardRoot?.querySelector('.routine-card__avatar')).toContainElement(executionCardRoot?.querySelector('.account-avatar__image') ?? null);
+    expect(executionCardRoot?.querySelector('.account-avatar__image')).toHaveAttribute('src', 'https://example.com/icons/tanaka.webp');
     expect(screen.getByText('集中できました')).toBeInTheDocument();
     expect(screen.getByText('達成項目数')).toHaveTextContent('1');
     expect(screen.getByText('応援')).toHaveTextContent('3');
@@ -242,5 +245,45 @@ describe('RoutineFeedPage', () => {
     await user.click(executionCard);
 
     expect(screen.getByText('/routines/routine-1/executions/20000000-0000-4000-8000-000000000001')).toBeInTheDocument();
+  });
+
+  it('匿名ユーザーの実行投稿は三点メニューからログイン誘導の通報フォームを開く', async () => {
+    const user = userEvent.setup();
+    render(<MemoryRouter><RoutineFeedPage isAuthenticated={false} service={{ list: async () => [executionRoutine], listFollowingAccounts: async () => [] }} /></MemoryRouter>);
+
+    await screen.findByRole('button', { name: '投稿のメニュー' });
+    await user.click(screen.getByRole('button', { name: '投稿のメニュー' }));
+    await user.click(screen.getByRole('menuitem', { name: 'この投稿を通報' }));
+
+    expect(await screen.findByRole('heading', { name: 'この投稿を通報' })).toBeInTheDocument();
+  });
+
+  it('プロフィール取得中またはPromise reject後の認証済み実行投稿では通報メニューを表示しない', async () => {
+    let rejectProfile: (reason: Error) => void;
+    const profile = new Promise<never>((_, reject) => { rejectProfile = reject; });
+    vi.spyOn(accountService, 'getProfile').mockReturnValue(profile);
+    renderPage({ list: async () => [executionRoutine] });
+
+    await screen.findByRole('button', { name: '朝の集中ルーティン' });
+    expect(screen.queryByRole('button', { name: '投稿のメニュー' })).not.toBeInTheDocument();
+
+    rejectProfile!(new Error('network'));
+    await expect(profile).rejects.toThrow('network');
+    await waitFor(() => expect(screen.queryByRole('button', { name: '投稿のメニュー' })).not.toBeInTheDocument());
+  });
+
+  it('認証済み他人の実行投稿には通報メニューを表示する', async () => {
+    vi.spyOn(accountService, 'getProfile').mockResolvedValue({ accountIdentifier: 'other-account' } as never);
+    renderPage({ list: async () => [executionRoutine] });
+
+    expect(await screen.findByRole('button', { name: '投稿のメニュー' })).toBeInTheDocument();
+  });
+
+  it('認証済み本人の実行投稿には通報メニューを表示しない', async () => {
+    vi.spyOn(accountService, 'getProfile').mockResolvedValue({ accountIdentifier: executionRoutine.accountId } as never);
+    renderPage({ list: async () => [executionRoutine] });
+
+    await screen.findByRole('button', { name: '朝の集中ルーティン' });
+    await waitFor(() => expect(screen.queryByRole('button', { name: '投稿のメニュー' })).not.toBeInTheDocument());
   });
 });

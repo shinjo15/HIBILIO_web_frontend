@@ -25,6 +25,16 @@ const routine: Routine = {
 };
 
 describe('RoutineCard', () => {
+
+  it('投稿者名に投稿種別を添え、投稿日時を同じヘッダーの右上に表示する', () => {
+    render(<MemoryRouter><RoutineCard routine={routine} /></MemoryRouter>);
+
+    const header = document.querySelector('.routine-card__header');
+    expect(header?.querySelector('.routine-card__handle')).toHaveTextContent('田中 陽介 がルーティンを投稿');
+    expect(header?.querySelector('.routine-card__author-link + .routine-card__activity-label')).toHaveTextContent(/がルーティンを投稿/);
+    expect(header?.querySelector('.routine-card__metadata-text')).not.toBeNull();
+  });
+
   it('閲覧可能なカスタマイズ元は親ルーティン・作者・アイコンを表示し、親詳細へリンクする', () => {
     const customizedRoutine = {
       ...routine,
@@ -45,6 +55,7 @@ describe('RoutineCard', () => {
     const title = screen.getByRole('heading', { name: '朝の集中ルーティン' });
     const titleRow = title.closest('.routine-card__title-row');
     expect(origin?.compareDocumentPosition(title)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(origin?.nextElementSibling).toBe(titleRow);
     expect(titleRow?.querySelector('.routine-card__origin-connector')).toHaveAttribute('aria-hidden', 'true');
     expect(screen.queryByText('カスタマイズ元')).not.toBeInTheDocument();
   });
@@ -72,6 +83,7 @@ describe('RoutineCard', () => {
     expect(document.querySelector('.routine-card__customization-origin')).toBeNull();
     expect(document.querySelector('.routine-card__origin-connector')).toBeNull();
   });
+
 
   it('投稿なしroutineは同じカードで実データを表示し、投稿日時・いいね・通報を表示しない', () => {
     const routineWithoutPost = { ...routine, createdAt: null, id: null, liked: null, likes: null };

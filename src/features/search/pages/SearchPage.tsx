@@ -7,7 +7,7 @@ import { AppBrandHeader } from '../../../shared/components/AppBrandHeader';
 import { ExecutionHistoryCard } from '../../../shared/components/ExecutionHistoryCard';
 import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
 import messages from '../../../shared/message/message.json';
-import { AccountUnauthorizedError, accountService } from '../../account/services/accountService';
+import { accountService } from '../../account/services/accountService';
 import { clearAuthenticated, isAuthenticated as hasAuthenticatedSession } from '../../auth/services/authSession';
 import { ReportDialog } from '../../report/components/ReportDialog';
 import { RoutineCard, type RoutineCardDisplay } from '../../routineFeed/components/RoutineCard';
@@ -202,7 +202,7 @@ function RoutineSearchResults({ authenticated, likeService, query, service, tagI
   const [likingPostIdentifiers, setLikingPostIdentifiers] = useState<ReadonlySet<string>>(() => new Set());
   const [likeAnimations, setLikeAnimations] = useState<ReadonlyMap<string, 'like' | 'unlike'>>(() => new Map());
   const [likeError, setLikeError] = useState(false);
-  const [reportingRoutine, setReportingRoutine] = useState<Routine | null>(null);
+  const [reportingRoutine, setReportingRoutine] = useState<{ accountId: string; id: string } | null>(null);
   const [currentAccountIdentifier, setCurrentAccountIdentifier] = useState<string | null | undefined>(authenticated ? undefined : null);
   const fetchPage = useCallback(async (page: number) => {
     const response = tagIdentifiers.length > 0 ? await service.searchPage('routines', query, page, tagIdentifiers) : await service.searchPage('routines', query, page);
@@ -215,9 +215,9 @@ function RoutineSearchResults({ authenticated, likeService, query, service, tagI
     if (!authenticated) return;
     let cancelled = false;
     accountService.getProfile().then((profile) => {
-      if (!cancelled) setCurrentAccountIdentifier(profile?.accountIdentifier ?? null);
-    }).catch((error: unknown) => {
-      if (!cancelled && error instanceof AccountUnauthorizedError) setCurrentAccountIdentifier(null);
+      if (!cancelled) setCurrentAccountIdentifier(profile?.accountIdentifier);
+    }).catch(() => {
+      if (!cancelled) setCurrentAccountIdentifier(undefined);
     });
     return () => { cancelled = true; };
   }, [authenticated]);
@@ -262,10 +262,10 @@ function RoutineSearchResults({ authenticated, likeService, query, service, tagI
   return <Stack className="search-page__results routine-feed-card-scope">
     {likeError && <Alert severity="error">{messages.routineFeed.likeError}</Alert>}
     {list.items.map((item) => {
-      if (item.itemType === 'routine_execution') return <div className="routine-feed-execution-post" key={item.postId}><ExecutionHistoryCard author={{ iconImageUrl: item.iconImageUrl, name: item.accountName }} execution={{ executedActionCount: item.executedActionCount, id: item.routineExecutionId, memo: item.executionMemo, postedAt: item.postedAt, routineId: item.routineId, routineTitle: item.routineName, supportCount: item.supportCount }} onSelect={(execution) => navigate(`/routines/${execution.routineId}/executions/${execution.id}`)} /></div>;
+      if (item.itemType === 'routine_execution') return <div className="routine-feed-execution-post" key={item.postId}><ExecutionHistoryCard author={{ iconImageUrl: item.iconImageUrl, name: item.accountName }} execution={{ executedActionCount: item.executedActionCount, id: item.routineExecutionId, memo: item.executionMemo, postedAt: item.postedAt, routineId: item.routineId, routineTitle: item.routineName, supportCount: item.supportCount }} onReport={!authenticated || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== item.accountId) ? () => setReportingRoutine({ accountId: item.accountId, id: item.postId }) : undefined} onSelect={(execution) => navigate(`/routines/${execution.routineId}/executions/${execution.id}`)} /></div>;
       if (!isRoutinePost(item)) return <RoutineCard key={`routine:${item.routineId}:${item.publishedAt}`} routine={toRoutineCard(item)} />;
       const routine = toRoutine(item);
-      return <RoutineCard isLiking={likingPostIdentifiers.has(routine.id)} key={routine.id} likeAnimation={likeAnimations.get(routine.id) ?? null} onLike={toggleLike} onReport={!authenticated || currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId) ? setReportingRoutine : undefined} routine={routine} />;
+      return <RoutineCard isLiking={likingPostIdentifiers.has(routine.id)} key={routine.id} likeAnimation={likeAnimations.get(routine.id) ?? null} onLike={toggleLike} onReport={!authenticated || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId) ? setReportingRoutine : undefined} routine={routine} />;
     })}
     {hasMore && <Button disabled={list.isLoadingMore} onClick={list.loadNextPage} variant="outlined">{messages.search.loadMore}</Button>}
     {list.isLoadingMore && <Typography className="search-page__load-more-loading">{messages.search.loadMoreLoading}</Typography>}
