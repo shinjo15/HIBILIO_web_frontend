@@ -41,16 +41,20 @@ function renderPage(service: RoutineCreateService) {
 
 describe('CustomizedRoutineCreatePage', () => {
   it('親ルーティンを初期値として表示し、親ルーティン識別子を送信する', async () => {
-    const create = vi.fn().mockResolvedValue(undefined);
+    const create = vi.fn().mockRejectedValueOnce(new Error('failed')).mockResolvedValueOnce(undefined);
     renderPage({ create });
 
     expect(await screen.findByRole('heading', { name: 'ルーティンをカスタマイズ' })).toBeInTheDocument();
     expect(screen.getByDisplayValue('朝のルーティン')).toBeInTheDocument();
     expect(screen.getByDisplayValue('元の説明')).toBeInTheDocument();
     expect(screen.getAllByPlaceholderText('行動の内容')).toHaveLength(2);
-    expect(screen.queryByRole('button', { name: '投稿' })).not.toBeInTheDocument();
+    const submitButton = screen.getByRole('button', { name: '投稿' });
+    expect(submitButton).toHaveAttribute('form', 'routine-create-form');
 
-    fireEvent.submit(document.getElementById('routine-create-form')!);
+    fireEvent.click(submitButton);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('ルーティンを投稿できませんでした。時間をおいて再試行してください。');
+    fireEvent.click(submitButton);
 
     await waitFor(() => expect(create).toHaveBeenCalledWith(expect.objectContaining({
       actions: [
@@ -60,5 +64,7 @@ describe('CustomizedRoutineCreatePage', () => {
       parentRoutineIdentifier: '30000000-0000-4000-8000-000000000001',
       routineExecutionMinutes: '30',
     })));
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(await screen.findByText('カスタマイズルーティンを投稿しました。')).toBeInTheDocument();
   });
 });

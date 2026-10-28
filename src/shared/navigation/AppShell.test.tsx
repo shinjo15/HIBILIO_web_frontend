@@ -4,6 +4,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from './AppShell';
 import { markAuthenticated, resetAuthenticationForTesting } from '../../features/auth/services/authSession';
+import { RoutineCreatePage } from '../../features/routineCreate/pages/RoutineCreatePage';
 
 afterEach(() => {
   cleanup();
@@ -128,5 +129,32 @@ describe('AppShell', () => {
     }));
     await user.click(screen.getByRole('button', { name: 'アカウント' }));
     expect(screen.getByRole('heading', { name: 'ログイン画面' })).toBeInTheDocument();
+  });
+
+  it('ルーティン投稿の送信中はモバイル投稿操作を無効化し、連打送信しない', async () => {
+    const user = userEvent.setup();
+    let resolveCreate: (() => void) | undefined;
+    const create = vi.fn().mockImplementation(() => new Promise<void>((resolve) => { resolveCreate = resolve; }));
+    const router = createMemoryRouter([
+      {
+        element: <AppShell />,
+        children: [{ element: <RoutineCreatePage service={{ create }} />, path: 'routines/new' }],
+      },
+    ], { initialEntries: ['/routines/new'] });
+
+    render(<RouterProvider router={router} />);
+    await user.type(screen.getByLabelText(/ルーティン名/), '朝の習慣');
+    await user.type(screen.getByPlaceholderText('行動の内容'), '水を飲む');
+    const mobileSubmit = document.querySelector<HTMLButtonElement>('.hibilio-mobile-nav__create-trigger');
+    expect(mobileSubmit).not.toBeNull();
+    await waitFor(() => expect(mobileSubmit).toBeEnabled());
+
+    await user.click(mobileSubmit!);
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(mobileSubmit).toBeDisabled();
+    expect(create).toHaveBeenCalledTimes(1);
+
+    resolveCreate?.();
+    expect(await screen.findByText('ルーティンを投稿しました。')).toBeInTheDocument();
   });
 });
