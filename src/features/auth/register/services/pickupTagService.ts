@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { apiFetch } from '../../../../shared/api/apiFetch';
 
 const pickupTagsResponseSchema = z.object({
   tags: z.array(z.object({
@@ -13,7 +14,7 @@ export type PickupTag = {
 };
 
 export async function getPickupTags(): Promise<PickupTag[]> {
-  const response = await fetch('/api/tags/pickup');
+  const response = await apiFetch('/api/tags/pickup');
   if (!response.ok) {
     throw new Error('Pickup tags could not be loaded.');
   }

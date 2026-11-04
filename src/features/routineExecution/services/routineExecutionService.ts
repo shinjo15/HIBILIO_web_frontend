@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { apiFetch } from '../../../shared/api/apiFetch';
 import messages from '../../../shared/message/message.json';
 import {
   routineExecutionRequestSchema,
@@ -68,13 +69,13 @@ export function createRoutineExecutionService(adapter: RoutineExecutionAdapter):
 }
 
 async function createRoutineExecution(request: RoutineExecutionRequest): Promise<void> {
-  const csrfResponse = await fetch('/api/csrf-token', { credentials: 'include' });
+  const csrfResponse = await apiFetch('/api/csrf-token', { credentials: 'include' });
   if (!csrfResponse.ok) {
     throw new RoutineExecutionError(messages.routineExecution.error);
   }
 
   const csrfToken = z.object({ csrf_token: z.string().min(1) }).parse(await csrfResponse.json()).csrf_token;
-  const response = await fetch('/api/routine-executions', {
+  const response = await apiFetch('/api/routine-executions', {
     body: JSON.stringify(request),
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },

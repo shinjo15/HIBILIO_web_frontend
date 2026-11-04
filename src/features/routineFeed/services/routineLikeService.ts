@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { apiFetch } from '../../../shared/api/apiFetch';
 
 export class RoutineLikeError extends Error {
   constructor(message: string, readonly status?: number) {
@@ -23,11 +24,11 @@ const csrfTokenSchema = z.object({ csrf_token: z.string().min(1) });
 
 export const routineLikeService: RoutineLikeService = {
   create: async (postIdentifier) => {
-    const csrfResponse = await fetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
+    const csrfResponse = await apiFetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
     if (!csrfResponse.ok) throw new RoutineLikeError('Failed to fetch CSRF token', csrfResponse.status);
 
     const csrfToken = csrfTokenSchema.parse(await csrfResponse.json()).csrf_token;
-    const response = await fetch('/api/likes', {
+    const response = await apiFetch('/api/likes', {
       body: JSON.stringify({ post_identifier: postIdentifier }),
       credentials: 'include',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
@@ -38,11 +39,11 @@ export const routineLikeService: RoutineLikeService = {
     if (!response.ok) throw new RoutineLikeError('Failed to create routine like', response.status);
   },
   remove: async (postIdentifier) => {
-    const csrfResponse = await fetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
+    const csrfResponse = await apiFetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
     if (!csrfResponse.ok) throw new RoutineLikeError('Failed to fetch CSRF token', csrfResponse.status);
 
     const csrfToken = csrfTokenSchema.parse(await csrfResponse.json()).csrf_token;
-    const response = await fetch(`/api/likes/${postIdentifier}`, {
+    const response = await apiFetch(`/api/likes/${postIdentifier}`, {
       credentials: 'include',
       headers: { 'X-CSRF-TOKEN': csrfToken },
       method: 'DELETE',

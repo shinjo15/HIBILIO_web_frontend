@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { apiFetch } from '../../../shared/api/apiFetch';
 
 export class FollowRequestError extends Error {
   constructor(message: string, readonly status?: number) {
@@ -22,12 +23,12 @@ export type FollowRequestService = {
 const csrfTokenSchema = z.object({ csrf_token: z.string().min(1) });
 
 async function sendFollowRequestAction(requestingAccountIdentifier: string, action: 'approve' | 'reject'): Promise<void> {
-  const csrfResponse = await fetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
+  const csrfResponse = await apiFetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
   if (csrfResponse.status === 401) throw new FollowRequestUnauthorizedError();
   if (!csrfResponse.ok) throw new FollowRequestError('Failed to fetch CSRF token', csrfResponse.status);
 
   const csrfToken = csrfTokenSchema.parse(await csrfResponse.json()).csrf_token;
-  const response = await fetch(`/api/follow-requests/${requestingAccountIdentifier}/${action}`, {
+  const response = await apiFetch(`/api/follow-requests/${requestingAccountIdentifier}/${action}`, {
     credentials: 'include',
     headers: { 'X-CSRF-TOKEN': csrfToken },
     method: 'POST',

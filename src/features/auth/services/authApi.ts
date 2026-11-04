@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { apiFetch } from '../../../shared/api/apiFetch';
 
 const apiErrorSchema = z.object({
   message: z.string().optional(),
@@ -11,7 +12,7 @@ const csrfTokenResponseSchema = z.object({
 export class AuthenticationApiError extends Error {}
 
 async function getCsrfToken(): Promise<string> {
-  const response = await fetch('/api/csrf-token', {
+  const response = await apiFetch('/api/csrf-token', {
     credentials: 'include',
     method: 'GET',
   });
@@ -24,7 +25,7 @@ async function getCsrfToken(): Promise<string> {
 }
 
 async function postNoContent(path: string, body: string): Promise<void> {
-  const response = await fetch(path, {
+  const response = await apiFetch(path, {
     body,
     credentials: 'include',
     headers: {
@@ -92,7 +93,7 @@ export async function createAccount({ accountBio, accountName, favoriteTagIdenti
     favoriteTagIdentifiers.forEach((identifier, index) => body.append(`favorite_tag_identifiers[${index}]`, identifier));
     if (iconImage !== null) body.append('icon_image', iconImage);
     if (headerImage !== null) body.append('header_image', headerImage);
-    const response = await fetch('/api/accounts', { body, credentials: 'include', headers: { 'X-CSRF-TOKEN': await getCsrfToken() }, method: 'POST' });
+    const response = await apiFetch('/api/accounts', { body, credentials: 'include', headers: { 'X-CSRF-TOKEN': await getCsrfToken() }, method: 'POST' });
     if (response.ok) return;
     const parsedError = apiErrorSchema.safeParse(await response.json().catch(() => ({})));
     throw new AuthenticationApiError(parsedError.success && parsedError.data.message !== undefined ? parsedError.data.message : '通信に失敗しました。時間をおいて再度お試しください。');

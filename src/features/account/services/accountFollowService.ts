@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { apiFetch } from '../../../shared/api/apiFetch';
 
 export class AccountFollowError extends Error {
   constructor(message: string, readonly status?: number) {
@@ -23,11 +24,11 @@ const csrfTokenSchema = z.object({ csrf_token: z.string().min(1) });
 
 export const accountFollowService: AccountFollowService = {
   create: async (accountIdentifier) => {
-    const csrfResponse = await fetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
+    const csrfResponse = await apiFetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
     if (!csrfResponse.ok) throw new AccountFollowError('Failed to fetch CSRF token', csrfResponse.status);
 
     const csrfToken = csrfTokenSchema.parse(await csrfResponse.json()).csrf_token;
-    const response = await fetch('/api/follows', {
+    const response = await apiFetch('/api/follows', {
       body: JSON.stringify({ followed_account_identifier: accountIdentifier }),
       credentials: 'include',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
@@ -38,12 +39,12 @@ export const accountFollowService: AccountFollowService = {
     if (!response.ok) throw new AccountFollowError('Failed to create account follow', response.status);
   },
   remove: async (accountIdentifier) => {
-    const csrfResponse = await fetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
+    const csrfResponse = await apiFetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
     if (csrfResponse.status === 401) throw new AccountFollowUnauthorizedError();
     if (!csrfResponse.ok) throw new AccountFollowError('Failed to fetch CSRF token', csrfResponse.status);
 
     const csrfToken = csrfTokenSchema.parse(await csrfResponse.json()).csrf_token;
-    const response = await fetch(`/api/follow-requests/${accountIdentifier}`, {
+    const response = await apiFetch(`/api/follow-requests/${accountIdentifier}`, {
       credentials: 'include',
       headers: { 'X-CSRF-TOKEN': csrfToken },
       method: 'DELETE',

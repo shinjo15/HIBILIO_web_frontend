@@ -92,9 +92,9 @@ describe('routineDetailService', () => {
       steps: [{ action: '水を飲む', duration: '10分', id: '40000000-0000-4000-8000-000000000001' }],
       title: '朝のルーティン',
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/routines/30000000-0000-4000-8000-000000000001');
-    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines/30000000-0000-4000-8000-000000000001/customized?page=1&number_of_items_per_page=40');
-    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/routines/30000000-0000-4000-8000-000000000001/execution-posts?page=1&number_of_items_per_page=40');
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/routines/30000000-0000-4000-8000-000000000001', { credentials: 'include' });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines/30000000-0000-4000-8000-000000000001/customized?page=1&number_of_items_per_page=40', { credentials: 'include' });
+    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/routines/30000000-0000-4000-8000-000000000001/execution-posts?page=1&number_of_items_per_page=40', { credentials: 'include' });
   });
 
   it('routine ID を adapter に渡し、DTO を画面用 ViewModel に変換する', async () => {
@@ -161,7 +161,7 @@ describe('routineDetailService', () => {
       items: [{ achieved: 1, id: '70000000-0000-4000-8000-000000000001', total: 2 }],
       total: 4,
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/routines/30000000-0000-4000-8000-000000000001/customized?page=2&number_of_items_per_page=40');
-    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines/30000000-0000-4000-8000-000000000001/execution-posts?page=3&number_of_items_per_page=40');
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/routines/30000000-0000-4000-8000-000000000001/customized?page=2&number_of_items_per_page=40', { credentials: 'include' });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines/30000000-0000-4000-8000-000000000001/execution-posts?page=3&number_of_items_per_page=40', { credentials: 'include' });
   });
 });

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { apiFetch } from '../../../shared/api/apiFetch';
 
 const csrfTokenSchema = z.object({ csrf_token: z.string().min(1) });
 const validationErrorSchema = z.object({ errors: z.record(z.string(), z.array(z.string())) });
@@ -36,11 +37,11 @@ export class ContactSupportError extends Error {
 
 export const contactSupportApiAdapter: ContactSupportAdapter = {
   create: async ({ content, title }) => {
-    const csrfResponse = await fetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
+    const csrfResponse = await apiFetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
     if (!csrfResponse.ok) throw new ContactSupportError('Failed to fetch CSRF token', csrfResponse.status);
 
     const csrfToken = csrfTokenSchema.parse(await csrfResponse.json()).csrf_token;
-    const response = await fetch('/api/contact-support', {
+    const response = await apiFetch('/api/contact-support', {
       body: JSON.stringify({ content, title }),
       credentials: 'include',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },

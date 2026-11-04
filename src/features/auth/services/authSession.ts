@@ -1,3 +1,5 @@
+import { apiFetch } from '../../../shared/api/apiFetch';
+
 export type AuthenticationStatus = 'authenticated' | 'loading' | 'unauthenticated';
 
 let authenticationStatus: AuthenticationStatus = 'loading';
@@ -22,7 +24,7 @@ function transitionAuthenticationStatus(status: AuthenticationStatus): void {
 }
 
 async function getCsrfToken(): Promise<string> {
-  const response = await fetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
+  const response = await apiFetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
   if (!response.ok) throw new Error('Failed to fetch CSRF token');
 
   const body: unknown = await response.json();
@@ -34,7 +36,7 @@ async function getCsrfToken(): Promise<string> {
 }
 
 async function verifySession(): Promise<Response> {
-  return fetch('/api/my/account', { credentials: 'include', method: 'GET' });
+  return apiFetch('/api/my/account', { credentials: 'include', method: 'GET' });
 }
 
 export function getAuthenticationStatus(): AuthenticationStatus {
@@ -79,7 +81,7 @@ export async function restoreAuthentication(): Promise<void> {
 
       const csrfToken = await getCsrfToken();
       if (generation !== sessionGeneration) return;
-      const restoreResponse = await fetch('/api/persistent-login/restore', {
+      const restoreResponse = await apiFetch('/api/persistent-login/restore', {
         credentials: 'include',
         headers: { 'X-CSRF-TOKEN': csrfToken },
         method: 'POST',
@@ -105,7 +107,7 @@ export async function restoreAuthentication(): Promise<void> {
 
 export async function logout(): Promise<void> {
   const csrfToken = await getCsrfToken();
-  const response = await fetch('/api/logout', {
+  const response = await apiFetch('/api/logout', {
     credentials: 'include',
     headers: { 'X-CSRF-TOKEN': csrfToken },
     method: 'POST',

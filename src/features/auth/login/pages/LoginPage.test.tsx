@@ -8,6 +8,7 @@ import { isAuthenticated } from '../../services/authSession';
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
   window.sessionStorage.clear();
 });
 
@@ -17,8 +18,14 @@ describe('LoginPage', () => {
 
     expect(screen.getByRole('link', { name: 'Googleでログイン' })).toHaveAttribute(
       'href',
-      'http://localhost:8001/auth/social/google',
+      '/auth/social/google',
     );
+  });
+
+  it('本番のGoogleログインリンクはAPI originへ遷移する', () => {
+    vi.stubEnv('VITE_API_ORIGIN', 'https://api.hibilio.com');
+    render(<MemoryRouter><LoginPage /></MemoryRouter>);
+    expect(screen.getByRole('link', { name: 'Googleでログイン' })).toHaveAttribute('href', 'https://api.hibilio.com/auth/social/google');
   });
 
   it('メールアドレスからパスコードを送信し、モック準拠の6桁入力画面で照合する', async () => {
@@ -33,7 +40,7 @@ describe('LoginPage', () => {
     expect(screen.getByRole('heading', { name: 'HIBILIO' })).toBeInTheDocument();
     expect(screen.getByLabelText('メールアドレス')).toHaveAttribute('type', 'email');
     expect(screen.getByRole('button', { name: 'パスコードを送信' })).toBeDisabled();
-    expect(screen.getByRole('link', { name: 'Googleでログイン' })).toHaveAttribute('href', 'http://localhost:8001/auth/social/google');
+    expect(screen.getByRole('link', { name: 'Googleでログイン' })).toHaveAttribute('href', '/auth/social/google');
     expect(screen.getByRole('button', { name: 'Appleでログイン' })).toHaveAttribute('type', 'button');
 
     await user.type(screen.getByLabelText('メールアドレス'), 'member@example.com');
