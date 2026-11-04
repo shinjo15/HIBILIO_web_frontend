@@ -20,7 +20,35 @@ const post = {
 
 describe('account routine post mappers', () => {
   it('投稿一覧の liked を現在の閲覧者の状態として保持する', () => {
-    expect(parseAccountPosts({ items: [post], total: 1 })).toMatchObject([{ id: 'post-1', liked: true }]);
+    expect(parseAccountPosts({
+      items: [{
+        ...post,
+        customization_origin: {
+          account_name: '親作者',
+          icon_image_url: null,
+          routine_identifier: 'parent-routine-1',
+          routine_name: '親の朝活ルーティン',
+        },
+      }],
+      total: 1,
+    })).toMatchObject([{
+      customizationOrigin: {
+        accountName: '親作者',
+        iconImageUrl: null,
+        routineId: 'parent-routine-1',
+        routineName: '親の朝活ルーティン',
+      },
+      id: 'post-1',
+      liked: true,
+    }]);
+  });
+
+  it('投稿一覧といいね一覧で customization_origin:null を親情報なしとして保持する', () => {
+    expect(parseAccountPosts({ items: [{ ...post, customization_origin: null }], total: 1 })).toMatchObject([{ customizationOrigin: null, id: 'post-1' }]);
+    expect(parseLikedRoutines({
+      items: [{ ...post, customization_origin: null, liked_at: '2026-09-04T12:00:00+00:00' }],
+      total: 1,
+    })).toMatchObject([{ customizationOrigin: null, id: 'post-1' }]);
   });
 
   it('いいね一覧でも liked_at ではなく API の liked を現在の閲覧者の状態として保持する', () => {

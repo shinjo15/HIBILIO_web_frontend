@@ -7,6 +7,7 @@ import { AccountUnauthorizedError, type AccountService } from '../services/accou
 import { AccountBlockUnauthorizedError, type AccountBlockService } from '../services/accountBlockService';
 import { AccountFollowError, AccountFollowUnauthorizedError, type AccountFollowService } from '../services/accountFollowService';
 import { FollowRequestError, FollowRequestUnauthorizedError, type FollowRequestService } from '../services/followRequestService';
+import type { RoutineLikeService } from '../../routineFeed/services/routineLikeService';
 import { isAuthenticated, markAuthenticated } from '../../auth/services/authSession';
 
 const firstPost = { accountId: '11111111-1111-4111-8111-111111111111', authorName: '山田 由紀', createdAt: '2026-09-03T12:00:00.000Z', customizations: 1, durationMinutes: 30, executions: 3, iconImageUrl: 'https://example.com/icons/post-author.webp', id: 'post-1', liked: false, likes: 2, routineId: 'routine-1', steps: [{ action: '集中', durationMinutes: 30 }], supports: 4, tags: ['睡眠'], title: '朝の集中ルーティン' };
@@ -46,8 +47,8 @@ function Location() {
   return <output>{useLocation().pathname}</output>;
 }
 
-function renderPage(accountService: AccountService = service, blockService?: AccountBlockService, followRequestService?: FollowRequestService, followService?: AccountFollowService) {
-  return render(<MemoryRouter><AccountPage blockService={blockService} followRequestService={followRequestService} followService={followService} service={accountService} /><Location /></MemoryRouter>);
+function renderPage(accountService: AccountService = service, blockService?: AccountBlockService, followRequestService?: FollowRequestService, followService?: AccountFollowService, likeService?: RoutineLikeService) {
+  return render(<MemoryRouter><AccountPage blockService={blockService} followRequestService={followRequestService} followService={followService} likeService={likeService} service={accountService} /><Location /></MemoryRouter>);
 }
 
 afterEach(() => {
@@ -71,6 +72,32 @@ describe('AccountPage', () => {
     await waitFor(() => expect(listBlockedAccounts).toHaveBeenCalledTimes(1));
     expect(screen.getByRole('tab', { name: '4いいね' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '2ブロック中' })).toBeInTheDocument();
+  });
+
+  it('アカウント投稿の複数いいねで、先に完了した投稿は他方を再送可能にしない', async () => {
+    const resolveCreates = new Map<string, () => void>();
+    const likeService: RoutineLikeService = {
+      create: vi.fn((postIdentifier: string) => new Promise<void>((resolve) => { resolveCreates.set(postIdentifier, resolve); })),
+      remove: vi.fn().mockResolvedValue(undefined),
+    };
+    const user = userEvent.setup();
+    renderPage({ ...service, listPosts: async () => [firstPost, secondPost] }, undefined, undefined, undefined, likeService);
+    await screen.findByRole('heading', { name: '山田 由紀' });
+
+    const likeButtons = await screen.findAllByRole('button', { name: 'いいねする' });
+    await user.click(likeButtons[0]);
+    await user.click(likeButtons[1]);
+    expect(likeService.create).toHaveBeenCalledTimes(2);
+    expect(screen.getAllByRole('button', { name: 'いいねを取り消す' })).toHaveLength(2);
+
+    resolveCreates.get('post-1')?.();
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'いいねを取り消す' })[0]).toBeEnabled());
+    expect(screen.getAllByRole('button', { name: 'いいねを取り消す' })[1]).toBeDisabled();
+    await user.click(screen.getAllByRole('button', { name: 'いいねを取り消す' })[1]);
+    expect(likeService.create).toHaveBeenCalledTimes(2);
+
+    resolveCreates.get('post-3')?.();
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'いいねを取り消す' })[1]).toBeEnabled());
   });
 
   it('鍵アカウントではブロック中の右に受信フォローリクエストを表示する', async () => {
@@ -405,6 +432,24 @@ describe('AccountPage', () => {
 
     await user.click(screen.getByRole('link', { name: '朝の集中ルーティン' }));
     expect(screen.getByText('/routines/routine-1')).toBeInTheDocument();
+  });
+
+  it('アカウント投稿でも親ルーティンのリンクとL字装飾を表示する', async () => {
+    renderPage({
+      ...service,
+      listPosts: async () => [{
+        ...firstPost,
+        customizationOrigin: {
+          accountName: '親作者',
+          iconImageUrl: null,
+          routineId: 'parent-routine-1',
+          routineName: '親の朝活ルーティン',
+        },
+      }],
+    });
+
+    expect(await screen.findByRole('link', { name: '親の朝活ルーティン' })).toHaveAttribute('href', '/routines/parent-routine-1');
+    expect(document.querySelector('.routine-card__origin-connector')).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('本人のアカウントにはお問い合わせ画面へのリンクを表示しない', async () => {

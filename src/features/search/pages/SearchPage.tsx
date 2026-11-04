@@ -1,23 +1,32 @@
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import { Alert, Box, Button, CircularProgress, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AccountAvatar } from '../../../shared/components/AccountImage';
 import { AppBrandHeader } from '../../../shared/components/AppBrandHeader';
+import { ExecutionHistoryCard } from '../../../shared/components/ExecutionHistoryCard';
 import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
 import messages from '../../../shared/message/message.json';
-import { formatPostedAt } from '../../routineFeed/domain/routine';
+import { accountService } from '../../account/services/accountService';
+import { clearAuthenticated, isAuthenticated as hasAuthenticatedSession } from '../../auth/services/authSession';
+import { ReportDialog } from '../../report/components/ReportDialog';
+import { RoutineCard, type RoutineCardDisplay } from '../../routineFeed/components/RoutineCard';
+import type { Routine } from '../../routineFeed/domain/routine';
+import { RoutineLikeUnauthorizedError, routineLikeService, type RoutineLikeService } from '../../routineFeed/services/routineLikeService';
+import '../../routineFeed/routineFeed.css';
+import '../../routineFeed/routineFeedTypography.css';
 import { searchService, type AccountSearchResult, type PopularSearchTag, type RoutineSearchResult, type SearchResult, type SearchService, type SearchTab, type SearchTag } from '../services/searchService';
 import '../search.css';
 
-type SearchPageProps = { service?: SearchService };
+type SearchPageProps = { isAuthenticated?: boolean; likeService?: RoutineLikeService; service?: SearchService };
 
 const tabs: Array<{ label: string; value: SearchTab }> = [
   { label: messages.search.tabs.routines, value: 'routines' },
-  { label: messages.search.tabs.accounts, value: 'accounts' },
+  { label: messages.navigation.account, value: 'accounts' },
 ];
 
-export function SearchPage({ service = searchService }: SearchPageProps) {
+export function SearchPage({ isAuthenticated, likeService = routineLikeService, service = searchService }: SearchPageProps) {
+  const authenticated = isAuthenticated ?? hasAuthenticatedSession();
   const [activeTab, setActiveTab] = useState<SearchTab>('routines');
   const [input, setInput] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
@@ -147,7 +156,7 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
             value={input}
           />
         </Box>
-        <Box aria-busy={isTagsLoading || isAllTagsLoading} aria-label={messages.search.tagsLabel}>{isTagsLoading ? null : tagsError ? <Alert action={<Button onClick={() => setTagsReloadVersion((version) => version + 1)}>{messages.search.retry}</Button>} severity="error">{messages.search.tagsError}</Alert> : <><Stack className="search-page__tags" direction="row">{visibleTags.map((tag) => <Button aria-pressed={selectedTags.some((selected) => selected.identifier === tag.identifier)} key={tag.identifier} onClick={() => toggleTag(tag)} size="small" variant={selectedTags.some((selected) => selected.identifier === tag.identifier) ? 'contained' : 'outlined'}>{tag.label}</Button>)}</Stack>{showAllTags ? <><Button className="search-page__close-tags" onClick={() => setShowAllTags(false)} size="small">{messages.search.closeAllTags}</Button>{allTagsError && <Alert action={<Button onClick={() => { setAllTagsError(false); setIsAllTagsLoading(true); setAllTagsReloadVersion((version) => version + 1); }}>{messages.search.retry}</Button>} severity="error">{messages.search.tagsError}</Alert>}</> : <Button onClick={() => { setIsAllTagsLoading(true); setShowAllTags(true); }} size="small">{messages.search.showAllTags}</Button>}</>}</Box>
+        <Box aria-busy={isTagsLoading || isAllTagsLoading} aria-label={messages.search.tagsLabel}>{isTagsLoading ? null : tagsError ? <Alert action={<Button onClick={() => setTagsReloadVersion((version) => version + 1)}>{messages.search.retry}</Button>} severity="error">{messages.search.tagsError}</Alert> : <><Stack className={showAllTags ? 'search-page__tags search-page__tags--expanded' : 'search-page__tags'} direction="row">{visibleTags.map((tag) => <Button aria-pressed={selectedTags.some((selected) => selected.identifier === tag.identifier)} key={tag.identifier} onClick={() => toggleTag(tag)} size="small" variant={selectedTags.some((selected) => selected.identifier === tag.identifier) ? 'contained' : 'outlined'}>{tag.label}</Button>)}</Stack>{showAllTags ? <><Button className="search-page__close-tags" onClick={() => setShowAllTags(false)} size="small">{messages.search.closeAllTags}</Button>{allTagsError && <Alert action={<Button onClick={() => { setAllTagsError(false); setIsAllTagsLoading(true); setAllTagsReloadVersion((version) => version + 1); }}>{messages.search.retry}</Button>} severity="error">{messages.search.tagsError}</Alert>}</> : <Button onClick={() => { setIsAllTagsLoading(true); setShowAllTags(true); }} size="small">{messages.search.showAllTags}</Button>}</>}</Box>
       </Box>
 
       <Box className="search-page__main-column">
@@ -157,35 +166,161 @@ export function SearchPage({ service = searchService }: SearchPageProps) {
         </Box>}
 
         <Box className="search-page__content">
-          {!isInputPending && (normalizedQuery.length > 0 || selectedTags.length > 0) && <SearchResults activeTab={activeTab} key={resultsKey} query={normalizedQuery} service={service} tagIdentifiers={tagIdentifiers} />}
+          {!isInputPending && (normalizedQuery.length > 0 || selectedTags.length > 0) && <SearchResults activeTab={activeTab} authenticated={authenticated} key={resultsKey} likeService={likeService} query={normalizedQuery} service={service} tagIdentifiers={tagIdentifiers} />}
         </Box>
       </Box>
     </Box>
   );
 }
 
-function SearchResults({ activeTab, query, service, tagIdentifiers }: { activeTab: SearchTab; query: string; service: SearchService; tagIdentifiers: string[] }) {
-  const fetchPage = useCallback((page: number) => tagIdentifiers.length > 0 ? service.searchPage(activeTab, query, page, tagIdentifiers) : service.searchPage(activeTab, query, page), [activeTab, query, service, tagIdentifiers]);
-  const list = useInfiniteList<SearchResult>({ fetchPage, key: `${activeTab}:${query}` });
+function SearchResults({ activeTab, authenticated, likeService, query, service, tagIdentifiers }: { activeTab: SearchTab; authenticated: boolean; likeService: RoutineLikeService; query: string; service: SearchService; tagIdentifiers: string[] }) {
+  return activeTab === 'routines'
+    ? <RoutineSearchResults authenticated={authenticated} likeService={likeService} query={query} service={service} tagIdentifiers={tagIdentifiers} />
+    : <AccountSearchResults query={query} service={service} tagIdentifiers={tagIdentifiers} />;
+}
+
+function AccountSearchResults({ query, service, tagIdentifiers }: { query: string; service: SearchService; tagIdentifiers: string[] }) {
+  const fetchPage = useCallback((page: number) => tagIdentifiers.length > 0 ? service.searchPage('accounts', query, page, tagIdentifiers) : service.searchPage('accounts', query, page), [query, service, tagIdentifiers]);
+  const list = useInfiniteList<SearchResult>({ fetchPage, key: `accounts:${query}` });
   const hasMore = list.total !== null && list.items.length < list.total;
 
   if (list.isInitialLoading) return <Loading />;
   if (list.error) return <Alert action={<Button color="inherit" onClick={list.retry}>{messages.search.retry}</Button>} icon={<ErrorOutlineOutlinedIcon />} severity="error">{messages.search.error}</Alert>;
-  if (list.items.length === 0) return <Empty tab={activeTab} />;
+  if (list.items.length === 0) return <Empty tab="accounts" />;
 
   return (
     <Stack className="search-page__results">
-      {list.items.map((item) => isRoutineResult(item)
-        ? <RoutineResultCard item={item} key={`${item.itemType}:${item.routineId}:${item.routineExecutionId ?? ''}:${item.publishedAt}`} />
-        : <AccountResultCard item={item} key={item.accountId} />)}
+      {list.items.filter((item): item is AccountSearchResult => !isRoutineResult(item)).map((item) => <AccountResultCard item={item} key={item.accountId} />)}
       {hasMore && <Button disabled={list.isLoadingMore} onClick={list.loadNextPage} variant="outlined">{messages.search.loadMore}</Button>}
       {list.isLoadingMore && <Typography className="search-page__load-more-loading">{messages.search.loadMoreLoading}</Typography>}
     </Stack>
   );
 }
 
+function RoutineSearchResults({ authenticated, likeService, query, service, tagIdentifiers }: { authenticated: boolean; likeService: RoutineLikeService; query: string; service: SearchService; tagIdentifiers: string[] }) {
+  const navigate = useNavigate();
+  const [likingPostIdentifiers, setLikingPostIdentifiers] = useState<ReadonlySet<string>>(() => new Set());
+  const [likeAnimations, setLikeAnimations] = useState<ReadonlyMap<string, 'like' | 'unlike'>>(() => new Map());
+  const [likeError, setLikeError] = useState(false);
+  const [reportingRoutine, setReportingRoutine] = useState<{ accountId: string; id: string } | null>(null);
+  const [currentAccountIdentifier, setCurrentAccountIdentifier] = useState<string | null | undefined>(authenticated ? undefined : null);
+  const fetchPage = useCallback(async (page: number) => {
+    const response = tagIdentifiers.length > 0 ? await service.searchPage('routines', query, page, tagIdentifiers) : await service.searchPage('routines', query, page);
+    return { items: response.items.filter(isRoutineResult), total: response.total };
+  }, [query, service, tagIdentifiers]);
+  const list = useInfiniteList<RoutineSearchResult>({ fetchPage, key: `routines:${query}` });
+  const hasMore = list.total !== null && list.items.length < list.total;
+
+  useEffect(() => {
+    if (!authenticated) return;
+    let cancelled = false;
+    accountService.getProfile().then((profile) => {
+      if (!cancelled) setCurrentAccountIdentifier(profile?.accountIdentifier);
+    }).catch(() => {
+      if (!cancelled) setCurrentAccountIdentifier(undefined);
+    });
+    return () => { cancelled = true; };
+  }, [authenticated]);
+
+  async function toggleLike(postIdentifier: string) {
+    const item = list.items.find((result) => result.itemType === 'routine' && result.postId === postIdentifier);
+    if (item === undefined || !isRoutinePost(item)) return;
+    const routine = toRoutine(item);
+    const type = routine.liked ? 'unlike' : 'like';
+    setLikingPostIdentifiers((current) => new Set(current).add(postIdentifier));
+    setLikeError(false);
+    setLikeAnimations((current) => new Map(current).set(postIdentifier, type));
+    const toggled: RoutineSearchResult = { ...item, liked: !item.liked, likes: item.likes + (item.liked ? -1 : 1) };
+    list.setItems((current) => current.map((result) => result.itemType === 'routine' && result.postId === postIdentifier ? toggled : result));
+    try {
+      if (routine.liked) await likeService.remove(postIdentifier);
+      else await likeService.create(postIdentifier);
+    } catch (error) {
+      list.setItems((current) => current.map((result) => result.itemType === 'routine' && result.postId === postIdentifier ? item : result));
+      if (error instanceof RoutineLikeUnauthorizedError) {
+        clearAuthenticated();
+        navigate('/login');
+      } else setLikeError(true);
+    } finally {
+      setLikingPostIdentifiers((current) => {
+        const next = new Set(current);
+        next.delete(postIdentifier);
+        return next;
+      });
+      setLikeAnimations((current) => {
+        const next = new Map(current);
+        next.delete(postIdentifier);
+        return next;
+      });
+    }
+  }
+
+  if (list.isInitialLoading) return <Loading />;
+  if (list.error) return <Alert action={<Button color="inherit" onClick={list.retry}>{messages.search.retry}</Button>} icon={<ErrorOutlineOutlinedIcon />} severity="error">{messages.search.error}</Alert>;
+  if (list.items.length === 0) return <Empty tab="routines" />;
+
+  return <Stack className="search-page__results routine-feed-card-scope">
+    {likeError && <Alert severity="error">{messages.routineFeed.likeError}</Alert>}
+    {list.items.map((item) => {
+      if (item.itemType === 'routine_execution') return <div className="routine-feed-execution-post" key={item.postId}><ExecutionHistoryCard author={{ iconImageUrl: item.iconImageUrl, name: item.accountName }} execution={{ executedActionCount: item.executedActionCount, id: item.routineExecutionId, memo: item.executionMemo, postedAt: item.postedAt, routineId: item.routineId, routineTitle: item.routineName, supportCount: item.supportCount }} onReport={!authenticated || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== item.accountId) ? () => setReportingRoutine({ accountId: item.accountId, id: item.postId }) : undefined} onSelect={(execution) => navigate(`/routines/${execution.routineId}/executions/${execution.id}`)} /></div>;
+      if (!isRoutinePost(item)) return <RoutineCard key={`routine:${item.routineId}:${item.publishedAt}`} routine={toRoutineCard(item)} />;
+      const routine = toRoutine(item);
+      return <RoutineCard isLiking={likingPostIdentifiers.has(routine.id)} key={routine.id} likeAnimation={likeAnimations.get(routine.id) ?? null} onLike={toggleLike} onReport={!authenticated || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId) ? setReportingRoutine : undefined} routine={routine} />;
+    })}
+    {hasMore && <Button disabled={list.isLoadingMore} onClick={list.loadNextPage} variant="outlined">{messages.search.loadMore}</Button>}
+    {list.isLoadingMore && <Typography className="search-page__load-more-loading">{messages.search.loadMoreLoading}</Typography>}
+    {reportingRoutine !== null && <ReportDialog onClose={() => setReportingRoutine(null)} onUnauthorized={() => { clearAuthenticated(); navigate('/login'); }} open targetAccountIdentifier={reportingRoutine.accountId} targetPostIdentifier={reportingRoutine.id} />}
+  </Stack>;
+}
+
 function isRoutineResult(item: SearchResult): item is RoutineSearchResult {
   return 'itemType' in item;
+}
+
+function isRoutinePost(item: RoutineSearchResult): item is RoutineSearchResult & { itemType: 'routine'; liked: boolean; likes: number; postId: string; postedAt: string } {
+  return item.itemType === 'routine' && item.liked !== null && item.likes !== null && item.postId !== null && item.postedAt !== null;
+}
+
+function toRoutine(item: RoutineSearchResult & { itemType: 'routine'; liked: boolean; likes: number; postId: string; postedAt: string }): Routine {
+  return {
+    accountId: item.accountId,
+    authorName: item.accountName,
+    createdAt: item.postedAt,
+    customizations: item.customizations,
+    customizationOrigin: item.customizationOrigin,
+    durationMinutes: item.routineExecutionMinutes,
+    executions: item.executions,
+    iconImageUrl: item.iconImageUrl,
+    id: item.postId,
+    liked: item.liked,
+    likes: item.likes,
+    postCategory: 'routine',
+    routineId: item.routineId,
+    steps: item.routineActions,
+    tags: item.tags,
+    title: item.routineName,
+  };
+}
+
+function toRoutineCard(item: RoutineSearchResult & { itemType: 'routine' }): RoutineCardDisplay {
+  return {
+    accountId: item.accountId,
+    authorName: item.accountName,
+    createdAt: item.postedAt,
+    customizations: item.customizations,
+    customizationOrigin: item.customizationOrigin,
+    durationMinutes: item.routineExecutionMinutes,
+    executions: item.executions,
+    iconImageUrl: item.iconImageUrl,
+    id: item.postId,
+    liked: item.liked,
+    likes: item.likes,
+    postCategory: 'routine',
+    routineId: item.routineId,
+    steps: item.routineActions,
+    tags: item.tags,
+    title: item.routineName,
+  };
 }
 
 function Loading() {
@@ -194,22 +329,6 @@ function Loading() {
 
 function Empty({ tab }: { tab: SearchTab }) {
   return <Typography className="search-page__empty">{tab === 'routines' ? messages.search.routinesEmpty : messages.search.accountsEmpty}</Typography>;
-}
-
-function RoutineResultCard({ item }: { item: RoutineSearchResult }) {
-  const detailPath = item.itemType === 'routine_execution' && item.routineExecutionId !== null
-    ? `/routines/${item.routineId}/executions/${item.routineExecutionId}`
-    : `/routines/${item.routineId}`;
-  return (
-    <article className="search-routine-card">
-      <div className="search-routine-card__header">
-        <div className="search-routine-card__author"><AccountAvatar className="search-routine-card__avatar" iconImageUrl={item.iconImageUrl} initial={item.accountName.slice(0, 1)} /><Link to={`/accounts/${item.accountId}`}>{item.accountName}</Link></div>
-        <div className="search-routine-card__metadata"><span>{item.itemType === 'routine' ? messages.search.routinePost : messages.search.routineExecutionPost}</span><span>{formatPostedAt(item.publishedAt)}</span></div>
-      </div>
-      <Typography component="h2"><Link to={detailPath}>{item.routineName}</Link></Typography>
-      <div className="search-routine-card__tags">{item.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
-    </article>
-  );
 }
 
 function AccountResultCard({ item }: { item: AccountSearchResult }) {

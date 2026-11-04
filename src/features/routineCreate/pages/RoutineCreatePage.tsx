@@ -26,7 +26,8 @@ export function RoutineCreatePage({
   const routineCreate = useRoutineCreate(service, initialForm);
   const copy = mode === 'customize' ? messages.routineCustomize : messages.routineCreate;
   const canSubmit = routineCreate.form.routineName.trim() !== ''
-    && routineCreate.form.actions.every((action) => action.actionName.trim() !== '');
+    && routineCreate.form.actions.every((action) => action.actionName.trim() !== '')
+    && !['submitting', 'loading', 'success'].includes(routineCreate.status);
 
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('routine-create-submission-state', { detail: { canSubmit } }));
@@ -82,6 +83,11 @@ export function RoutineCreatePage({
             onUpdateAction={routineCreate.updateAction}
             onUpdateField={routineCreate.updateField}
           />
+          <div className="routine-create-desktop-submit">
+            <button className="routine-create-desktop-submit__button" disabled={!canSubmit} form="routine-create-form" type="submit">
+              {routineCreate.status === 'submitting' ? messages.routineCreate.submitting : messages.routineCreate.submit}
+            </button>
+          </div>
         </div>
       </main>
     </section>

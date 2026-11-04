@@ -7,15 +7,22 @@ import { formatDuration, formatPostedAt, type Routine } from '../domain/routine'
 import { AccountAvatar } from '../../../shared/components/AccountImage';
 
 
-type RoutineCardProps = {
+export type RoutineCardDisplay = Omit<Routine, 'createdAt' | 'id' | 'liked' | 'likes'> & {
+  createdAt: string | null;
+  id: string | null;
+  liked: boolean | null;
+  likes: number | null;
+};
+
+type RoutineCardProps<T extends RoutineCardDisplay> = {
   likeAnimation?: 'like' | 'unlike' | null;
   isLiking?: boolean;
   onLike?: (postIdentifier: string) => void;
-  onReport?: (routine: Routine) => void;
-  routine: Routine;
+  onReport?: (routine: T) => void;
+  routine: T;
 };
 
-export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, onReport, routine }: RoutineCardProps) {
+export function RoutineCard<T extends RoutineCardDisplay>({ isLiking = false, likeAnimation = null, onLike, onReport, routine }: RoutineCardProps<T>) {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const avatarClasses: Record<string, string> = {
     H: 'routine-card__avatar--h',
@@ -26,9 +33,14 @@ export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, on
   };
   const avatarInitial = routine.authorName.slice(0, 1).toUpperCase();
   const avatarClass = avatarClasses[avatarInitial] ?? 'routine-card__avatar--default';
+  const origin = routine.customizationOrigin;
+  const originInitial = origin?.accountName.slice(0, 1).toUpperCase() ?? '';
+  const originAvatarClass = avatarClasses[originInitial] ?? 'routine-card__avatar--default';
+  const postIdentifier = routine.id;
+  const hasPostControls = postIdentifier !== null && routine.liked !== null && routine.likes !== null;
   const likeClass = [
     'routine-card__like',
-    routine.liked && 'routine-card__like--liked',
+    routine.liked === true && 'routine-card__like--liked',
     likeAnimation === 'like' && 'routine-card__like--like-animation',
     likeAnimation === 'unlike' && 'routine-card__like--unlike-animation',
   ].filter(Boolean).join(' ');
@@ -42,27 +54,36 @@ export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, on
           <Stack className="routine-card__header">
             <Stack className="routine-card__author">
               <AccountAvatar className={`routine-card__avatar ${avatarClass}`} iconImageUrl={routine.iconImageUrl ?? null} initial={avatarInitial} />
-              <Typography className="routine-card__handle"><Link className="routine-card__author-link" to={`/accounts/${routine.accountId}`}>{routine.authorName}</Link></Typography>
+              <Typography className="routine-card__handle"><Link className="routine-card__author-link" to={`/accounts/${routine.accountId}`}>{routine.authorName}</Link><span className="routine-card__activity-label"> がルーティンを投稿</span></Typography>
             </Stack>
             <Stack className="routine-card__metadata">
               <Stack className="routine-card__metadata-top">
-                <Typography className="routine-card__metadata-text">{formatPostedAt(routine.createdAt)}</Typography>
-                {onReport !== undefined && <IconButton aria-controls={menuAnchor !== null ? `routine-report-menu-${routine.id}` : undefined} aria-expanded={menuAnchor !== null} aria-haspopup="menu" aria-label={messages.report.postMenu} className="routine-card__more" onClick={(event) => { event.stopPropagation(); setMenuAnchor(event.currentTarget); }} size="small"><MoreVertIcon /></IconButton>}
+                {routine.createdAt !== null && <Typography className="routine-card__metadata-text">{formatPostedAt(routine.createdAt)}</Typography>}
+                {hasPostControls && onReport !== undefined && <IconButton aria-controls={menuAnchor !== null ? `routine-report-menu-${postIdentifier}` : undefined} aria-expanded={menuAnchor !== null} aria-haspopup="menu" aria-label={messages.report.postMenu} className="routine-card__more" onClick={(event) => { event.stopPropagation(); setMenuAnchor(event.currentTarget); }} size="small"><MoreVertIcon /></IconButton>}
               </Stack>
             </Stack>
           </Stack>
 
           {routine.durationMinutes !== null && <Stack className="routine-card__duration routine-card__execution-duration"><ClockIcon /><Typography className="routine-card__metadata-text">{formatDuration(routine.durationMinutes)}</Typography></Stack>}
-          <Typography component="h2" className="routine-card__title">
-            <Link className="routine-card__detail-link" to={`/routines/${routine.routineId}`}>{routine.title}</Link>
-          </Typography>
-
+          <Box className="routine-card__title-flow">
+            {origin !== null && origin !== undefined &&
+              <Stack className="routine-card__customization-origin">
+                <AccountAvatar className={`routine-card__avatar routine-card__customization-origin-avatar ${originAvatarClass}`} iconImageUrl={origin.iconImageUrl} initial={originInitial} />
+                <Typography className="routine-card__customization-origin-text"><Link className="routine-card__detail-link" to={`/routines/${origin.routineId}`}>{origin.routineName}</Link><span> · {origin.accountName}</span></Typography>
+              </Stack>}
+            <Box className={`routine-card__title-row${origin !== null && origin !== undefined ? ' routine-card__title-row--with-origin' : ''}`}>
+              {origin !== null && origin !== undefined && <Box aria-hidden="true" className="routine-card__origin-connector" />}
+              <Typography component="h2" className="routine-card__title">
+                <Link className="routine-card__detail-link" to={`/routines/${routine.routineId}`}>{routine.title}</Link>
+              </Typography>
+            </Box>
+          </Box>
           <Stack className="routine-card__tags">
             {routine.tags.slice(0, 3).map((tag) => <Box component="span" className="routine-card__tag" key={tag}>{tag}</Box>)}
           </Stack>
           <Stack className="routine-card__steps">
             {routine.steps.slice(0, 3).map((step) => (
-              <Typography className="routine-card__step" key={`${routine.id}-${step.action}`}>
+              <Typography className="routine-card__step" key={`${routine.id ?? routine.routineId}-${step.action}`}>
                 {step.action}{step.durationMinutes !== null && <Box component="span" className="routine-card__step-duration">（{formatDuration(step.durationMinutes)}）</Box>}
               </Typography>
             ))}
@@ -70,15 +91,15 @@ export function RoutineCard({ isLiking = false, likeAnimation = null, onLike, on
           </Stack>
 
           <Stack className="routine-card__actions">
-            <button aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass} disabled={isLiking || onLike === undefined} onClick={(event) => { event.stopPropagation(); onLike?.(routine.id); }} type="button">
-              <HeartIcon filled={routine.liked} />
+            {hasPostControls && <button aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass} disabled={isLiking || onLike === undefined} onClick={(event) => { event.stopPropagation(); onLike?.(postIdentifier); }} type="button">
+              <HeartIcon filled={routine.liked === true} />
               <Typography component="span" className="routine-card__action-value">{routine.likes}</Typography>
-            </button>
+            </button>}
             <ActionItem icon={<RunIcon />} value={routine.executions} />
             <ActionItem icon={<ShuffleIcon />} value={routine.customizations} />
           </Stack>
       </Box>
-      <Menu anchorEl={menuAnchor} id={`routine-report-menu-${routine.id}`} onClose={() => setMenuAnchor(null)} open={menuAnchor !== null}><MenuItem onClick={(event) => { event.stopPropagation(); setMenuAnchor(null); onReport?.(routine); }}>{messages.report.postMenuReport}</MenuItem></Menu>
+      <Menu anchorEl={menuAnchor} id={`routine-report-menu-${postIdentifier}`} onClose={() => setMenuAnchor(null)} open={menuAnchor !== null}><MenuItem onClick={(event) => { event.stopPropagation(); setMenuAnchor(null); onReport?.(routine); }}>{messages.report.postMenuReport}</MenuItem></Menu>
     </Paper>
   );
 }

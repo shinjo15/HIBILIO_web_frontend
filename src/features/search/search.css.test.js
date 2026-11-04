@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const styles = readFileSync(resolve(globalThis.process.cwd(), 'src/features/search/search.css'), 'utf8');
+const routineFeedStyles = readFileSync(resolve(globalThis.process.cwd(), 'src/features/routineFeed/routineFeed.css'), 'utf8');
+const routineFeedTypographyStyles = readFileSync(resolve(globalThis.process.cwd(), 'src/features/routineFeed/routineFeedTypography.css'), 'utf8');
 
 describe('search page central column styles', () => {
   it('keeps popular tags and every search result state inside a feed-like bordered card column', () => {
@@ -18,10 +20,20 @@ describe('search page central column styles', () => {
     expect(styles).not.toContain('min-height: calc(100dvh - 1px);');
   });
 
-  it('keeps an expanded tag list scrollable while making chips and its close control easy to use', () => {
-    expect(styles).toContain('.search-page__tags {\n  flex-wrap: wrap;\n  gap: 8px;\n  max-height: min(45vh, 320px);\n  overflow-y: auto;');
-    expect(styles).toContain('.search-page__tags .MuiButton-root {\n  min-height: 40px;\n  padding: 6px 12px;');
+  it('keeps pickup tags in one horizontal scroll row and only expands all tags into a bounded vertical list', () => {
+    expect(styles).toContain('.search-page__tags {\n  flex-wrap: nowrap;\n  gap: 8px;\n  overflow-x: auto;\n  overflow-y: hidden;\n  padding-bottom: 12px;');
+    expect(styles).toContain('.search-page__tags--expanded {\n  flex-wrap: wrap;\n  max-height: min(45vh, 320px);\n  overflow-x: hidden;\n  overflow-y: auto;');
+    expect(styles).toContain('.search-page__tags .MuiButton-root {\n  flex: 0 0 auto;\n  min-height: 40px;\n  padding: 6px 12px;');
     expect(styles).toContain('.search-page__close-tags.MuiButton-root {\n  font-weight: 600;\n  margin-top: 8px;\n  min-height: 44px;\n  padding: 10px 16px;');
+  });
+
+  it('scopes feed card styles to search results without applying feed page sizing', () => {
+    expect(routineFeedStyles).toContain('.routine-feed-card-scope .MuiPaper-root.routine-card');
+    expect(routineFeedStyles).toContain('.routine-feed-card-scope .routine-card__actions');
+    expect(routineFeedStyles).toContain('.routine-feed-card-scope .routine-feed-execution-post');
+    expect(routineFeedStyles).not.toContain('.routine-feed-card-scope {\n  min-height: 100dvh;');
+    expect(routineFeedTypographyStyles).toContain('.routine-feed-card-scope .routine-card__title');
+    expect(routineFeedTypographyStyles).toContain('.routine-feed-card-scope .routine-card__step');
   });
 
 });

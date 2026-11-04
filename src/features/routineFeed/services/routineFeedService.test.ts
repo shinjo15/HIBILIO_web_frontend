@@ -5,6 +5,12 @@ const response = {
   posts: [{
     account_identifier: '10000000-0000-4000-8000-000000000001',
     account_name: '田中 陽介',
+    customization_origin: {
+      account_name: '親作者',
+      icon_image_url: 'https://example.com/icons/parent.webp',
+      routine_identifier: 'parent-routine-1',
+      routine_name: '親の朝活ルーティン',
+    },
     icon_image_url: 'https://example.com/icons/tanaka.webp',
     customization_count: 3,
     execution_count: 12,
@@ -39,6 +45,12 @@ describe('routineFeedService', () => {
       authorName: '田中 陽介',
       createdAt: '2026-09-04T00:00:00+00:00',
       customizations: 3,
+      customizationOrigin: {
+        accountName: '親作者',
+        iconImageUrl: 'https://example.com/icons/parent.webp',
+        routineId: 'parent-routine-1',
+        routineName: '親の朝活ルーティン',
+      },
       durationMinutes: 25,
       executions: 12,
       id: 'post-1',
@@ -56,9 +68,19 @@ describe('routineFeedService', () => {
     }]);
   });
 
+  it('APIが非公開の親を customization_origin:null と返した場合、親情報なしの表示モデルへ変換する', async () => {
+    const service = createRoutineFeedService({
+      list: async () => ({ ...response, posts: [{ ...response.posts[0], customization_origin: null }] }),
+      listFollowingAccounts: async () => ({ following_accounts: [] }),
+    });
+
+    await expect(service.list('recommended')).resolves.toMatchObject([{ customizationOrigin: null, id: 'post-1' }]);
+  });
+
   it('フォロー中の実行投稿では post ID と別の実行 ID を保持する', async () => {
     const routineExecutionIdentifier = '20000000-0000-4000-8000-000000000001';
-    const { liked: removedLiked, ...routinePost } = response.posts[0];
+    const { customization_origin: removedCustomizationOrigin, liked: removedLiked, ...routinePost } = response.posts[0];
+    expect(removedCustomizationOrigin).toBeDefined();
     expect(removedLiked).toBe(true);
     const service = createRoutineFeedService({
       list: async () => ({
@@ -76,6 +98,7 @@ describe('routineFeedService', () => {
       supportCount: 3,
       supported: true,
     }]);
+    await expect(service.list('following')).resolves.toSatisfy((items) => !('customizationOrigin' in items[0]));
   });
 
   it('ページ指定の結果を items と total で返し、従来の list は配列のまま維持する', async () => {

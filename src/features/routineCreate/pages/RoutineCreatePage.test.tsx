@@ -39,6 +39,50 @@ describe('RoutineCreatePage', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
+  it('PC用投稿ボタンは既存フォームへ送信し、入力不備と送信中は無効にする', async () => {
+    const user = userEvent.setup();
+    let resolveCreate: (() => void) | undefined;
+    const create = vi.fn().mockImplementation(() => new Promise<void>((resolve) => { resolveCreate = resolve; }));
+    renderPage({ create });
+
+    const submitButton = screen.getByRole('button', { name: '投稿' });
+    expect(submitButton).toHaveAttribute('form', 'routine-create-form');
+    expect(submitButton).toBeDisabled();
+    await fillMinimumForm(user);
+    expect(submitButton).toBeEnabled();
+
+    await user.click(submitButton);
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(submitButton).toBeDisabled();
+    await user.click(submitButton);
+    expect(create).toHaveBeenCalledTimes(1);
+
+    resolveCreate?.();
+    expect(await screen.findByText('ルーティンを投稿しました。')).toBeInTheDocument();
+  });
+
+  it('同一tickのフォーム連続submitは一度だけ送信し、失敗後は再送できる', async () => {
+    let rejectFirstCreate: ((error: Error) => void) | undefined;
+    let resolveSecondCreate: (() => void) | undefined;
+    const create = vi.fn()
+      .mockImplementationOnce(() => new Promise<void>((_, reject) => { rejectFirstCreate = reject; }))
+      .mockImplementationOnce(() => new Promise<void>((resolve) => { resolveSecondCreate = resolve; }));
+    renderPage({ create });
+    fireEvent.change(screen.getByLabelText(/ルーティン名/), { target: { value: '朝の習慣' } });
+    fireEvent.change(screen.getByPlaceholderText('行動の内容'), { target: { value: '水を飲む' } });
+
+    submitForm();
+    submitForm();
+    expect(create).toHaveBeenCalledTimes(1);
+
+    rejectFirstCreate?.(new Error('failed'));
+    expect(await screen.findByRole('alert')).toHaveTextContent('ルーティンを投稿できませんでした。時間をおいて再試行してください。');
+    submitForm();
+    expect(create).toHaveBeenCalledTimes(2);
+    resolveSecondCreate?.();
+    expect(await screen.findByText('ルーティンを投稿しました。')).toBeInTheDocument();
+  });
+
   it('ステップを追加・並べ替え・削除できる', async () => {
     const user = userEvent.setup();
     renderPage({ create: vi.fn().mockResolvedValue(undefined) });

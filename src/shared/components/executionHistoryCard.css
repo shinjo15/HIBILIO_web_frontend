@@ -1,4 +1,4 @@
-.account-page__card {
+.execution-history-card.account-page__card {
   background-color: var(--hibilio-color-card);
   border: 1px solid var(--hibilio-color-border);
   border-radius: 12px;
@@ -8,6 +8,27 @@
   overflow: hidden;
   padding: 0;
   text-align: left;
+}
+
+.execution-history-card {
+  position: relative;
+}
+
+.execution-history-card__select {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: block;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.execution-history-card:has(.execution-history-card__select:focus-visible) {
+  outline: 2px solid var(--hibilio-color-primary);
+  outline-offset: 2px;
 }
 
 .account-page__card:hover,
@@ -42,6 +63,81 @@
 .account-page__card-date {
   flex-shrink: 0;
   margin-left: 12px;
+}
+
+.execution-history-card .account-page__card-header.execution-history-card__header {
+  display: grid;
+  gap: 12px;
+  grid-template-areas: 'author metadata' 'title title';
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.execution-history-card__author {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  grid-area: author;
+  min-width: 0;
+}
+
+.execution-history-card__author .routine-card__handle {
+  color: var(--hibilio-color-muted-text);
+  display: flex;
+  font-size: 12px;
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.execution-history-card__action-label {
+  color: var(--hibilio-color-primary);
+  flex: 0 0 auto;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.execution-history-card__author-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.execution-history-card__header .account-page__card-title {
+  grid-area: title;
+}
+
+.execution-history-card__metadata {
+  align-items: center;
+  display: flex;
+  gap: 2px;
+  grid-area: metadata;
+  justify-self: end;
+}
+
+.execution-history-card__metadata .account-page__card-date {
+  margin-left: 0;
+  padding-top: 2px;
+}
+
+.execution-history-card__metadata--with-menu {
+  padding-right: 40px;
+}
+
+.MuiIconButton-root.execution-history-card__more {
+  box-sizing: border-box;
+  color: var(--hibilio-color-muted-text);
+  height: 32px;
+  position: absolute;
+  right: 8px;
+  top: 10px;
+  width: 32px;
+}
+
+.MuiIconButton-root.execution-history-card__more:hover {
+  background: transparent;
+  color: var(--hibilio-color-on-background);
 }
 
 .account-page__card-metrics {
