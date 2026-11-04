@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { apiFetch } from '../../../shared/api/apiFetch';
 import messages from '../../../shared/message/message.json';
 import {
   routineCreateRequestSchema,
@@ -31,7 +32,7 @@ export type RoutineCreateService = {
 };
 
 async function createRoutine(request: RoutineCreateRequest): Promise<void> {
-  const csrfResponse = await fetch('/api/csrf-token', {
+  const csrfResponse = await apiFetch('/api/csrf-token', {
     credentials: 'include',
     method: 'GET',
   });
@@ -41,7 +42,7 @@ async function createRoutine(request: RoutineCreateRequest): Promise<void> {
   }
 
   const csrfToken = csrfTokenResponseSchema.parse(await csrfResponse.json()).csrf_token;
-  const response = await fetch('/api/routines', {
+  const response = await apiFetch('/api/routines', {
     body: JSON.stringify(request),
     credentials: 'include',
     headers: {

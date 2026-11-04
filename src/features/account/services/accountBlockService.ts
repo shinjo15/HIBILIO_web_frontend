@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { apiFetch } from '../../../shared/api/apiFetch';
 
 export class AccountBlockError extends Error {
   constructor(message: string, readonly status?: number) {
@@ -23,11 +24,11 @@ const csrfTokenSchema = z.object({ csrf_token: z.string().min(1) });
 
 export const accountBlockService: AccountBlockService = {
   create: async (accountIdentifier) => {
-    const csrfResponse = await fetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
+    const csrfResponse = await apiFetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
     if (!csrfResponse.ok) throw new AccountBlockError('Failed to fetch CSRF token', csrfResponse.status);
 
     const csrfToken = csrfTokenSchema.parse(await csrfResponse.json()).csrf_token;
-    const response = await fetch('/api/blocks', {
+    const response = await apiFetch('/api/blocks', {
       body: JSON.stringify({ blocked_account_identifier: accountIdentifier }),
       credentials: 'include',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
@@ -38,11 +39,11 @@ export const accountBlockService: AccountBlockService = {
     if (!response.ok) throw new AccountBlockError('Failed to create account block', response.status);
   },
   remove: async (accountIdentifier) => {
-    const csrfResponse = await fetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
+    const csrfResponse = await apiFetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
     if (!csrfResponse.ok) throw new AccountBlockError('Failed to fetch CSRF token', csrfResponse.status);
 
     const csrfToken = csrfTokenSchema.parse(await csrfResponse.json()).csrf_token;
-    const response = await fetch(`/api/blocks/${accountIdentifier}`, {
+    const response = await apiFetch(`/api/blocks/${accountIdentifier}`, {
       credentials: 'include',
       headers: { 'X-CSRF-TOKEN': csrfToken },
       method: 'DELETE',

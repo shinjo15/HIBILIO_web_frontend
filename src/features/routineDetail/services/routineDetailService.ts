@@ -5,6 +5,7 @@ import {
 } from '../domain/routineDetail';
 import { formatPostedAt } from '../../routineFeed/domain/routine';
 import { z } from 'zod';
+import { apiFetch } from '../../../shared/api/apiFetch';
 import type { PageResult } from '../../../shared/hooks/useInfiniteList';
 
 export type RoutineDetailAdapter = {
@@ -324,9 +325,9 @@ const routineExecutionPostsResponseSchema = z.object({
 export const apiRoutineDetailAdapter: RoutineDetailAdapter = {
   get: async (routineId) => {
     const [detailResponse, customizationsResponse, executionPostsResponse] = await Promise.all([
-      fetch(`/api/routines/${routineId}`),
-      fetch(`/api/routines/${routineId}/customized?page=1&number_of_items_per_page=40`),
-      fetch(`/api/routines/${routineId}/execution-posts?page=1&number_of_items_per_page=40`),
+      apiFetch(`/api/routines/${routineId}`),
+      apiFetch(`/api/routines/${routineId}/customized?page=1&number_of_items_per_page=40`),
+      apiFetch(`/api/routines/${routineId}/execution-posts?page=1&number_of_items_per_page=40`),
     ]);
     if (detailResponse.status === 404) {
       return null;
@@ -385,12 +386,12 @@ export const apiRoutineDetailAdapter: RoutineDetailAdapter = {
     } satisfies RoutineDetailDto;
   },
   listCustomizations: async (routineId, page) => {
-    const response = await fetch(`/api/routines/${routineId}/customized?page=${page}&number_of_items_per_page=40`);
+    const response = await apiFetch(`/api/routines/${routineId}/customized?page=${page}&number_of_items_per_page=40`);
     if (!response.ok) throw new Error(`Failed to fetch customized routines: ${response.status}`);
     return response.json();
   },
   listExecutionPosts: async (routineId, page) => {
-    const response = await fetch(`/api/routines/${routineId}/execution-posts?page=${page}&number_of_items_per_page=40`);
+    const response = await apiFetch(`/api/routines/${routineId}/execution-posts?page=${page}&number_of_items_per_page=40`);
     if (!response.ok) throw new Error(`Failed to fetch routine execution posts: ${response.status}`);
     return response.json();
   },

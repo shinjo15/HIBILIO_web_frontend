@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { apiFetch } from '../../../shared/api/apiFetch';
 import { followingAccountSchema, routineSchema, type FollowingAccount, type Routine, type RoutineFeedTab } from '../domain/routine';
 
 const numberOfItemsPerPage = 40;
@@ -73,7 +74,7 @@ const routineFeedApiAdapter: RoutineFeedAdapter = {
       number_of_items_per_page: String(numberOfItemsPerPage),
       page: String(page),
     });
-    const response = await fetch(`${paths[tab]}?${searchParams}`, {
+    const response = await apiFetch(`${paths[tab]}?${searchParams}`, {
       credentials: 'include',
       method: 'GET',
     });
@@ -89,7 +90,7 @@ const routineFeedApiAdapter: RoutineFeedAdapter = {
     return response.json();
   },
   listFollowingAccounts: async () => {
-    const response = await fetch('/api/my/following', {
+    const response = await apiFetch('/api/my/following', {
       credentials: 'include',
       method: 'GET',
     });

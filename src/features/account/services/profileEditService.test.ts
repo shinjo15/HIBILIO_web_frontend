@@ -105,7 +105,7 @@ describe('createProfileEditService', () => {
     await expect(createProfileEditService().loadTagCandidates()).resolves.toEqual([
       { identifier: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', label: '朝活' },
     ]);
-    expect(fetchMock).toHaveBeenCalledWith('/api/tags');
+    expect(fetchMock).toHaveBeenCalledWith('/api/tags', { credentials: 'include' });
   });
 
   it('保存時の401を未認証エラーにする', async () => {

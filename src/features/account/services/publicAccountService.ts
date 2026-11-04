@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { apiFetch } from '../../../shared/api/apiFetch';
 import { parseAccountPostsPage, parseLikedRoutinesPage } from './accountRoutinePosts';
 import { parseAccountRoutineExecutionsPage } from './accountRoutineExecutions';
 import type { Routine } from '../../routineFeed/domain/routine';
@@ -62,7 +63,7 @@ export type PublicAccountService = {
 
 const publicAccountApiAdapter: PublicAccountAdapter = {
   get: async (accountIdentifier) => {
-    const response = await fetch(`/api/accounts/${accountIdentifier}`, { credentials: 'include', method: 'GET' });
+    const response = await apiFetch(`/api/accounts/${accountIdentifier}`, { credentials: 'include', method: 'GET' });
 
     if (response.status === 404) {
       return null;
@@ -77,17 +78,17 @@ const publicAccountApiAdapter: PublicAccountAdapter = {
 };
 
 export function createPublicAccountService(adapter: PublicAccountAdapter = publicAccountApiAdapter): PublicAccountService {
-  const listLikesPage = async (accountIdentifier: string, page: number) => fetch(`/api/accounts/${accountIdentifier}/likes?page=${page}&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' })
+  const listLikesPage = async (accountIdentifier: string, page: number) => apiFetch(`/api/accounts/${accountIdentifier}/likes?page=${page}&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' })
     .then(async (response) => {
       if (!response.ok) throw new Error(`Failed to fetch public liked routines: ${response.status}`);
       return parseLikedRoutinesPage(await response.json());
     });
-  const listExecutionHistoriesPage = async (accountIdentifier: string, page: number) => fetch(`/api/accounts/${accountIdentifier}/routine-executions?page=${page}&number_of_items_per_page=40`)
+  const listExecutionHistoriesPage = async (accountIdentifier: string, page: number) => apiFetch(`/api/accounts/${accountIdentifier}/routine-executions?page=${page}&number_of_items_per_page=40`)
     .then(async (response) => {
       if (!response.ok) throw new Error(`Failed to fetch public routine executions: ${response.status}`);
       return parseAccountRoutineExecutionsPage(await response.json());
     });
-  const listPostsPage = async (accountIdentifier: string, page: number) => fetch(`/api/accounts/${accountIdentifier}/posts?page=${page}&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' })
+  const listPostsPage = async (accountIdentifier: string, page: number) => apiFetch(`/api/accounts/${accountIdentifier}/posts?page=${page}&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' })
     .then(async (response) => {
       if (!response.ok) throw new Error(`Failed to fetch public routine posts: ${response.status}`);
       return parseAccountPostsPage(await response.json());

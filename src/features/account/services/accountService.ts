@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { apiFetch } from '../../../shared/api/apiFetch';
 import { parseAccountPostsPage, parseLikedRoutinesPage } from './accountRoutinePosts';
 import { parseAccountRoutineExecutionsPage } from './accountRoutineExecutions';
 import type { Routine } from '../../routineFeed/domain/routine';
@@ -111,13 +112,13 @@ export type AccountService = {
 
 const accountExecutionApiAdapter: AccountExecutionAdapter = {
   getExecutionHistory: async (executionId) => {
-    const response = await fetch(`/api/routine-executions/${executionId}`, { credentials: 'include', method: 'GET' });
+    const response = await apiFetch(`/api/routine-executions/${executionId}`, { credentials: 'include', method: 'GET' });
     if (response.status === 404) return null;
     if (!response.ok) throw new Error(`Failed to fetch routine execution details: ${response.status}`);
     return response.json();
   },
   listExecutionHistories: async (page = 1) => {
-    const response = await fetch(`/api/my/routine-executions?page=${page}&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' });
+    const response = await apiFetch(`/api/my/routine-executions?page=${page}&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' });
     if (response.status === 401) throw new AccountUnauthorizedError('Routine executions require authentication');
     if (!response.ok) throw new Error(`Failed to fetch routine executions: ${response.status}`);
     return response.json();
@@ -126,7 +127,7 @@ const accountExecutionApiAdapter: AccountExecutionAdapter = {
 
 const accountProfileApiAdapter: AccountProfileAdapter = {
   getProfile: async () => {
-    const response = await fetch('/api/my/account', {
+    const response = await apiFetch('/api/my/account', {
       credentials: 'include',
       method: 'GET',
     });
@@ -145,7 +146,7 @@ const accountProfileApiAdapter: AccountProfileAdapter = {
 
 const accountLikesApiAdapter: AccountLikesAdapter = {
   listLikes: async (page = 1) => {
-    const response = await fetch(`/api/my/likes?page=${page}&number_of_items_per_page=40`, {
+    const response = await apiFetch(`/api/my/likes?page=${page}&number_of_items_per_page=40`, {
       credentials: 'include',
       method: 'GET',
     });
@@ -165,7 +166,7 @@ const accountLikesApiAdapter: AccountLikesAdapter = {
 
 const accountBlocksApiAdapter: AccountBlocksAdapter = {
   listBlockedAccounts: async () => {
-    const response = await fetch('/api/my/blocks', { credentials: 'include', method: 'GET' });
+    const response = await apiFetch('/api/my/blocks', { credentials: 'include', method: 'GET' });
 
     if (response.status === 401) {
       throw new AccountUnauthorizedError('Blocked accounts require authentication');
@@ -190,7 +191,7 @@ const receivedFollowRequestsResponseSchema = z.object({
 
 const receivedFollowRequestsApiAdapter: ReceivedFollowRequestsAdapter = {
   listReceivedFollowRequests: async () => {
-    const response = await fetch('/api/my/follow-requests', { credentials: 'include', method: 'GET' });
+    const response = await apiFetch('/api/my/follow-requests', { credentials: 'include', method: 'GET' });
 
     if (response.status === 401) {
       throw new AccountUnauthorizedError('Received follow requests require authentication');
@@ -215,7 +216,7 @@ const sentFollowRequestsResponseSchema = z.object({
 
 const sentFollowRequestsApiAdapter: SentFollowRequestsAdapter = {
   listSentFollowRequests: async () => {
-    const response = await fetch('/api/my/sent-follow-requests', { credentials: 'include', method: 'GET' });
+    const response = await apiFetch('/api/my/sent-follow-requests', { credentials: 'include', method: 'GET' });
 
     if (response.status === 401) {
       throw new AccountUnauthorizedError('Sent follow requests require authentication');
@@ -231,7 +232,7 @@ const sentFollowRequestsApiAdapter: SentFollowRequestsAdapter = {
 
 const accountPostsApiAdapter: AccountPostsAdapter = {
   listPosts: async (page = 1) => {
-    const response = await fetch(`/api/my/posts?page=${page}&number_of_items_per_page=40`, {
+    const response = await apiFetch(`/api/my/posts?page=${page}&number_of_items_per_page=40`, {
       credentials: 'include',
       method: 'GET',
     });

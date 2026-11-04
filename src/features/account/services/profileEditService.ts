@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { apiFetch } from '../../../shared/api/apiFetch';
 
 const csrfTokenResponseSchema = z.object({
   csrf_token: z.string().min(1),
@@ -78,21 +79,21 @@ async function ensureSuccessful(response: Response, operation: string): Promise<
 
 const profileEditApiAdapter: ProfileEditAdapter = {
   get: async () => {
-    const response = await fetch('/api/my/account', { credentials: 'include', method: 'GET' });
+    const response = await apiFetch('/api/my/account', { credentials: 'include', method: 'GET' });
     await ensureSuccessful(response, 'fetch editable profile');
     return response.json();
   },
   getCsrfToken: async () => {
-    const response = await fetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
+    const response = await apiFetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
     await ensureSuccessful(response, 'fetch CSRF token');
     return response.json();
   },
   getTagCandidates: async () => {
-    const response = await fetch('/api/tags');
+    const response = await apiFetch('/api/tags');
     await ensureSuccessful(response, 'fetch tag candidates');
     return response.json();
   },
-  patch: async (body, headers, method = 'PATCH') => fetch('/api/my/account', {
+  patch: async (body, headers, method = 'PATCH') => apiFetch('/api/my/account', {
     body,
     credentials: 'include',
     headers,

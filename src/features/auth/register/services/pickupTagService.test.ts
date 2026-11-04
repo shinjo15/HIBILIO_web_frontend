@@ -13,6 +13,6 @@ describe('getPickupTags', () => {
     await expect(getPickupTags()).resolves.toEqual([
       { identifier: '20000000-0000-4000-8000-000000000001', label: '朝活' },
     ]);
-    expect(fetchMock).toHaveBeenCalledWith('/api/tags/pickup');
+    expect(fetchMock).toHaveBeenCalledWith('/api/tags/pickup', { credentials: 'include' });
   });
 });

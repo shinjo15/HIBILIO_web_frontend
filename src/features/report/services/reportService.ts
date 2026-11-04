@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { apiFetch } from '../../../shared/api/apiFetch';
 
 export const reportCategories = ['spam', 'harassment', 'inappropriate_content', 'impersonation', 'other'] as const;
 export type ReportCategory = typeof reportCategories[number];
@@ -30,11 +31,11 @@ const csrfTokenSchema = z.object({ csrf_token: z.string().min(1) });
 
 export const reportService: ReportService = {
   create: async ({ category, targetAccountIdentifier, targetPostIdentifier, text }) => {
-    const csrfResponse = await fetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
+    const csrfResponse = await apiFetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
     if (!csrfResponse.ok) throw new ReportError('Failed to fetch CSRF token', csrfResponse.status);
 
     const csrfToken = csrfTokenSchema.parse(await csrfResponse.json()).csrf_token;
-    const response = await fetch('/api/reports', {
+    const response = await apiFetch('/api/reports', {
       body: JSON.stringify({ category, target_account_identifier: targetAccountIdentifier, ...(targetPostIdentifier === undefined ? {} : { target_post_identifier: targetPostIdentifier }), text }),
       credentials: 'include',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },

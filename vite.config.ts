@@ -9,6 +9,10 @@ export default defineConfig({
       host: 'localhost',
     },
     proxy: {
+      '/auth/social': {
+        changeOrigin: true,
+        target: 'http://localhost:8001',
+      },
       '/api': {
         changeOrigin: true,
         target: 'http://localhost:8001',

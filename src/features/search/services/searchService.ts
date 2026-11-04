@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { apiFetch } from '../../../shared/api/apiFetch';
 
 const numberOfItemsPerPage = 40;
 
@@ -84,29 +85,29 @@ function createSearchParams(queryName: string, query: string, page: number, tagI
 
 const searchApiAdapter: SearchAdapter = {
   listAllTags: async () => {
-    const response = await fetch('/api/tags', { credentials: 'include', method: 'GET' });
+    const response = await apiFetch('/api/tags', { credentials: 'include', method: 'GET' });
     if (!response.ok) throw new Error(`Failed to fetch tags: ${response.status}`);
     return response.json();
   },
   listPopularTags: async () => {
-    const response = await fetch('/api/tags/popular', { credentials: 'include', method: 'GET' });
+    const response = await apiFetch('/api/tags/popular', { credentials: 'include', method: 'GET' });
     if (!response.ok) throw new Error(`Failed to fetch popular tags: ${response.status}`);
     return response.json();
   },
   listTags: async () => {
-    const response = await fetch('/api/tags/pickup', { credentials: 'include', method: 'GET' });
+    const response = await apiFetch('/api/tags/pickup', { credentials: 'include', method: 'GET' });
     if (!response.ok) throw new Error(`Failed to fetch tags: ${response.status}`);
     return response.json();
   },
   searchAccounts: async (accountName, page, tagIdentifiers) => {
     const searchParams = createSearchParams('account_name', accountName, page, tagIdentifiers);
-    const response = await fetch(`/api/accounts/search?${searchParams}`, { credentials: 'include', method: 'GET' });
+    const response = await apiFetch(`/api/accounts/search?${searchParams}`, { credentials: 'include', method: 'GET' });
     if (!response.ok) throw new Error(`Failed to search accounts: ${response.status}`);
     return response.json();
   },
   searchRoutines: async (title, page, tagIdentifiers) => {
     const searchParams = createSearchParams('title', title, page, tagIdentifiers);
-    const response = await fetch(`/api/routines/search?${searchParams}`, { credentials: 'include', method: 'GET' });
+    const response = await apiFetch(`/api/routines/search?${searchParams}`, { credentials: 'include', method: 'GET' });
     if (!response.ok) throw new Error(`Failed to search routines: ${response.status}`);
     return response.json();
   },
