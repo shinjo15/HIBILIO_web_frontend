@@ -16,7 +16,10 @@ type SettingsContentProps = {
   onToggleLikeNotification: () => void;
   onTogglePrivateAccount: () => void;
   onToggleSupportNotification: () => void;
+  onRetryPrivateAccount: () => void;
+  privateAccountDisabled: boolean;
   settings: Settings;
+  visibilityError: boolean;
 };
 
 type SettingToggleRowProps = {
@@ -24,6 +27,7 @@ type SettingToggleRowProps = {
   icon: ReactNode;
   label: string;
   onChange: () => void;
+  disabled?: boolean;
 };
 
 export function SettingsContent({
@@ -34,7 +38,10 @@ export function SettingsContent({
   onToggleLikeNotification,
   onTogglePrivateAccount,
   onToggleSupportNotification,
+  onRetryPrivateAccount,
+  privateAccountDisabled,
   settings,
+  visibilityError,
 }: SettingsContentProps) {
   return (
     <section className="settings-page">
@@ -50,7 +57,8 @@ export function SettingsContent({
           <SettingToggleRow checked={settings.isDarkMode} icon={<DarkModeOutlinedIcon fontSize="small" />} label={messages.settings.darkMode} onChange={onToggleDarkMode} />
         </SettingsSection>
         <SettingsSection title={messages.settings.sections.privacy}>
-          <SettingToggleRow checked={settings.isPrivateAccount} icon={<LockOutlinedIcon fontSize="small" />} label={messages.settings.privateAccount} onChange={onTogglePrivateAccount} />
+          <SettingToggleRow checked={settings.isPrivateAccount} disabled={privateAccountDisabled} icon={<LockOutlinedIcon fontSize="small" />} label={messages.settings.privateAccount} onChange={onTogglePrivateAccount} />
+          {visibilityError && <div className="settings-visibility-error" role="alert"><span>{messages.settings.visibilityError}</span><button onClick={onRetryPrivateAccount} type="button">{messages.settings.retry}</button></div>}
         </SettingsSection>
         <SettingsSection title={messages.settings.sections.notifications}>
           <SettingToggleRow checked={settings.isLikeNotificationEnabled} icon={<NotificationsOutlinedIcon fontSize="small" />} label={messages.settings.likeNotification} onChange={onToggleLikeNotification} />
@@ -80,14 +88,14 @@ function SettingsSection({ children, title }: { children: ReactNode; title: stri
   );
 }
 
-function SettingToggleRow({ checked, icon, label, onChange }: SettingToggleRowProps) {
+function SettingToggleRow({ checked, disabled = false, icon, label, onChange }: SettingToggleRowProps) {
   return (
     <div className="settings-toggle-row">
       <div className="settings-toggle-row__label">
         <span aria-hidden="true" className="settings-toggle-row__icon">{icon}</span>
         <span>{label}</span>
       </div>
-      <button aria-checked={checked} aria-label={label} className={checked ? 'settings-toggle settings-toggle--checked' : 'settings-toggle'} onClick={onChange} role="switch" type="button">
+      <button aria-checked={checked} aria-label={label} className={checked ? 'settings-toggle settings-toggle--checked' : 'settings-toggle'} disabled={disabled} onClick={onChange} role="switch" type="button">
         <span className="settings-toggle__thumb" />
       </button>
     </div>

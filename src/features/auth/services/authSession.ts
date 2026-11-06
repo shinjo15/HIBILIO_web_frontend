@@ -7,6 +7,13 @@ let restoration: Promise<void> | null = null;
 let sessionGeneration = 0;
 const listeners = new Set<() => void>();
 
+export class CsrfTokenError extends Error {
+  constructor(public readonly status: number) {
+    super('Failed to fetch CSRF token');
+    this.name = 'CsrfTokenError';
+  }
+}
+
 function setAuthenticationStatus(status: AuthenticationStatus): void {
   authenticationStatus = status;
   listeners.forEach((listener) => listener());
@@ -23,9 +30,9 @@ function transitionAuthenticationStatus(status: AuthenticationStatus): void {
   setAuthenticationStatus(status);
 }
 
-async function getCsrfToken(): Promise<string> {
+export async function getCsrfToken(): Promise<string> {
   const response = await apiFetch('/api/csrf-token', { credentials: 'include', method: 'GET' });
-  if (!response.ok) throw new Error('Failed to fetch CSRF token');
+  if (!response.ok) throw new CsrfTokenError(response.status);
 
   const body: unknown = await response.json();
   if (typeof body !== 'object' || body === null || !('csrf_token' in body) || typeof body.csrf_token !== 'string' || body.csrf_token === '') {

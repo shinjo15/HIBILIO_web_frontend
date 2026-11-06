@@ -108,6 +108,11 @@
   background-color: var(--hibilio-color-primary);
 }
 
+.settings-toggle:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .settings-toggle__thumb {
   background-color: var(--hibilio-color-on-primary);
   border-radius: 50%;
@@ -119,6 +124,25 @@
 
 .settings-toggle--checked .settings-toggle__thumb {
   transform: translateX(20px);
+}
+
+.settings-visibility-error {
+  align-items: center;
+  color: var(--hibilio-color-primary);
+  display: flex;
+  font-size: 13px;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 8px 20px 12px;
+}
+
+.settings-visibility-error button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
 }
 
 .settings-page__sign-out-section {

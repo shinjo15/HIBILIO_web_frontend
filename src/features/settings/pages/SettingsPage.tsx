@@ -35,7 +35,10 @@ export function SettingsPage() {
       onToggleLikeNotification={settings.toggleLikeNotification}
       onTogglePrivateAccount={settings.togglePrivateAccount}
       onToggleSupportNotification={settings.toggleSupportNotification}
+      onRetryPrivateAccount={settings.retryVisibility}
+      privateAccountDisabled={settings.isVisibilityLoading || settings.isVisibilitySaving || settings.visibilityLoadError}
       settings={settings.settings}
+      visibilityError={settings.visibilityError}
     />
   );
 }
