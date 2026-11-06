@@ -1,3 +1,7 @@
+.hibilio-desktop-nav .MuiSvgIcon-root {
+  font-size: 25px !important;
+}
+
 .hibilio-mobile-nav.MuiBox-root {
   align-items: center;
   background-color: var(--hibilio-color-card);

@@ -32,7 +32,7 @@
   display: inline-flex;
   height: 32px;
   justify-content: center;
-  padding: 0;
+  padding: 1px;
   width: 32px;
 }
 
@@ -82,8 +82,8 @@
 }
 
 .routine-execution-icon {
-  height: 20px;
-  width: 20px;
+  height: 30px;
+  width: 30px;
 }
 
 .routine-execution-scroll {
@@ -160,8 +160,8 @@
 
 .routine-execution-check-icon {
   display: none;
-  height: 14px;
-  width: 14px;
+  height: 18px;
+  width: 18px;
 }
 
 .routine-execution-step--checked .routine-execution-check-icon {

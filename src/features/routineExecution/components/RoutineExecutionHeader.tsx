@@ -26,5 +26,5 @@ export function RoutineExecutionHeader({ achieved, label = messages.routineExecu
 }
 
 function CloseIcon() {
-  return <svg aria-hidden="true" className="routine-execution-icon" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2" viewBox="0 0 24 24"><line x1="6" x2="18" y1="6" y2="18" /><line x1="18" x2="6" y1="6" y2="18" /></svg>;
+  return <svg aria-hidden="true" className="routine-execution-icon" fill="none" height="25" stroke="currentColor" strokeLinecap="round" strokeWidth="2" viewBox="0 0 24 24" width="25"><line x1="6" x2="18" y1="6" y2="18" /><line x1="18" x2="6" y1="6" y2="18" /></svg>;
 }

@@ -1,0 +1,56 @@
+/* MUI icons are scoped to their existing interactive controls. */
+.hibilio-desktop-nav__create-trigger .MuiSvgIcon-root,
+.hibilio-mobile-nav > .MuiButtonBase-root:not(.hibilio-mobile-nav__create-trigger) .MuiSvgIcon-root,
+.account-page__settings .MuiSvgIcon-root,
+.account-action-menu__icon .MuiSvgIcon-root,
+.account-page__follow-request-sent .MuiSvgIcon-root,
+.settings-page .MuiSvgIcon-root {
+  font-size: 25px !important;
+}
+
+.hibilio-mobile-nav__create-icon .MuiSvgIcon-root,
+.account-profile__actions .MuiIconButton-root .MuiSvgIcon-root,
+.routine-card__more .MuiSvgIcon-root,
+.execution-history-card__more .MuiSvgIcon-root,
+.routine-feed-error__retry .MuiSvgIcon-root {
+  font-size: 30px !important;
+}
+
+.hibilio-register__social-link-remove .MuiSvgIcon-root {
+  font-size: 25px !important;
+}
+
+/* Existing inline SVG controls retain their distinct size categories. */
+.account-page__follow svg,
+.account-page__block svg {
+  height: 16px !important;
+  width: 16px !important;
+}
+
+.routine-card__like svg {
+  height: 20px !important;
+  width: 20px !important;
+}
+
+.routine-detail-icon {
+  height: 25px !important;
+  width: 25px !important;
+}
+
+.routine-detail-small-icon,
+.routine-detail-chevron {
+  height: 20px !important;
+  width: 20px !important;
+}
+
+.routine-detail-step__memo-toggle .routine-detail-chevron,
+.routine-create-icon-button .routine-create-icon,
+.routine-execution-check-icon {
+  height: 18px !important;
+  width: 18px !important;
+}
+
+.routine-create-add-action .routine-create-icon {
+  height: 20px !important;
+  width: 20px !important;
+}
