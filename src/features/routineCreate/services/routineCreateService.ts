@@ -16,6 +16,22 @@ const csrfTokenResponseSchema = z.object({
   csrf_token: z.string().min(1),
 });
 
+const tagCandidatesResponseSchema = z.object({
+  tags: z.array(z.object({
+    tag_identifier: z.string().uuid(),
+    tag_name: z.string().min(1),
+  })),
+});
+
+const favoriteTagsResponseSchema = z.object({
+  favorite_tags: z.array(z.object({
+    tag_identifier: z.string().uuid(),
+    tag_name: z.string().min(1),
+  })),
+});
+
+export type RoutineCreateTag = { identifier: string; label: string };
+
 export class RoutineCreateApiError extends Error {
   constructor(message: string) {
     super(message);
@@ -23,12 +39,23 @@ export class RoutineCreateApiError extends Error {
   }
 }
 
+export class RoutineCreateUnauthorizedError extends Error {
+  constructor() {
+    super('Routine creation requires authentication');
+    this.name = 'RoutineCreateUnauthorizedError';
+  }
+}
+
 export type RoutineCreateAdapter = {
   create: (request: RoutineCreateRequest) => Promise<void>;
+  getFavoriteTags?: () => Promise<unknown>;
+  searchTagCandidates?: (query: string) => Promise<unknown>;
 };
 
 export type RoutineCreateService = {
   create: (input: RoutineCreateViewModel) => Promise<void>;
+  loadFavoriteTags?: () => Promise<RoutineCreateTag[]>;
+  searchTagCandidates?: (query: string) => Promise<RoutineCreateTag[]>;
 };
 
 async function createRoutine(request: RoutineCreateRequest): Promise<void> {
@@ -56,6 +83,10 @@ async function createRoutine(request: RoutineCreateRequest): Promise<void> {
     return;
   }
 
+  if (response.status === 401) {
+    throw new RoutineCreateUnauthorizedError();
+  }
+
   const parsedError = apiErrorSchema.safeParse(await response.json().catch(() => ({})));
   throw new RoutineCreateApiError(parsedError.success && parsedError.data.message !== undefined
     ? parsedError.data.message
@@ -64,6 +95,20 @@ async function createRoutine(request: RoutineCreateRequest): Promise<void> {
 
 export const routineCreateApiAdapter: RoutineCreateAdapter = {
   create: createRoutine,
+  getFavoriteTags: async () => {
+    const response = await apiFetch('/api/my/account', { credentials: 'include', method: 'GET' });
+    if (response.status === 401) throw new RoutineCreateUnauthorizedError();
+    if (!response.ok) throw new RoutineCreateApiError(messages.routineCreate.tagLoadError);
+    return response.json();
+  },
+  searchTagCandidates: async (query) => {
+    const response = await apiFetch(`/api/tags?${new URLSearchParams({ tag_name: query }).toString()}`, {
+      credentials: 'include',
+      method: 'GET',
+    });
+    if (!response.ok) throw new RoutineCreateApiError(messages.routineCreate.tagLoadError);
+    return response.json();
+  },
 };
 
 export function createRoutineCreateService(adapter: RoutineCreateAdapter): RoutineCreateService {
@@ -72,6 +117,14 @@ export function createRoutineCreateService(adapter: RoutineCreateAdapter): Routi
       const request = routineCreateRequestSchema.parse(toRoutineCreateRequest(input));
       await adapter.create(request);
     },
+    loadFavoriteTags: async () => favoriteTagsResponseSchema.parse(await adapter.getFavoriteTags?.()).favorite_tags.map((tag) => ({
+      identifier: tag.tag_identifier,
+      label: tag.tag_name,
+    })),
+    searchTagCandidates: async (query) => tagCandidatesResponseSchema.parse(await adapter.searchTagCandidates?.(query)).tags.map((tag) => ({
+      identifier: tag.tag_identifier,
+      label: tag.tag_name,
+    })),
   };
 }
 

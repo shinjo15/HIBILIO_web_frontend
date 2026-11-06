@@ -42,6 +42,7 @@ export const routineCreateFormSchema = z.object({
   routineMemo: routineMemoSchema,
   routineName: routineNameSchema,
   parentRoutineIdentifier: z.string().uuid().optional(),
+  tagIdentifiers: z.array(z.string().uuid()).optional(),
 });
 
 export const routineCreateActionRequestSchema = z.object({
@@ -57,6 +58,7 @@ export const routineCreateRequestSchema = z.object({
   routine_memo: z.string().min(1).max(300).optional(),
   routine_name: z.string().min(1).max(50),
   parent_routine_identifier: z.string().uuid().optional(),
+  tag_identifiers: z.array(z.string().uuid()).optional(),
 });
 
 export type RoutineCreateActionViewModel = z.infer<typeof routineCreateActionSchema>;
@@ -144,6 +146,10 @@ export function toRoutineCreateRequest(input: unknown): RoutineCreateRequest {
 
   if (form.parentRoutineIdentifier !== undefined) {
     request.parent_routine_identifier = form.parentRoutineIdentifier;
+  }
+
+  if (form.tagIdentifiers !== undefined && form.tagIdentifiers.length > 0) {
+    request.tag_identifiers = form.tagIdentifiers;
   }
 
   return request;

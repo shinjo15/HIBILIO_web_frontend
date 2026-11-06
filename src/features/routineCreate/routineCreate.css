@@ -186,6 +186,58 @@
   padding: 0;
 }
 
+.routine-create-tags {
+  border: 0;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.routine-create-tags__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.routine-create-tags__error {
+  align-items: center;
+  color: var(--hibilio-color-primary);
+  display: flex;
+  font-size: 13px;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.routine-create-tags__error button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  padding: 6px 0;
+}
+
+.routine-create-tags__list button {
+  background: var(--hibilio-color-card);
+  border: 1px solid var(--hibilio-color-border);
+  border-radius: 999px;
+  color: var(--hibilio-color-on-background);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  min-height: 36px;
+  padding: 6px 12px;
+}
+
+.routine-create-tags__list button.is-selected {
+  background: var(--hibilio-color-muted);
+  border-color: var(--hibilio-color-primary);
+  color: var(--hibilio-color-primary);
+}
+
 .routine-create-actions__list {
   display: grid;
   gap: 12px;
