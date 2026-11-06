@@ -1,12 +1,18 @@
 import type { FormEvent } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { HibilioMark } from '../../../shared/brand/HibilioMark';
 import messages from '../../../shared/message/message.json';
+import { clearAuthenticated } from '../../auth/services/authSession';
 import { RoutineCreateForm } from '../components/RoutineCreateForm';
 import type { RoutineCreateViewModel } from '../domain/routineCreate';
 import { useRoutineCreate } from '../hooks/useRoutineCreate';
-import { routineCreateService, type RoutineCreateService } from '../services/routineCreateService';
+import {
+  RoutineCreateUnauthorizedError,
+  routineCreateService,
+  type RoutineCreateService,
+  type RoutineCreateTag,
+} from '../services/routineCreateService';
 import '../routineCreate.css';
 
 type RoutineCreatePageProps = {
@@ -24,10 +30,21 @@ export function RoutineCreatePage({
 }: RoutineCreatePageProps) {
   const navigate = useNavigate();
   const routineCreate = useRoutineCreate(service, initialForm);
+  const [favoriteTags, setFavoriteTags] = useState<RoutineCreateTag[]>([]);
+  const [selectedTags, setSelectedTags] = useState<RoutineCreateTag[]>([]);
+  const [tagCandidates, setTagCandidates] = useState<RoutineCreateTag[]>([]);
+  const [tagQuery, setTagQuery] = useState('');
+  const [favoriteTagLoadError, setFavoriteTagLoadError] = useState<string | null>(null);
+  const [tagSearchLoadError, setTagSearchLoadError] = useState<string | null>(null);
+  const [tagReloadVersion, setTagReloadVersion] = useState(0);
+  const searchRequestId = useRef(0);
+  const tagQueryRef = useRef(tagQuery);
   const copy = mode === 'customize' ? messages.routineCustomize : messages.routineCreate;
   const canSubmit = routineCreate.form.routineName.trim() !== ''
     && routineCreate.form.actions.every((action) => action.actionName.trim() !== '')
     && !['submitting', 'loading', 'success'].includes(routineCreate.status);
+  const visibleTagCandidates = [...selectedTags, ...(tagQuery.trim() === '' ? favoriteTags : tagCandidates)]
+    .filter((tag, index, tags) => tags.findIndex((item) => item.identifier === tag.identifier) === index);
 
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('routine-create-submission-state', { detail: { canSubmit } }));
@@ -36,6 +53,53 @@ export function RoutineCreatePage({
       window.dispatchEvent(new CustomEvent('routine-create-submission-state', { detail: { canSubmit: false } }));
     };
   }, [canSubmit]);
+
+  useEffect(() => {
+    let cancelled = false;
+    service.loadFavoriteTags?.()
+      .then((favoriteTags) => {
+        if (cancelled) return;
+        setFavoriteTagLoadError(null);
+        setFavoriteTags(favoriteTags);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        if (error instanceof RoutineCreateUnauthorizedError) {
+          clearAuthenticated();
+          navigate('/login');
+          return;
+        }
+        setFavoriteTagLoadError(messages.routineCreate.favoriteTagLoadError);
+      });
+    return () => { cancelled = true; };
+  }, [navigate, service, tagReloadVersion]);
+
+  useEffect(() => {
+    const query = tagQuery.trim();
+    if (query === '') return;
+    const requestId = searchRequestId.current + 1;
+    searchRequestId.current = requestId;
+    const timeoutId = window.setTimeout(() => {
+      service.searchTagCandidates?.(query)
+        .then((tags) => {
+          if (searchRequestId.current !== requestId) return;
+          setTagCandidates(tags);
+          setTagSearchLoadError(null);
+        })
+        .catch(() => {
+          if (searchRequestId.current !== requestId) return;
+          setTagCandidates([]);
+          setTagSearchLoadError(messages.routineCreate.tagLoadError);
+        });
+    }, 300);
+    return () => window.clearTimeout(timeoutId);
+  }, [service, tagQuery, tagReloadVersion]);
+
+  useEffect(() => {
+    if (!routineCreate.isUnauthorized) return;
+    clearAuthenticated();
+    navigate('/login');
+  }, [navigate, routineCreate.isUnauthorized]);
 
   useEffect(() => {
     if (routineCreate.status !== 'success') {
@@ -59,6 +123,29 @@ export function RoutineCreatePage({
     void routineCreate.submit();
   }
 
+  function retryTagLoad() {
+    setTagReloadVersion((version) => version + 1);
+  }
+
+  function toggleTag(tag: RoutineCreateTag) {
+    const isSelected = (routineCreate.form.tagIdentifiers ?? []).includes(tag.identifier);
+    if (isSelected) {
+      setSelectedTags((tags) => tags.filter((item) => item.identifier !== tag.identifier));
+    } else {
+      setSelectedTags((tags) => [...tags.filter((item) => item.identifier !== tag.identifier), tag]);
+    }
+    routineCreate.toggleTag(tag.identifier);
+  }
+
+  function updateTagQuery(query: string) {
+    if (tagQueryRef.current === query) return;
+    tagQueryRef.current = query;
+    searchRequestId.current += 1;
+    setTagCandidates([]);
+    setTagSearchLoadError(null);
+    setTagQuery(query);
+  }
+
   return (
     <section className="routine-create-page">
       <header className="routine-create-header">
@@ -79,9 +166,15 @@ export function RoutineCreatePage({
             onAddAction={routineCreate.addAction}
             onMoveAction={routineCreate.moveAction}
             onRemoveAction={routineCreate.removeAction}
+            onRetryTagLoad={retryTagLoad}
             onSubmit={handleSubmit}
+            onToggleTag={toggleTag}
             onUpdateAction={routineCreate.updateAction}
             onUpdateField={routineCreate.updateField}
+            onUpdateTagQuery={updateTagQuery}
+            tagCandidates={visibleTagCandidates}
+            tagLoadError={tagSearchLoadError ?? favoriteTagLoadError}
+            tagQuery={tagQuery}
           />
           <div className="routine-create-desktop-submit">
             <button className="routine-create-desktop-submit__button" disabled={!canSubmit} form="routine-create-form" type="submit">

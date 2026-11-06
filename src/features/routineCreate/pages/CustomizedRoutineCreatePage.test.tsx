@@ -42,7 +42,10 @@ function renderPage(service: RoutineCreateService) {
 describe('CustomizedRoutineCreatePage', () => {
   it('親ルーティンを初期値として表示し、親ルーティン識別子を送信する', async () => {
     const create = vi.fn().mockRejectedValueOnce(new Error('failed')).mockResolvedValueOnce(undefined);
-    renderPage({ create });
+    renderPage({
+      create,
+      loadFavoriteTags: async () => [{ identifier: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', label: '朝活' }],
+    });
 
     expect(await screen.findByRole('heading', { name: 'ルーティンをカスタマイズ' })).toBeInTheDocument();
     expect(screen.getByDisplayValue('朝のルーティン')).toBeInTheDocument();
@@ -50,6 +53,7 @@ describe('CustomizedRoutineCreatePage', () => {
     expect(screen.getAllByPlaceholderText('行動の内容')).toHaveLength(2);
     const submitButton = screen.getByRole('button', { name: '投稿' });
     expect(submitButton).toHaveAttribute('form', 'routine-create-form');
+    fireEvent.click(await screen.findByRole('button', { name: '朝活を選択' }));
 
     fireEvent.click(submitButton);
 
@@ -63,6 +67,7 @@ describe('CustomizedRoutineCreatePage', () => {
       ],
       parentRoutineIdentifier: '30000000-0000-4000-8000-000000000001',
       routineExecutionMinutes: '30',
+      tagIdentifiers: ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'],
     })));
     expect(create).toHaveBeenCalledTimes(2);
     expect(await screen.findByText('カスタマイズルーティンを投稿しました。')).toBeInTheDocument();

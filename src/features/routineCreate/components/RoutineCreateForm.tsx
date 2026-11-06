@@ -1,9 +1,11 @@
 import type { FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import messages from '../../../shared/message/message.json';
 import type {
   RoutineCreateActionViewModel,
   RoutineCreateViewModel,
 } from '../domain/routineCreate';
+import type { RoutineCreateTag } from '../services/routineCreateService';
 
 type RoutineCreateFormProps = {
   errorMessage: string | null;
@@ -12,9 +14,15 @@ type RoutineCreateFormProps = {
   onAddAction: () => void;
   onMoveAction: (index: number, direction: -1 | 1) => void;
   onRemoveAction: (index: number) => void;
+  onRetryTagLoad: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onToggleTag: (tag: RoutineCreateTag) => void;
+  onUpdateTagQuery: (value: string) => void;
   onUpdateAction: (index: number, field: keyof RoutineCreateActionViewModel, value: string) => void;
-  onUpdateField: (field: keyof Omit<RoutineCreateViewModel, 'actions'>, value: string) => void;
+  onUpdateField: (field: Exclude<keyof RoutineCreateViewModel, 'actions' | 'tagIdentifiers'>, value: string) => void;
+  tagCandidates: RoutineCreateTag[];
+  tagLoadError: string | null;
+  tagQuery: string;
 };
 
 export function RoutineCreateForm({
@@ -24,10 +32,25 @@ export function RoutineCreateForm({
   onAddAction,
   onMoveAction,
   onRemoveAction,
+  onRetryTagLoad,
   onSubmit,
+  onToggleTag,
+  onUpdateTagQuery,
   onUpdateAction,
   onUpdateField,
+  tagCandidates,
+  tagLoadError,
+  tagQuery,
 }: RoutineCreateFormProps) {
+  const isComposingTagQuery = useRef(false);
+  const pendingTagQuery = useRef('');
+  const [tagQueryInput, setTagQueryInput] = useState(tagQuery);
+
+  useEffect(() => {
+    if (!isComposingTagQuery.current) {
+      setTagQueryInput(tagQuery);
+    }
+  }, [tagQuery]);
   return (
     <form className="routine-create-form" id="routine-create-form" noValidate onSubmit={onSubmit}>
       {errorMessage !== null && <p className="routine-create-form__error" role="alert">{errorMessage}</p>}
@@ -77,6 +100,18 @@ export function RoutineCreateForm({
           <span aria-hidden="true">{messages.routineCreate.minuteUnit}</span>
         </div>
       </div>
+
+      <fieldset className="routine-create-tags">
+        <legend className="routine-create-field__label">{messages.routineCreate.tags}</legend>
+        <input aria-label={messages.routineCreate.tagSearchPlaceholder} className="routine-create-input" onChange={(event) => { const value = event.target.value; setTagQueryInput(value); if (isComposingTagQuery.current) { pendingTagQuery.current = value; return; } onUpdateTagQuery(value); }} onCompositionEndCapture={() => { isComposingTagQuery.current = false; const value = pendingTagQuery.current; setTagQueryInput(value); onUpdateTagQuery(value); pendingTagQuery.current = ''; }} onCompositionStartCapture={() => { isComposingTagQuery.current = true; pendingTagQuery.current = tagQueryInput; }} placeholder={messages.routineCreate.tagSearchPlaceholder} type="search" value={tagQueryInput} />
+        {tagLoadError !== null && <div className="routine-create-tags__error" role="alert"><span>{tagLoadError}</span><button onClick={onRetryTagLoad} type="button">{messages.routineCreate.retryTagLoad}</button></div>}
+        <div className="routine-create-tags__list">
+          {tagCandidates.map((tag) => {
+            const selected = (form.tagIdentifiers ?? []).includes(tag.identifier);
+            return <button aria-label={`${tag.label}${selected ? messages.routineCreate.removeTag : messages.routineCreate.selectTag}`} className={selected ? 'is-selected' : ''} key={tag.identifier} onClick={() => onToggleTag(tag)} type="button">{tag.label}</button>;
+          })}
+        </div>
+      </fieldset>
 
       <fieldset className="routine-create-actions">
         <legend className="routine-create-field__label">

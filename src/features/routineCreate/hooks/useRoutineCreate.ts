@@ -10,6 +10,7 @@ import {
 } from '../domain/routineCreate';
 import {
   RoutineCreateApiError,
+  RoutineCreateUnauthorizedError,
   routineCreateService,
   type RoutineCreateService,
 } from '../services/routineCreateService';
@@ -25,10 +26,11 @@ function wait(milliseconds: number): Promise<void> {
 export function useRoutineCreate(service: RoutineCreateService = routineCreateService, initialForm?: RoutineCreateViewModel) {
   const [form, setForm] = useState<RoutineCreateViewModel>(() => initialForm ?? createInitialRoutineCreateViewModel());
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
   const [status, setStatus] = useState<RoutineCreateStatus>('idle');
   const isSubmittingRef = useRef(false);
 
-  function updateField(field: keyof Omit<RoutineCreateViewModel, 'actions'>, value: string) {
+  function updateField(field: Exclude<keyof RoutineCreateViewModel, 'actions' | 'tagIdentifiers'>, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
     setErrorMessage(null);
     setStatus((current) => current === 'error' ? 'idle' : current);
@@ -62,6 +64,18 @@ export function useRoutineCreate(service: RoutineCreateService = routineCreateSe
       actions: reorderRoutineCreateActions(current.actions, index, index + direction),
     }));
     setErrorMessage(null);
+  }
+
+  function toggleTag(identifier: string) {
+    setForm((current) => {
+      const tagIdentifiers = current.tagIdentifiers ?? [];
+      return {
+        ...current,
+        tagIdentifiers: tagIdentifiers.includes(identifier)
+          ? tagIdentifiers.filter((tagIdentifier) => tagIdentifier !== identifier)
+          : [...tagIdentifiers, identifier],
+      };
+    });
   }
 
   async function submit(): Promise<void> {
@@ -106,6 +120,12 @@ export function useRoutineCreate(service: RoutineCreateService = routineCreateSe
       setStatus('success');
     } catch (error) {
       isSubmittingRef.current = false;
+      if (error instanceof RoutineCreateUnauthorizedError) {
+        setIsUnauthorized(true);
+        setErrorMessage(null);
+        setStatus('error');
+        return;
+      }
       setErrorMessage(error instanceof RoutineCreateApiError ? error.message : messages.routineCreate.error);
       setStatus('error');
     }
@@ -115,10 +135,12 @@ export function useRoutineCreate(service: RoutineCreateService = routineCreateSe
     addAction,
     errorMessage,
     form,
+    isUnauthorized,
     moveAction,
     removeAction,
     status,
     submit,
+    toggleTag,
     updateAction,
     updateField,
   };
