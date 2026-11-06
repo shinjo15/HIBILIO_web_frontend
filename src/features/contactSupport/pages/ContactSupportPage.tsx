@@ -65,5 +65,5 @@ export function ContactSupportPage({ service = contactSupportService }: ContactS
 }
 
 function BackIcon() {
-  return <svg aria-hidden="true" className="contact-support__back-icon" fill="none" height="20" viewBox="0 0 24 24" width="20"><polyline points="15 18 9 12 15 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
+  return <svg aria-hidden="true" className="contact-support__back-icon" fill="none" height="25" viewBox="0 0 24 24" width="25"><polyline points="15 18 9 12 15 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
 }

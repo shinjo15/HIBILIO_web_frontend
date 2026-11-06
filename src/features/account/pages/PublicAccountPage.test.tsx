@@ -44,6 +44,8 @@ describe('PublicAccountPage', () => {
     const backButton = screen.getByRole('button', { name: '戻る' });
     expect(backButton).toBeInTheDocument();
     expect(backButton.closest('header')).toHaveClass('account-page__header--public');
+    expect(backButton.querySelector('svg.account-page__back-icon')).toBeInTheDocument();
+    expect(backButton.querySelector('span')).toHaveTextContent('戻る');
     expect(screen.getByRole('button', { name: 'フォロー' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'ブロック' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'アカウントのメニュー' })).toBeInTheDocument();
@@ -210,7 +212,10 @@ describe('PublicAccountPage', () => {
     renderPage(createPublicAccountService({ get: async () => null }));
 
     expect(await screen.findByText('アカウントが見つかりませんでした。')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '戻る' })).toBeInTheDocument();
+    const backButton = screen.getByRole('button', { name: '戻る' });
+    expect(backButton).toBeInTheDocument();
+    expect(backButton.querySelector('svg.account-page__back-icon')).toBeInTheDocument();
+    expect(backButton.querySelector('span')).toHaveTextContent('戻る');
   });
 
   it('詳細取得の通信障害では見つからない状態にせず、戻る付きエラーを表示する', async () => {
@@ -224,7 +229,10 @@ describe('PublicAccountPage', () => {
     renderPage(service);
 
     expect(await screen.findByText('アカウント情報を読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '戻る' })).toBeInTheDocument();
+    const backButton = screen.getByRole('button', { name: '戻る' });
+    expect(backButton).toBeInTheDocument();
+    expect(backButton.querySelector('svg.account-page__back-icon')).toBeInTheDocument();
+    expect(backButton.querySelector('span')).toHaveTextContent('戻る');
     expect(screen.queryByText('アカウントが見つかりませんでした。')).not.toBeInTheDocument();
   });
 
@@ -234,7 +242,10 @@ describe('PublicAccountPage', () => {
     renderPage(service);
 
     expect(await screen.findByText('アカウント情報を読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '戻る' })).toBeInTheDocument();
+    const backButton = screen.getByRole('button', { name: '戻る' });
+    expect(backButton).toBeInTheDocument();
+    expect(backButton.querySelector('svg.account-page__back-icon')).toBeInTheDocument();
+    expect(backButton.querySelector('span')).toHaveTextContent('戻る');
     expect(screen.queryByText('アカウントが見つかりませんでした。')).not.toBeInTheDocument();
   });
 
@@ -252,7 +263,10 @@ describe('PublicAccountPage', () => {
     renderPage(service);
 
     expect(await screen.findByRole('heading', { name: '鍵アカウント' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '戻る' })).toBeInTheDocument();
+    const backButton = screen.getByRole('button', { name: '戻る' });
+    expect(backButton).toBeInTheDocument();
+    expect(backButton.querySelector('svg.account-page__back-icon')).toBeInTheDocument();
+    expect(backButton.querySelector('span')).toHaveTextContent('戻る');
     expect(screen.getByRole('button', { name: 'フォローリクエストを送信' })).toBeInTheDocument();
     expect(document.querySelector('.account-profile__banner')).toBeInTheDocument();
     expect(document.querySelector('.account-profile__banner .account-header-image')).toHaveAttribute('src', 'https://example.com/headers/private.webp');

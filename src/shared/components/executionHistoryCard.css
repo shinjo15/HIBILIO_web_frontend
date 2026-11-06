@@ -122,13 +122,14 @@
 }
 
 .execution-history-card__metadata--with-menu {
-  padding-right: 40px;
+  padding-right: 44px;
 }
 
 .MuiIconButton-root.execution-history-card__more {
   box-sizing: border-box;
   color: var(--hibilio-color-muted-text);
   height: 32px;
+  padding: 1px;
   position: absolute;
   right: 8px;
   top: 10px;

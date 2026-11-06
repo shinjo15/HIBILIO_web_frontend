@@ -92,7 +92,7 @@ export function AppShell() {
         }}
         variant="permanent"
       >
-        <Box component="nav" sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <Box className="hibilio-desktop-nav" component="nav" sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2.5, py: 3 }}>
             <Box sx={{ alignItems: 'center', display: 'flex', gap: 1 }}>
               <HibilioMark />

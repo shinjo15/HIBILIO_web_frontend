@@ -60,11 +60,11 @@
 
 .account-relation-card-with-action__button svg {
   fill: none;
-  height: 13px;
+  height: 16px;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-width: 2;
-  width: 13px;
+  width: 16px;
 }
 
 .account-relation-card-with-action__button:hover,

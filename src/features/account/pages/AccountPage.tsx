@@ -16,6 +16,7 @@ import { AccountUnauthorizedError, accountService, type AccountService } from '.
 import { registrationSocialPlatforms } from '../../auth/register/services/registrationSocialPlatforms';
 import { clearAuthenticated } from '../../auth/services/authSession';
 import { AccountLikesList, AccountPostsList } from '../components/AccountRoutineLists';
+import { AccountBackButton } from '../components/AccountBackButton';
 import { AccountRelationList } from '../../../shared/components/AccountRelationList';
 import { ExecutionHistoryCard } from '../../../shared/components/ExecutionHistoryCard';
 import { AccountAvatar, AccountHeaderImage } from '../../../shared/components/AccountImage';
@@ -373,10 +374,10 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
   }
 
   if (hasError) {
-    return <section className="account-page"><header className={isOwnAccount ? 'account-page__header' : 'account-page__header account-page__header--public'}>{!isOwnAccount && <button aria-label={messages.publicAccount.back} className="account-page__back" onClick={onBack} type="button">← {messages.publicAccount.back}</button>}</header><p className="account-page__state account-page__state--error">{messages.account.error}</p></section>;
+    return <section className="account-page"><header className={isOwnAccount ? 'account-page__header' : 'account-page__header account-page__header--public'}>{!isOwnAccount && <AccountBackButton onBack={onBack} />}</header><p className="account-page__state account-page__state--error">{messages.account.error}</p></section>;
   }
 
-  if (!profile) return <section className="account-page"><header className={isOwnAccount ? 'account-page__header' : 'account-page__header account-page__header--public'}>{!isOwnAccount && <button aria-label={messages.publicAccount.back} className="account-page__back" onClick={onBack} type="button">← {messages.publicAccount.back}</button>}</header><p className="account-page__state">{notFoundMessage ?? messages.account.error}</p></section>;
+  if (!profile) return <section className="account-page"><header className={isOwnAccount ? 'account-page__header' : 'account-page__header account-page__header--public'}>{!isOwnAccount && <AccountBackButton onBack={onBack} />}</header><p className="account-page__state">{notFoundMessage ?? messages.account.error}</p></section>;
 
   const tabCounts: Record<AccountTab, number | null> = {
     blockedAccounts: blockedAccountsStatus === 'loaded' ? blockedAccounts.length : null,
@@ -399,7 +400,7 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
   return (
     <section className="account-page">
       <header className={isOwnAccount ? 'account-page__header account-page__header--own' : 'account-page__header account-page__header--public'}>
-        {!isOwnAccount && <button aria-label={messages.publicAccount.back} className="account-page__back" onClick={onBack} type="button">← {messages.publicAccount.back}</button>}
+        {!isOwnAccount && <AccountBackButton onBack={onBack} />}
         {isOwnAccount && <><h1 className="account-page__header-title">{messages.account.title}</h1><button aria-label={messages.account.settings} className="account-page__settings" onClick={() => navigate('/account/settings')} type="button"><SettingsOutlinedIcon fontSize="small" /></button></>}
       </header>
 

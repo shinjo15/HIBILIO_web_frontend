@@ -577,8 +577,12 @@
 }
 
 @media (max-width: 599px) {
-  .routine-detail-header__back { width: auto; }
+  .routine-detail-header__back {
+    justify-content: center;
+    min-height: 40px;
+    width: 40px;
+  }
   .routine-detail-header__back span { display: none; }
-  .routine-detail-header__spacer { width: 20px; }
+  .routine-detail-header__spacer { width: 40px; }
   .routine-detail-summary__title { font-size: 21px; }
 }

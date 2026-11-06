@@ -32,16 +32,17 @@
   font-size: 14px;
   font-weight: 600;
   gap: 4px;
-  padding: 0;
+  min-height: 40px;
+  padding: 8px;
 }
 
 .account-page__back svg {
-  height: 20px;
+  height: 18px;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2;
-  width: 20px;
+  width: 18px;
 }
 
 .account-page__settings,
@@ -215,6 +216,7 @@
   border: 1px solid var(--hibilio-color-border);
   color: var(--hibilio-color-muted-text);
   height: 36px;
+  padding: 3px;
   width: 36px;
 }
 

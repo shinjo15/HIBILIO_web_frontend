@@ -32,10 +32,10 @@ describe('execution history card styles', () => {
     accountStyle.remove();
   });
 
-  it('三点メニューはカードの右上にあり、狭い画面でも投稿者名を省略できる', () => {
+  it('30pxアイコンの三点メニューはカードの右上に余白を確保し、狭い画面でも投稿者名を省略できる', () => {
     expect(styles).toMatch(/\.MuiIconButton-root\.execution-history-card__more[\s\S]*position: absolute[\s\S]*right: 8px/);
-    expect(styles).toMatch(/\.MuiIconButton-root\.execution-history-card__more[\s\S]*height: 32px[\s\S]*width: 32px/);
-    expect(styles).toMatch(/\.execution-history-card__metadata--with-menu \{\s*padding-right: 40px;/);
+    expect(styles).toMatch(/\.MuiIconButton-root\.execution-history-card__more[\s\S]*height: 32px[\s\S]*padding: 1px[\s\S]*width: 32px/);
+    expect(styles).toMatch(/\.execution-history-card__metadata--with-menu \{\s*padding-right: 44px;/);
     expect(styles).toMatch(/\.execution-history-card__author \.routine-card__handle[\s\S]*overflow: hidden[\s\S]*text-overflow: ellipsis[\s\S]*white-space: nowrap/);
   });
 

@@ -253,17 +253,17 @@ function RoutineCreateAction({
 }
 
 function PlusIcon() {
-  return <svg aria-hidden="true" className="routine-create-icon" fill="none" height="16" viewBox="0 0 24 24" width="16"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeLinecap="round" strokeWidth="2" /></svg>;
+  return <svg aria-hidden="true" className="routine-create-icon" fill="none" height="20" viewBox="0 0 24 24" width="20"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeLinecap="round" strokeWidth="2" /></svg>;
 }
 
 function ArrowUpIcon() {
-  return <svg aria-hidden="true" className="routine-create-icon" fill="none" height="14" viewBox="0 0 24 24" width="14"><path d="m6 15 6-6 6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
+  return <svg aria-hidden="true" className="routine-create-icon" fill="none" height="18" viewBox="0 0 24 24" width="18"><path d="m6 15 6-6 6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
 }
 
 function ArrowDownIcon() {
-  return <svg aria-hidden="true" className="routine-create-icon" fill="none" height="14" viewBox="0 0 24 24" width="14"><path d="m6 9 6 6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
+  return <svg aria-hidden="true" className="routine-create-icon" fill="none" height="18" viewBox="0 0 24 24" width="18"><path d="m6 9 6 6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
 }
 
 function TrashIcon() {
-  return <svg aria-hidden="true" className="routine-create-icon" fill="none" height="14" viewBox="0 0 24 24" width="14"><path d="M3 6h18M19 6l-1 14H6L5 6m5 5v6m4-6v6M9 6l1-3h4l1 3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
+  return <svg aria-hidden="true" className="routine-create-icon" fill="none" height="18" viewBox="0 0 24 24" width="18"><path d="M3 6h18M19 6l-1 14H6L5 6m5 5v6m4-6v6M9 6l1-3h4l1 3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
 }

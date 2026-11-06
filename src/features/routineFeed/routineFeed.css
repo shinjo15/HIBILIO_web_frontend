@@ -264,7 +264,10 @@
 .routine-feed-page .MuiIconButton-root.routine-card__more,
 .routine-feed-card-scope .MuiIconButton-root.routine-card__more {
   color: var(--hibilio-color-muted-text);
+  height: 32px;
   margin: -6px -8px -6px 0;
+  padding: 1px;
+  width: 32px;
 }
 
 .routine-feed-page .MuiIconButton-root.routine-card__more:hover,
