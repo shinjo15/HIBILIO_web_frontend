@@ -1,10 +1,16 @@
 import { createContext, useContext } from 'react';
 
+import type { UiMode } from './uiModeService';
+
 export type ThemeMode = 'dark' | 'light';
 
 type AppThemeContextValue = {
-  setThemeMode: (themeMode: ThemeMode) => void;
+  isUiModeLoading: boolean;
+  isUiModeSaving: boolean;
+  setUiMode: (uiMode: UiMode) => Promise<void>;
   themeMode: ThemeMode;
+  uiMode: UiMode;
+  uiModeError: boolean;
 };
 
 export const AppThemeContext = createContext<AppThemeContextValue | null>(null);

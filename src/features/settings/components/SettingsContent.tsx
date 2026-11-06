@@ -5,6 +5,7 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import SupportAgentOutlinedIcon from '@mui/icons-material/SupportAgentOutlined';
 import type { ReactNode } from 'react';
+import type { UiMode } from '../../../app/uiModeService';
 import type { Settings } from '../domain/settings';
 import messages from '../../../shared/message/message.json';
 
@@ -12,13 +13,16 @@ type SettingsContentProps = {
   onBack: () => void;
   onContactSupport: () => void;
   onSignOut: () => void;
-  onToggleDarkMode: () => void;
+  onUiModeChange: (uiMode: UiMode) => void;
   onToggleLikeNotification: () => void;
   onTogglePrivateAccount: () => void;
   onToggleSupportNotification: () => void;
   onRetryPrivateAccount: () => void;
   privateAccountDisabled: boolean;
   settings: Settings;
+  uiMode: UiMode;
+  uiModeDisabled: boolean;
+  uiModeError: boolean;
   visibilityError: boolean;
 };
 
@@ -34,13 +38,16 @@ export function SettingsContent({
   onBack,
   onContactSupport,
   onSignOut,
-  onToggleDarkMode,
+  onUiModeChange,
   onToggleLikeNotification,
   onTogglePrivateAccount,
   onToggleSupportNotification,
   onRetryPrivateAccount,
   privateAccountDisabled,
   settings,
+  uiMode,
+  uiModeDisabled,
+  uiModeError,
   visibilityError,
 }: SettingsContentProps) {
   return (
@@ -54,7 +61,8 @@ export function SettingsContent({
 
       <div className="settings-page__content">
         <SettingsSection title={messages.settings.sections.display}>
-          <SettingToggleRow checked={settings.isDarkMode} icon={<DarkModeOutlinedIcon fontSize="small" />} label={messages.settings.darkMode} onChange={onToggleDarkMode} />
+          <UiModeRow disabled={uiModeDisabled} onChange={onUiModeChange} uiMode={uiMode} />
+          {uiModeError && <div className="settings-visibility-error" role="alert">{messages.settings.uiModeError}</div>}
         </SettingsSection>
         <SettingsSection title={messages.settings.sections.privacy}>
           <SettingToggleRow checked={settings.isPrivateAccount} disabled={privateAccountDisabled} icon={<LockOutlinedIcon fontSize="small" />} label={messages.settings.privateAccount} onChange={onTogglePrivateAccount} />
@@ -85,6 +93,30 @@ function SettingsSection({ children, title }: { children: ReactNode; title: stri
       <h2 className="settings-section__title">{title}</h2>
       <div className="settings-section__rows">{children}</div>
     </section>
+  );
+}
+
+function UiModeRow({ disabled, onChange, uiMode }: { disabled: boolean; onChange: (uiMode: UiMode) => void; uiMode: UiMode }) {
+  const options: Array<{ label: string; value: UiMode }> = [
+    { label: messages.settings.uiModeSystem, value: 'system' },
+    { label: messages.settings.uiModeLight, value: 'light' },
+    { label: messages.settings.uiModeDark, value: 'dark' },
+  ];
+
+  return (
+    <div className="settings-toggle-row settings-ui-mode-row">
+      <div className="settings-toggle-row__label">
+        <span aria-hidden="true" className="settings-toggle-row__icon"><DarkModeOutlinedIcon fontSize="small" /></span>
+        <span>{messages.settings.uiMode}</span>
+      </div>
+      <div aria-label={messages.settings.uiMode} className="settings-ui-mode-options" role="radiogroup">
+        {options.map((option) => (
+          <button aria-checked={uiMode === option.value} className={uiMode === option.value ? 'settings-ui-mode-option settings-ui-mode-option--selected' : 'settings-ui-mode-option'} disabled={disabled} key={option.value} onClick={() => onChange(option.value)} role="radio" type="button">
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 

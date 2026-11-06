@@ -88,6 +88,43 @@
   gap: 12px;
 }
 
+.settings-ui-mode-row {
+  gap: 12px;
+}
+
+.settings-ui-mode-options {
+  border: 1px solid var(--hibilio-color-border);
+  border-radius: 8px;
+  display: flex;
+  overflow: hidden;
+}
+
+.settings-ui-mode-option {
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--hibilio-color-border);
+  color: var(--hibilio-color-muted-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  min-height: 30px;
+  padding: 0 8px;
+}
+
+.settings-ui-mode-option:first-child {
+  border-left: 0;
+}
+
+.settings-ui-mode-option--selected {
+  background-color: var(--hibilio-color-primary);
+  color: var(--hibilio-color-on-primary);
+}
+
+.settings-ui-mode-option:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .settings-toggle-row__icon {
   color: var(--hibilio-color-muted-text);
   display: flex;

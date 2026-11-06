@@ -30,7 +30,7 @@ function renderPage() {
   );
 }
 
-function accountResponse(visibility: 'private' | 'public'): Response {
+function accountResponse(visibility: 'private' | 'public', uiMode: 'dark' | 'light' | 'system' = 'system'): Response {
   return new Response(JSON.stringify({
     account_bio: null,
     account_identifier: '11111111-1111-4111-8111-111111111111',
@@ -39,6 +39,7 @@ function accountResponse(visibility: 'private' | 'public'): Response {
     header_image_url: null,
     icon_image_url: null,
     social_links: [],
+    ui_mode: uiMode,
     visibility,
   }), { status: 200 });
 }
@@ -120,6 +121,7 @@ describe('SettingsPage', () => {
     markAuthenticated();
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(accountResponse('public'))
+      .mockResolvedValueOnce(accountResponse('public'))
       .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }))
       .mockResolvedValueOnce(new Response(null, { status: 401 }))
       .mockResolvedValueOnce(new Response(null, { status: 401 }));
@@ -196,14 +198,32 @@ describe('SettingsPage', () => {
     });
   });
 
-  it('ダークモードで CSS トークンと MUI テーマを切り替える', async () => {
+  it('保存済みテーマを3択で表示し、ダーク選択はCSRF付き保存と再同期後に CSS トークンと MUI テーマを切り替える', async () => {
     const user = userEvent.setup();
+    markAuthenticated();
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(accountResponse('public', 'system'))
+      .mockResolvedValueOnce(accountResponse('public'))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(accountResponse('public', 'dark'));
+    vi.stubGlobal('fetch', fetchMock);
     renderPage();
 
-    await user.click(screen.getByRole('switch', { name: 'ダークモード' }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole('radio', { name: 'システム設定', checked: true })).toBeEnabled();
+    await user.click(screen.getByRole('radio', { name: 'ダーク', checked: false }));
 
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(5));
+    expect(await screen.findByRole('radio', { name: 'ダーク', checked: true })).toBeEnabled();
     expect(document.documentElement).toHaveClass('hibilio-theme-dark');
     expect(screen.getByText('dark')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/account/ui-mode', {
+      body: JSON.stringify({ ui_mode: 'dark' }),
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': 'csrf-token' },
+      method: 'PATCH',
+    });
   });
 
   it('公開範囲の保存失敗後も再同期値を表示する', async () => {
