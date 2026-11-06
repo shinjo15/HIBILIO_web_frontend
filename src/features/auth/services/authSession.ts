@@ -50,6 +50,10 @@ export function getAuthenticationStatus(): AuthenticationStatus {
   return authenticationStatus;
 }
 
+export function getAuthenticationGeneration(): number {
+  return sessionGeneration;
+}
+
 export function subscribeToAuthentication(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);

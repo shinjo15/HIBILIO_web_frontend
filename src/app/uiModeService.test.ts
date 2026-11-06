@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createUiModeService, resetUiModeServiceForTesting, UiModeUnauthorizedError } from './uiModeService';
+import { clearAuthenticated, markAuthenticated, resetAuthenticationForTesting } from '../features/auth/services/authSession';
 
 afterEach(() => {
+  resetAuthenticationForTesting();
   resetUiModeServiceForTesting();
   vi.unstubAllGlobals();
 });
@@ -47,6 +49,25 @@ describe('createUiModeService', () => {
     await Promise.all([first, second]);
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('CSRF取得待機中に認証セッションが切り替わった更新はPATCHしない', async () => {
+    let resolveCsrf: (response: Response) => void = () => undefined;
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(() => new Promise<Response>((resolve) => { resolveCsrf = resolve; }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+    markAuthenticated();
+    const service = createUiModeService();
+    const pendingUpdate = service.update('dark', 1);
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    clearAuthenticated();
+    markAuthenticated();
+    resolveCsrf(new Response(JSON.stringify({ csrf_token: 'old-session-token' }), { status: 200 }));
+
+    await expect(pendingUpdate).rejects.toThrow('UI mode session changed');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('取得と更新の401を認証切れとして扱う', async () => {

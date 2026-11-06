@@ -1,6 +1,6 @@
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { clearAuthenticated, getAuthenticationStatus, subscribeToAuthentication } from '../features/auth/services/authSession';
+import { clearAuthenticated, getAuthenticationGeneration, getAuthenticationStatus, subscribeToAuthentication } from '../features/auth/services/authSession';
 import { AppThemeContext, type ThemeMode } from './appThemeContext';
 import { getInFlightUiModeUpdate, UiModeUnauthorizedError, uiModeService, type UiMode } from './uiModeService';
 
@@ -30,31 +30,38 @@ const palettes = {
 
 export function AppThemeProvider({ children }: AppThemeProviderProps) {
   const authenticationStatus = useSyncExternalStore(subscribeToAuthentication, getAuthenticationStatus, getAuthenticationStatus);
-  const [uiMode, setUiModeState] = useState<UiMode>('system');
+  const [uiMode, setUiModeState] = useState<UiMode | null>(null);
   const [systemThemeMode, setSystemThemeMode] = useState<ThemeMode>(() => window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   const [isUiModeLoading, setIsUiModeLoading] = useState(() => getAuthenticationStatus() === 'authenticated');
   const [isUiModeSaving, setIsUiModeSaving] = useState(false);
   const [uiModeError, setUiModeError] = useState(false);
+  const savingOperation = useRef<symbol | null>(null);
   const syncGeneration = useRef(0);
+  const sessionGeneration = useRef(0);
   const isMounted = useRef(true);
-  const themeMode: ThemeMode = uiMode === 'system' ? systemThemeMode : uiMode;
+  const themeMode: ThemeMode = authenticationStatus !== 'authenticated' || uiMode === null ? 'light' : uiMode === 'system' ? systemThemeMode : uiMode;
   const palette = palettes[themeMode];
 
-  const synchronizeUiMode = useCallback(async (): Promise<boolean> => {
+  const synchronizeUiMode = useCallback(async (expectedSessionGeneration = getAuthenticationGeneration()): Promise<boolean> => {
     const generation = syncGeneration.current + 1;
     syncGeneration.current = generation;
     setIsUiModeLoading(true);
-    const isCurrent = () => isMounted.current && generation === syncGeneration.current;
+    setUiModeError(false);
+    const isCurrent = () => isMounted.current && expectedSessionGeneration === getAuthenticationGeneration() && generation === syncGeneration.current;
 
     try {
-      const inFlightUpdate = getInFlightUiModeUpdate();
+      const inFlightUpdate = getInFlightUiModeUpdate(expectedSessionGeneration);
       if (inFlightUpdate !== null) await inFlightUpdate.catch(() => undefined);
-      const loadedUiMode = await uiModeService.load();
+      const loadedUiMode = await uiModeService.load(expectedSessionGeneration);
       if (!isCurrent()) return false;
       setUiModeState(loadedUiMode);
       return true;
     } catch (error) {
       if (error instanceof UiModeUnauthorizedError) clearAuthenticated();
+      if (isCurrent()) {
+        setUiModeState(null);
+        setUiModeError(true);
+      }
       return false;
     } finally {
       if (isCurrent()) setIsUiModeLoading(false);
@@ -63,18 +70,25 @@ export function AppThemeProvider({ children }: AppThemeProviderProps) {
 
   useEffect(() => {
     isMounted.current = true;
+    sessionGeneration.current = getAuthenticationGeneration();
     if (authenticationStatus !== 'authenticated') {
       syncGeneration.current += 1;
       queueMicrotask(() => {
         if (!isMounted.current) return;
-        setUiModeState('system');
+        setUiModeState(null);
         setUiModeError(false);
         setIsUiModeLoading(false);
+        savingOperation.current = null;
+        setIsUiModeSaving(false);
       });
       return () => { isMounted.current = false; };
     }
 
-    void Promise.resolve().then(() => synchronizeUiMode());
+    void Promise.resolve().then(() => {
+      setUiModeState(null);
+      setUiModeError(false);
+      return synchronizeUiMode(sessionGeneration.current);
+    });
     return () => {
       isMounted.current = false;
       syncGeneration.current += 1;
@@ -94,23 +108,32 @@ export function AppThemeProvider({ children }: AppThemeProviderProps) {
   }, [themeMode]);
 
   const setUiMode = useCallback(async (nextUiMode: UiMode): Promise<void> => {
-    if (authenticationStatus !== 'authenticated' || isUiModeSaving || nextUiMode === uiMode) return;
+    if (authenticationStatus !== 'authenticated' || savingOperation.current !== null || nextUiMode === uiMode) return;
+    const updateSessionGeneration = getAuthenticationGeneration();
+    const operation = Symbol('ui-mode-save');
+    savingOperation.current = operation;
     setIsUiModeSaving(true);
     setUiModeError(false);
     let updateFailed = false;
 
     try {
-      await uiModeService.update(nextUiMode);
+      await uiModeService.update(nextUiMode, updateSessionGeneration);
     } catch {
       updateFailed = true;
     } finally {
-      const synchronized = await synchronizeUiMode();
-      if (isMounted.current) {
+      const synchronized = updateSessionGeneration === getAuthenticationGeneration() ? await synchronizeUiMode(updateSessionGeneration) : false;
+      if (savingOperation.current === operation) savingOperation.current = null;
+      if (isMounted.current && updateSessionGeneration === getAuthenticationGeneration()) {
         setUiModeError(updateFailed || !synchronized);
         setIsUiModeSaving(false);
       }
     }
-  }, [authenticationStatus, isUiModeSaving, synchronizeUiMode, uiMode]);
+  }, [authenticationStatus, synchronizeUiMode, uiMode]);
+
+  const retryUiMode = useCallback(() => {
+    if (authenticationStatus !== 'authenticated' || savingOperation.current !== null) return;
+    void synchronizeUiMode(getAuthenticationGeneration());
+  }, [authenticationStatus, synchronizeUiMode]);
 
   const theme = useMemo(
     () => createTheme({
@@ -148,7 +171,7 @@ export function AppThemeProvider({ children }: AppThemeProviderProps) {
   );
 
   return (
-    <AppThemeContext value={{ isUiModeLoading, isUiModeSaving, setUiMode, themeMode, uiMode, uiModeError }}>
+    <AppThemeContext value={{ isUiModeLoading, isUiModeSaving, retryUiMode, setUiMode, systemThemeMode, themeMode, uiMode, uiModeError }}>
       <ThemeProvider theme={theme}>
         <CssBaseline enableColorScheme />
         {children}

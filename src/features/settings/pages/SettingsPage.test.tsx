@@ -198,7 +198,7 @@ describe('SettingsPage', () => {
     });
   });
 
-  it('保存済みテーマを3択で表示し、ダーク選択はCSRF付き保存と再同期後に CSS トークンと MUI テーマを切り替える', async () => {
+  it('システム設定チェックを外すと表示中のOS実効テーマを保存し、ライト・ダーク2択を表示する', async () => {
     const user = userEvent.setup();
     markAuthenticated();
     const fetchMock = vi.fn()
@@ -206,24 +206,86 @@ describe('SettingsPage', () => {
       .mockResolvedValueOnce(accountResponse('public'))
       .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }))
       .mockResolvedValueOnce(new Response(null, { status: 204 }))
-      .mockResolvedValueOnce(accountResponse('public', 'dark'));
+      .mockResolvedValueOnce(accountResponse('public', 'light'))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(accountResponse('public', 'system'));
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ addEventListener: vi.fn(), matches: false, removeEventListener: vi.fn() })));
     vi.stubGlobal('fetch', fetchMock);
     renderPage();
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-    expect(await screen.findByRole('radio', { name: 'システム設定', checked: true })).toBeEnabled();
-    await user.click(screen.getByRole('radio', { name: 'ダーク', checked: false }));
+    const themeHeading = screen.getByRole('heading', { level: 3, name: 'テーマ' });
+    const themePanel = themeHeading.parentElement;
+    expect(themePanel).toHaveClass('settings-ui-mode');
+    const systemSetting = await screen.findByRole('checkbox', { name: 'システム設定を利用する', checked: true });
+    expect(systemSetting).toBeEnabled();
+    expect(screen.getByText('システム設定を利用する')).toBeInTheDocument();
+    expect(themePanel).toContainElement(systemSetting);
+    expect(systemSetting.closest('label')).toHaveClass('settings-toggle', 'settings-toggle--checked', 'settings-ui-mode-system-toggle');
+    systemSetting.focus();
+    expect(systemSetting).toHaveFocus();
+    expect(screen.queryByRole('radio', { name: 'ライト' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: 'ダーク' })).not.toBeInTheDocument();
+    await user.click(systemSetting);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(5));
-    expect(await screen.findByRole('radio', { name: 'ダーク', checked: true })).toBeEnabled();
-    expect(document.documentElement).toHaveClass('hibilio-theme-dark');
-    expect(screen.getByText('dark')).toBeInTheDocument();
+    const uncheckedSystemSetting = await screen.findByRole('checkbox', { name: 'システム設定を利用する', checked: false });
+    expect(uncheckedSystemSetting).toBeEnabled();
+    expect(uncheckedSystemSetting.closest('label')).toHaveClass('settings-toggle', 'settings-ui-mode-system-toggle');
+    expect(uncheckedSystemSetting.closest('label')).not.toHaveClass('settings-toggle--checked');
+    expect(screen.getByRole('radio', { name: 'ライト', checked: true })).toBeEnabled();
+    expect(screen.getByRole('radio', { name: 'ダーク', checked: false })).toBeEnabled();
+    const themeOptions = screen.getByRole('radiogroup', { name: 'テーマ' });
+    expect(themePanel).toContainElement(themeOptions);
+    expect(themeOptions).toHaveClass('settings-ui-mode-options');
     expect(fetchMock).toHaveBeenCalledWith('/api/my/account/ui-mode', {
-      body: JSON.stringify({ ui_mode: 'dark' }),
+      body: JSON.stringify({ ui_mode: 'light' }),
       credentials: 'include',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': 'csrf-token' },
       method: 'PATCH',
     });
+
+    await user.keyboard(' ');
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(8));
+    expect(await screen.findByRole('checkbox', { name: 'システム設定を利用する', checked: true })).toBeEnabled();
+    expect(screen.queryByRole('radio', { name: 'ライト' })).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenLastCalledWith('/api/my/account', { credentials: 'include', method: 'GET' });
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/account/ui-mode', {
+      body: JSON.stringify({ ui_mode: 'system' }),
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': 'csrf-token' },
+      method: 'PATCH',
+    });
+  });
+
+  it('テーマ保存エラー時は再同期値を表示して操作を無効化し、再試行後に選択可能に戻す', async () => {
+    const user = userEvent.setup();
+    markAuthenticated();
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(accountResponse('public', 'system'))
+      .mockResolvedValueOnce(accountResponse('public'))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 503 }))
+      .mockResolvedValueOnce(accountResponse('public', 'system'))
+      .mockResolvedValueOnce(accountResponse('public', 'light'));
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ addEventListener: vi.fn(), matches: false, removeEventListener: vi.fn() })));
+    vi.stubGlobal('fetch', fetchMock);
+    renderPage();
+
+    await user.click(await screen.findByRole('checkbox', { name: 'システム設定を利用する', checked: true }));
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'システム設定を利用する', checked: true })).toBeDisabled();
+    expect(screen.queryByRole('radio', { name: 'ライト' })).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+
+    await user.click(screen.getByRole('button', { name: '再試行' }));
+
+    expect(await screen.findByRole('checkbox', { name: 'システム設定を利用する', checked: false })).toBeEnabled();
+    expect(screen.getByRole('radio', { name: 'ライト', checked: true })).toBeEnabled();
+    expect(fetchMock).toHaveBeenCalledTimes(6);
   });
 
   it('公開範囲の保存失敗後も再同期値を表示する', async () => {

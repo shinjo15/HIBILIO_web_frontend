@@ -7,9 +7,11 @@ export type ThemeMode = 'dark' | 'light';
 type AppThemeContextValue = {
   isUiModeLoading: boolean;
   isUiModeSaving: boolean;
+  retryUiMode: () => void;
   setUiMode: (uiMode: UiMode) => Promise<void>;
+  systemThemeMode: ThemeMode;
   themeMode: ThemeMode;
-  uiMode: UiMode;
+  uiMode: UiMode | null;
   uiModeError: boolean;
 };
 
