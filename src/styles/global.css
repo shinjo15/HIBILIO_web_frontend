@@ -11,3 +11,12 @@ body {
   background-color: var(--hibilio-color-background);
   color: var(--hibilio-color-on-background);
 }
+
+@supports (-webkit-touch-callout: none) {
+  @media (any-pointer: coarse) {
+    input:not([type="checkbox"], [type="radio"], [type="file"], [type="hidden"], [type="range"], [type="color"]),
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+}
