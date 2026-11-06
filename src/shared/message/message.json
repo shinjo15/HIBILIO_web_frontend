@@ -330,6 +330,7 @@
     "darkMode": "ダークモード",
     "likeNotification": "いいね通知",
     "privateAccount": "鍵アカウント",
+    "retry": "再試行",
     "sections": {
       "display": "表示",
       "notifications": "通知",
@@ -337,7 +338,8 @@
     },
     "signOut": "ログアウト",
     "supportNotification": "応援通知",
-    "title": "設定"
+    "title": "設定",
+    "visibilityError": "公開設定を読み込めないか、保存できませんでした。もう一度お試しください。"
   },
   "routineCreate": {
     "title": "ルーティンを投稿",

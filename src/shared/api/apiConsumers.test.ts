@@ -13,6 +13,7 @@ import { apiRoutineDetailAdapter } from '../../features/routineDetail/services/r
 import { routineLikeService } from '../../features/routineFeed/services/routineLikeService';
 import { routineFeedService } from '../../features/routineFeed/services/routineFeedService';
 import { searchService } from '../../features/search/services/searchService';
+import { accountVisibilityService } from '../../features/settings/services/accountVisibilityService';
 
 const origin = 'https://api.hibilio.com';
 
@@ -67,5 +68,23 @@ describe('production API consumers', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(2, `${origin}${path}`, expect.objectContaining({
       credentials: 'include', headers: expect.objectContaining({ 'X-CSRF-TOKEN': 'api-only-token' }), method: 'POST',
     }));
+  });
+
+  it('公開範囲変更はorigin切替後もCSRF JSON、Cookie、PATCHを保持する', async () => {
+    vi.stubEnv('VITE_API_ORIGIN', origin);
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'api-only-token' })))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await accountVisibilityService.update('private');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, `${origin}/api/csrf-token`, { credentials: 'include', method: 'GET' });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, `${origin}/api/my/account/visibility`, {
+      body: JSON.stringify({ visibility: 'private' }),
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': 'api-only-token' },
+      method: 'PATCH',
+    });
   });
 });
