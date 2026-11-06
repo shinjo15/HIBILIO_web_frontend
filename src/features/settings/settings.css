@@ -88,6 +88,113 @@
   gap: 12px;
 }
 
+.settings-ui-mode__heading {
+  align-items: center;
+  display: flex;
+  font-size: 14px;
+  font-weight: 400;
+  gap: 12px;
+  margin: 0;
+  min-height: 52px;
+  padding: 0 20px;
+}
+
+.settings-ui-mode-row,
+.settings-ui-mode-options-row {
+  border-top: 1px solid var(--hibilio-color-border);
+}
+
+.settings-ui-mode-row {
+  gap: 12px;
+}
+
+.settings-ui-mode-options-row {
+  align-items: center;
+  display: flex;
+  justify-content: flex-end;
+  min-height: 52px;
+  padding: 0 20px;
+}
+
+.settings-ui-mode-system-toggle {
+  display: block;
+  position: relative;
+}
+
+.settings-ui-mode-system-toggle input {
+  block-size: 100%;
+  cursor: pointer;
+  inline-size: 100%;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  position: absolute;
+}
+
+.settings-ui-mode-system-toggle input:not(:checked) + .settings-toggle__thumb {
+  transform: translateX(0);
+}
+
+.settings-ui-mode-system-toggle input:focus-visible + .settings-toggle__thumb,
+.settings-ui-mode-option input:focus-visible + span {
+  outline: 2px solid var(--hibilio-color-on-background);
+  outline-offset: 2px;
+}
+
+.settings-ui-mode-system-toggle:has(input:disabled) {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.settings-ui-mode-system-toggle input:disabled {
+  cursor: wait;
+}
+
+.settings-ui-mode-options {
+  border: 1px solid var(--hibilio-color-border);
+  border-radius: 8px;
+  display: flex;
+  overflow: hidden;
+}
+
+.settings-ui-mode-option {
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--hibilio-color-border);
+  color: var(--hibilio-color-muted-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  min-height: 30px;
+  position: relative;
+}
+
+.settings-ui-mode-option:first-child {
+  border-left: 0;
+}
+
+.settings-ui-mode-option--selected {
+  background-color: var(--hibilio-color-primary);
+  color: var(--hibilio-color-on-primary);
+}
+
+.settings-ui-mode-option input {
+  opacity: 0;
+  position: absolute;
+}
+
+.settings-ui-mode-option span {
+  align-items: center;
+  display: flex;
+  min-height: 30px;
+  padding: 0 8px;
+}
+
+.settings-ui-mode-option:has(input:disabled) {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .settings-toggle-row__icon {
   color: var(--hibilio-color-muted-text);
   display: flex;

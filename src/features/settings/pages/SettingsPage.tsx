@@ -7,13 +7,8 @@ import '../settings.css';
 
 export function SettingsPage() {
   const navigate = useNavigate();
-  const { setThemeMode } = useAppTheme();
+  const { isUiModeLoading, isUiModeSaving, retryUiMode, setUiMode, systemThemeMode, uiMode, uiModeError } = useAppTheme();
   const settings = useSettings();
-
-  function toggleDarkMode() {
-    settings.toggleDarkMode();
-    setThemeMode(settings.settings.isDarkMode ? 'light' : 'dark');
-  }
 
   async function signOut() {
     try {
@@ -30,14 +25,19 @@ export function SettingsPage() {
     <SettingsContent
       onBack={() => navigate('/account')}
       onContactSupport={() => navigate('/contact-support')}
+      onRetryUiMode={retryUiMode}
       onSignOut={() => void signOut()}
-      onToggleDarkMode={toggleDarkMode}
+      onUiModeChange={(nextUiMode) => void setUiMode(nextUiMode)}
       onToggleLikeNotification={settings.toggleLikeNotification}
       onTogglePrivateAccount={settings.togglePrivateAccount}
       onToggleSupportNotification={settings.toggleSupportNotification}
       onRetryPrivateAccount={settings.retryVisibility}
       privateAccountDisabled={settings.isVisibilityLoading || settings.isVisibilitySaving || settings.visibilityLoadError}
       settings={settings.settings}
+      systemThemeMode={systemThemeMode}
+      uiMode={uiMode}
+      uiModeDisabled={isUiModeLoading || isUiModeSaving || uiModeError}
+      uiModeError={uiModeError}
       visibilityError={settings.visibilityError}
     />
   );
