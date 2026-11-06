@@ -66,6 +66,14 @@ function readPngPixel(png, x, y) {
 }
 
 describe('document favicon', () => {
+  it('keeps the viewport scalable by the user', () => {
+    const viewport = indexHtml.match(/<meta name="viewport" content="([^"]+)" \/>/)?.[1];
+
+    expect(viewport).toContain('width=device-width');
+    expect(viewport).toContain('initial-scale=1.0');
+    expect(viewport).not.toMatch(/(?:user-scalable|maximum-scale|minimum-scale)/i);
+  });
+
   it('references SVG and PNG favicon fallbacks from the Vite public directory', () => {
     expect(indexHtml).toContain('<link rel="icon" href="/favicon.svg" type="image/svg+xml" />');
     expect(indexHtml).toContain('<link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />');
