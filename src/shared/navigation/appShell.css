@@ -16,6 +16,49 @@
   height: 100%;
 }
 
+.hibilio-mobile-nav__create-trigger.MuiButtonBase-root {
+  overflow: visible;
+  position: relative;
+}
+
+.hibilio-mobile-nav__create-guide.MuiBox-root {
+  background: var(--hibilio-color-on-background);
+  border-radius: 8px;
+  bottom: calc(100% + 12px);
+
+  color: var(--hibilio-color-background);
+  display: grid;
+  font-size: 13px;
+  gap: 2px;
+  left: 50%;
+  max-width: min(280px, calc(100vw - 32px));
+  padding: 8px 12px;
+  position: absolute;
+  text-align: center;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.hibilio-mobile-nav__create-guide--fading.MuiBox-root {
+  animation: hibilio-create-guide-fade-out 300ms ease-out forwards;
+}
+
+.hibilio-mobile-nav__create-guide.MuiBox-root::after {
+  border: 7px solid transparent;
+  border-top-color: var(--hibilio-color-on-background);
+  content: '';
+  left: calc(50% - 7px);
+  pointer-events: none;
+  position: absolute;
+  top: 100%;
+}
+
+.hibilio-mobile-nav__create-guide small {
+  color: inherit;
+  font-size: 11px;
+  white-space: normal;
+}
+
 .hibilio-mobile-nav__create-trigger--disabled.MuiButtonBase-root {
   cursor: not-allowed;
 }
@@ -24,9 +67,56 @@
   border: 1px solid var(--hibilio-color-primary);
 }
 
+.hibilio-desktop-nav__create-trigger.MuiListItemButton-root {
+  min-height: 46px;
+}
+
+.hibilio-mobile-nav__create-icon--enlarged.MuiBox-root {
+  height: 60px !important;
+  width: 60px !important;
+}
+
+.hibilio-mobile-nav__create-trigger--attention .hibilio-mobile-nav__create-icon.MuiBox-root {
+  position: relative;
+}
+
+.hibilio-mobile-nav__create-trigger--attention .hibilio-mobile-nav__create-icon.MuiBox-root::after {
+  animation: hibilio-create-submit-attention 2.4s ease-in-out infinite;
+  border: 1px solid var(--hibilio-color-primary);
+  border-radius: inherit;
+  content: '';
+  inset: -4px;
+  pointer-events: none;
+  position: absolute;
+}
+
+@keyframes hibilio-create-submit-attention {
+  50% {
+    opacity: 0.3;
+    transform: scale(1.07);
+  }
+}
+
+@keyframes hibilio-create-guide-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
 .hibilio-mobile-nav__create-trigger--disabled .hibilio-mobile-nav__create-icon.MuiBox-root {
   background-color: var(--hibilio-color-muted) !important;
   color: var(--hibilio-color-muted-text) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hibilio-mobile-nav__create-trigger--attention .hibilio-mobile-nav__create-icon.MuiBox-root::after {
+    animation: none;
+    opacity: 0.5;
+  }
+
+  .hibilio-mobile-nav__create-guide--fading.MuiBox-root {
+    animation: none;
+  }
 }
 
 @media (min-width: 1200px) {

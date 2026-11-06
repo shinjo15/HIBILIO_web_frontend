@@ -43,7 +43,7 @@ describe('RoutineCreatePage', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
-  it('PC用投稿ボタンは既存フォームへ送信し、入力不備と送信中は無効にする', async () => {
+  it('PC用投稿ボタンは入力不備と送信中もアニメーションを表示しつつ、既存フォームへ一度だけ送信する', async () => {
     const user = userEvent.setup();
     let resolveCreate: (() => void) | undefined;
     const create = vi.fn().mockImplementation(() => new Promise<void>((resolve) => { resolveCreate = resolve; }));
@@ -52,17 +52,58 @@ describe('RoutineCreatePage', () => {
     const submitButton = screen.getByRole('button', { name: '投稿' });
     expect(submitButton).toHaveAttribute('form', 'routine-create-form');
     expect(submitButton).toBeDisabled();
+    expect(submitButton).toHaveClass('routine-create-desktop-submit__button--attention');
     await fillMinimumForm(user);
     expect(submitButton).toBeEnabled();
+    expect(submitButton).toHaveClass('routine-create-desktop-submit__button--attention');
 
     await user.click(submitButton);
     expect(create).toHaveBeenCalledTimes(1);
     expect(submitButton).toBeDisabled();
+    expect(submitButton).toHaveClass('routine-create-desktop-submit__button--attention');
     await user.click(submitButton);
     expect(create).toHaveBeenCalledTimes(1);
 
     resolveCreate?.();
     expect(await screen.findByText('ルーティンを投稿しました。')).toBeInTheDocument();
+  });
+
+  it('PC投稿ボタンの案内は5秒後にフェードを始め、完了後に関連付けを解除して再入時に再表示する', async () => {
+    vi.useFakeTimers();
+    const service = { create: vi.fn().mockResolvedValue(undefined) };
+    const firstPage = renderPage(service);
+
+    const firstSubmitButton = screen.getByRole('button', { name: '投稿' });
+    expect(firstSubmitButton).toHaveAttribute('aria-describedby');
+    expect(document.querySelector('.routine-create-desktop-submit__guide')).toHaveAttribute(
+      'id',
+      firstSubmitButton.getAttribute('aria-describedby'),
+    );
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(4_999); });
+
+    expect(document.querySelector('.routine-create-desktop-submit__guide')).not.toHaveClass('routine-create-desktop-submit__guide--fading');
+    expect(firstSubmitButton).toHaveAttribute('aria-describedby');
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+
+    expect(document.querySelector('.routine-create-desktop-submit__guide')).toHaveClass('routine-create-desktop-submit__guide--fading');
+    expect(firstSubmitButton).toHaveAttribute('aria-describedby');
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+
+    expect(document.querySelector('.routine-create-desktop-submit__guide')).not.toBeInTheDocument();
+    expect(firstSubmitButton).not.toHaveAttribute('aria-describedby');
+
+    firstPage.unmount();
+    renderPage(service);
+
+    const reenteredSubmitButton = screen.getByRole('button', { name: '投稿' });
+    expect(reenteredSubmitButton).toHaveAttribute('aria-describedby');
+    expect(document.querySelector('.routine-create-desktop-submit__guide')).toHaveAttribute(
+      'id',
+      reenteredSubmitButton.getAttribute('aria-describedby'),
+    );
   });
 
   it('同一tickのフォーム連続submitは一度だけ送信し、失敗後は再送できる', async () => {

@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { HibilioMark } from '../../../shared/brand/HibilioMark';
 import messages from '../../../shared/message/message.json';
@@ -37,6 +37,8 @@ export function RoutineCreatePage({
   const [favoriteTagLoadError, setFavoriteTagLoadError] = useState<string | null>(null);
   const [tagSearchLoadError, setTagSearchLoadError] = useState<string | null>(null);
   const [tagReloadVersion, setTagReloadVersion] = useState(0);
+  const [submitGuideState, setSubmitGuideState] = useState<'visible' | 'fading' | 'hidden'>('visible');
+  const submitGuideId = useId();
   const searchRequestId = useRef(0);
   const tagQueryRef = useRef(tagQuery);
   const copy = mode === 'customize' ? messages.routineCustomize : messages.routineCreate;
@@ -53,6 +55,15 @@ export function RoutineCreatePage({
       window.dispatchEvent(new CustomEvent('routine-create-submission-state', { detail: { canSubmit: false } }));
     };
   }, [canSubmit]);
+
+  useEffect(() => {
+    const fadeTimeoutId = window.setTimeout(() => setSubmitGuideState('fading'), 5_000);
+    const removeTimeoutId = window.setTimeout(() => setSubmitGuideState('hidden'), 5_300);
+    return () => {
+      window.clearTimeout(fadeTimeoutId);
+      window.clearTimeout(removeTimeoutId);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,9 +188,17 @@ export function RoutineCreatePage({
             tagQuery={tagQuery}
           />
           <div className="routine-create-desktop-submit">
-            <button className="routine-create-desktop-submit__button" disabled={!canSubmit} form="routine-create-form" type="submit">
-              {routineCreate.status === 'submitting' ? messages.routineCreate.submitting : messages.routineCreate.submit}
-            </button>
+            <div className="routine-create-desktop-submit__control">
+              <button aria-describedby={submitGuideState !== 'hidden' ? submitGuideId : undefined} className="routine-create-desktop-submit__button routine-create-desktop-submit__button--attention" disabled={!canSubmit} form="routine-create-form" type="submit">
+                {routineCreate.status === 'submitting' ? messages.routineCreate.submitting : messages.routineCreate.submit}
+              </button>
+              {submitGuideState !== 'hidden' && (
+                <div aria-live="polite" className={`routine-create-desktop-submit__guide${submitGuideState === 'fading' ? ' routine-create-desktop-submit__guide--fading' : ''}`} id={submitGuideId} role="tooltip">
+                  <span>{messages.routineCreate.submitGuide}</span>
+                  {!canSubmit && <small>{messages.routineCreate.submitDisabledGuide}</small>}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>

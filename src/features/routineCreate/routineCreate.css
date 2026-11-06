@@ -445,10 +445,64 @@
     cursor: pointer;
     font: inherit;
     font-weight: 600;
-    max-width: 672px;
     min-height: 48px;
     pointer-events: auto;
+    position: relative;
+    width: 100%;
+  }
+
+  .routine-create-desktop-submit__control {
+    max-width: 672px;
+    pointer-events: auto;
+    position: relative;
     width: calc(100% - 32px);
+  }
+
+  .routine-create-desktop-submit__guide {
+    background: var(--hibilio-color-on-background);
+    border-radius: 8px;
+    bottom: calc(100% + 12px);
+
+    color: var(--hibilio-color-background);
+    display: grid;
+    font-size: 13px;
+    gap: 2px;
+    max-width: calc(100% - 32px);
+    padding: 8px 12px;
+    pointer-events: none;
+    position: absolute;
+    left: 50%;
+    text-align: center;
+    transform: translateX(-50%);
+  }
+
+  .routine-create-desktop-submit__guide::after {
+    border: 7px solid transparent;
+    border-top-color: var(--hibilio-color-on-background);
+    content: '';
+    left: calc(50% - 7px);
+    pointer-events: none;
+    position: absolute;
+    top: 100%;
+  }
+
+  .routine-create-desktop-submit__guide small {
+    color: inherit;
+    font-size: 11px;
+  }
+
+  .routine-create-desktop-submit__guide--fading {
+    animation: routine-create-submit-guide-fade-out 300ms ease-out forwards;
+  }
+
+  .routine-create-desktop-submit__button--attention::after {
+    animation: routine-create-submit-attention 2.4s ease-in-out infinite;
+    border: 1px solid var(--hibilio-color-primary);
+    border-radius: inherit;
+    content: '';
+    inset: -4px;
+    pointer-events: none;
+    position: absolute;
   }
 
   .routine-create-desktop-submit__button:hover:not(:disabled),
@@ -462,5 +516,27 @@
     border-color: var(--hibilio-color-border);
     color: var(--hibilio-color-muted-text);
     cursor: not-allowed;
+  }
+}
+
+@keyframes routine-create-submit-attention {
+  50% {
+    opacity: 0.3;
+    transform: scale(1.015);
+  }
+}
+
+@keyframes routine-create-submit-guide-fade-out {
+  to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .routine-create-desktop-submit__button--attention::after {
+    animation: none;
+    opacity: 0.5;
+  }
+
+  .routine-create-desktop-submit__guide--fading {
+    animation: none;
   }
 }

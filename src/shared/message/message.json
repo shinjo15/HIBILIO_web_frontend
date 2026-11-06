@@ -351,6 +351,8 @@
     "back": "戻る",
     "backToFeed": "一覧へ戻る",
     "submit": "投稿",
+    "submitGuide": "ここを押して作成",
+    "submitDisabledGuide": "ルーティン名と行動の内容を入力すると投稿できます。",
     "submitting": "投稿しています…",
     "success": "ルーティンを投稿しました。",
     "successDescription": "一覧へ移動します。",

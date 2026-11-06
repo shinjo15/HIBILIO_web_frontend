@@ -13,7 +13,7 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, useId, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Link as RouterLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { getAuthenticationStatus, restoreAuthentication, subscribeToAuthentication } from '../../features/auth/services/authSession';
 import { HibilioMark } from '../brand/HibilioMark';
@@ -58,6 +58,7 @@ export function AppShell() {
     || /^\/routines\/[^/]+\/customize$/.test(location.pathname);
   const authenticationStatus = useSyncExternalStore(subscribeToAuthentication, getAuthenticationStatus, getAuthenticationStatus);
   const [canSubmitRoutineCreate, setCanSubmitRoutineCreate] = useState(false);
+  const routineCreateGuideId = useId();
 
   useEffect(() => {
     if (authenticationStatus === 'loading') void restoreAuthentication();
@@ -131,6 +132,7 @@ export function AppShell() {
 
           <List sx={{ mt: 'auto', p: 1.5 }}>
             <ListItemButton
+              className="hibilio-desktop-nav__create-trigger"
               component={RouterLink}
               selected={activePath === '/routines/new'}
               sx={{
@@ -176,26 +178,14 @@ export function AppShell() {
             </ButtonBase>
           );
         })}
-        <ButtonBase
-          aria-current={activePath === '/routines/new' ? 'page' : undefined}
-          aria-label={isRoutineCreate ? messages.routineCreate.submit : messages.navigation.createRoutine}
-          className={isRoutineCreate && !canSubmitRoutineCreate ? 'hibilio-mobile-nav__create-trigger hibilio-mobile-nav__create-trigger--disabled' : 'hibilio-mobile-nav__create-trigger'}
-          disabled={isRoutineCreate && !canSubmitRoutineCreate}
-          form={isRoutineCreate ? 'routine-create-form' : undefined}
-          onClick={isRoutineCreate ? undefined : () => navigate(protectedPath('/routines/new'))}
-          type={isRoutineCreate ? 'submit' : 'button'}
-          sx={{ alignItems: 'center', display: 'flex', height: '100%', justifyContent: 'center', minWidth: 0, width: '100%' }}
-        >
-          <Box
-            className="hibilio-mobile-nav__create-icon"
-            sx={{
-              alignItems: 'center', backgroundColor: 'primary.main', borderRadius: '50%',
-              color: 'primary.contrastText', display: 'flex', height: 48, justifyContent: 'center', marginTop: -2.5, width: 48,
-            }}
-          >
-            {isRoutineCreate ? <SendIcon fontSize="small" /> : <AddIcon />}
-          </Box>
-        </ButtonBase>
+        <RoutineCreateMobileTrigger
+          activePath={activePath}
+          canSubmit={canSubmitRoutineCreate}
+          id={routineCreateGuideId}
+          isRoutineCreate={isRoutineCreate}
+          key={isRoutineCreate ? 'routine-create' : 'navigation'}
+          onNavigateToCreate={() => navigate(protectedPath('/routines/new'))}
+        />
         {navigationItems.slice(2).map((item) => {
           const isSelected = activePath === item.path;
           return (
@@ -218,5 +208,74 @@ export function AppShell() {
         <Box aria-hidden="true" className="hibilio-mobile-nav__spacer" />
       </Box>
     </Box>
+  );
+}
+
+function RoutineCreateMobileTrigger({
+  activePath,
+  canSubmit,
+  id,
+  isRoutineCreate,
+  onNavigateToCreate,
+}: {
+  activePath: string;
+  canSubmit: boolean;
+  id: string;
+  isRoutineCreate: boolean;
+  onNavigateToCreate: () => void;
+}) {
+  const [guideState, setGuideState] = useState<'visible' | 'fading' | 'hidden'>('visible');
+  const className = isRoutineCreate
+    ? `hibilio-mobile-nav__create-trigger hibilio-mobile-nav__create-trigger--attention${canSubmit ? '' : ' hibilio-mobile-nav__create-trigger--disabled'}`
+    : 'hibilio-mobile-nav__create-trigger';
+
+  useEffect(() => {
+    if (!isRoutineCreate) return;
+
+    const fadeTimeoutId = window.setTimeout(() => setGuideState('fading'), 5_000);
+    const removeTimeoutId = window.setTimeout(() => setGuideState('hidden'), 5_300);
+    return () => {
+      window.clearTimeout(fadeTimeoutId);
+      window.clearTimeout(removeTimeoutId);
+    };
+  }, [isRoutineCreate]);
+
+  return (
+    <>
+      <ButtonBase
+        aria-current={activePath === '/routines/new' ? 'page' : undefined}
+        aria-describedby={isRoutineCreate && guideState !== 'hidden' ? id : undefined}
+        aria-label={isRoutineCreate ? messages.routineCreate.submit : messages.navigation.createRoutine}
+        className={className}
+        disabled={isRoutineCreate && !canSubmit}
+        form={isRoutineCreate ? 'routine-create-form' : undefined}
+        onClick={isRoutineCreate ? undefined : onNavigateToCreate}
+        type={isRoutineCreate ? 'submit' : 'button'}
+        sx={{ alignItems: 'center', display: 'flex', height: '100%', justifyContent: 'center', minWidth: 0, width: '100%' }}
+      >
+        <Box
+          className="hibilio-mobile-nav__create-icon hibilio-mobile-nav__create-icon--enlarged"
+          sx={{
+            alignItems: 'center', backgroundColor: 'primary.main', borderRadius: '50%',
+            color: 'primary.contrastText', display: 'flex', height: 48, justifyContent: 'center', marginTop: -2.5, width: 48,
+          }}
+        >
+          {isRoutineCreate ? <SendIcon fontSize="small" /> : <AddIcon />}
+        </Box>
+        {isRoutineCreate && guideState !== 'hidden' && (
+          <Box
+            aria-live="polite"
+            className={`hibilio-mobile-nav__create-guide${guideState === 'fading' ? ' hibilio-mobile-nav__create-guide--fading' : ''}`}
+            component="span"
+            id={id}
+            role="tooltip"
+            sx={{ pointerEvents: 'none' }}
+          >
+            <span>{messages.routineCreate.submitGuide}</span>
+            {!canSubmit && <small>{messages.routineCreate.submitDisabledGuide}</small>}
+          </Box>
+        )}
+      </ButtonBase>
+    </>
   );
 }
