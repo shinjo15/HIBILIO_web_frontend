@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { routineSchema } from '../../routineFeed/domain/routine';
 
 export const accountProfileSchema = z.object({
   accountIdentifier: z.string().min(1),
@@ -66,10 +67,18 @@ export const accountExecutionSummarySchema = z.object({
   supportCount: z.number().int().nonnegative(),
 });
 
+export const accountRoutineSchema = routineSchema.extend({
+  createdAt: z.string().datetime({ offset: true }).nullable(),
+  id: z.string().min(1).nullable(),
+  liked: z.boolean().nullable(),
+  likes: z.number().int().nonnegative().nullable(),
+});
+
 export type AccountProfile = z.infer<typeof accountProfileSchema>;
 export type AccountRelation = z.infer<typeof accountRelationSchema>;
 export type AccountPost = z.infer<typeof accountPostSchema>;
 export type AccountExecutionHistory = z.infer<typeof accountExecutionHistorySchema>;
 export type AccountExecutionSummary = z.infer<typeof accountExecutionSummarySchema>;
+export type AccountRoutine = z.infer<typeof accountRoutineSchema>;
 export type LikedRoutine = z.infer<typeof likedRoutineSchema>;
-export type AccountTab = 'posts' | 'likes' | 'executionHistory' | 'blockedAccounts' | 'followRequests' | 'sentFollowRequests';
+export type AccountTab = 'posts' | 'routines' | 'likes' | 'executionHistory' | 'blockedAccounts' | 'followRequests' | 'sentFollowRequests';

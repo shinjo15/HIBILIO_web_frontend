@@ -3,19 +3,19 @@ import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { IconButton, ListItemIcon, Menu, MenuItem } from '@mui/material';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type {
   AccountExecutionSummary,
   AccountProfile,
   AccountRelation,
+  AccountRoutine,
   AccountTab,
 } from '../domain/account';
-import type { Routine } from '../../routineFeed/domain/routine';
 import { AccountUnauthorizedError, accountService, type AccountService } from '../services/accountService';
 import { registrationSocialPlatforms } from '../../auth/register/services/registrationSocialPlatforms';
 import { clearAuthenticated } from '../../auth/services/authSession';
-import { AccountLikesList, AccountPostsList } from '../components/AccountRoutineLists';
+import { AccountLikesList, AccountPostsList, AccountRoutinesList } from '../components/AccountRoutineLists';
 import { AccountBackButton } from '../components/AccountBackButton';
 import { AccountRelationList } from '../../../shared/components/AccountRelationList';
 import { ExecutionHistoryCard } from '../../../shared/components/ExecutionHistoryCard';
@@ -68,7 +68,14 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
   const [cancellingSentFollowRequestAccountIdentifier, setCancellingSentFollowRequestAccountIdentifier] = useState<string | null>(null);
   const [actionMenuAnchor, setActionMenuAnchor] = useState<HTMLElement | null>(null);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
-  const [reportingRoutine, setReportingRoutine] = useState<Routine | null>(null);
+  const [reportingRoutine, setReportingRoutine] = useState<AccountRoutine | null>(null);
+  const likeOverridesRef = useRef(new Map<string, { liked: boolean; likes: number }>());
+
+  const applyLikeOverrides = useCallback(<Item extends AccountRoutine>(items: Item[]): Item[] => items.map((item) => {
+    if (item.id === null || item.liked === null || item.likes === null) return item;
+    const override = likeOverridesRef.current.get(item.id);
+    return override === undefined ? item : { ...item, ...override };
+  }), []);
 
   const handleListError = useCallback((error: unknown) => {
     if (error instanceof AccountUnauthorizedError) {
@@ -77,24 +84,40 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
     }
   }, [navigate]);
   const fetchPostsPage = useCallback(async (page: number) => {
-    if (service.listPostsPage !== undefined) return service.listPostsPage(page);
+    if (service.listPostsPage !== undefined) {
+      const result = await service.listPostsPage(page);
+      return { ...result, items: applyLikeOverrides(result.items) };
+    }
     const items = await service.listPosts();
-    return { items, total: items.length };
-  }, [service]);
+    return { items: applyLikeOverrides(items), total: items.length };
+  }, [applyLikeOverrides, service]);
   const fetchLikesPage = useCallback(async (page: number) => {
-    if (service.listLikesPage !== undefined) return service.listLikesPage(page);
+    if (service.listLikesPage !== undefined) {
+      const result = await service.listLikesPage(page);
+      return { ...result, items: applyLikeOverrides(result.items) };
+    }
     const items = await service.listLikes();
-    return { items, total: items.length };
-  }, [service]);
+    return { items: applyLikeOverrides(items), total: items.length };
+  }, [applyLikeOverrides, service]);
+  const fetchRoutinesPage = useCallback(async (page: number) => {
+    if (service.listRoutinesPage !== undefined) {
+      const result = await service.listRoutinesPage(page);
+      return { ...result, items: applyLikeOverrides(result.items) };
+    }
+    const items = await service.listRoutines();
+    return { items: applyLikeOverrides(items), total: items.length };
+  }, [applyLikeOverrides, service]);
   const fetchExecutionHistoriesPage = useCallback(async (page: number) => {
     if (service.listExecutionHistoriesPage !== undefined) return service.listExecutionHistoriesPage(page);
     const items = await service.listExecutionHistories();
     return { items, total: items.length };
   }, [service]);
   const postsList = useInfiniteList({ enabled: activeTab === 'posts', fetchPage: fetchPostsPage, key: 'account-posts', onError: handleListError, preserveWhenDisabled: true });
+  const routinesList = useInfiniteList({ enabled: isOwnAccount, fetchPage: fetchRoutinesPage, key: 'account-routines', onError: handleListError, preserveWhenDisabled: true });
   const likesList = useInfiniteList({ enabled: true, fetchPage: fetchLikesPage, key: 'account-likes', onError: handleListError, preserveWhenDisabled: true });
   const executionHistoriesList = useInfiniteList({ enabled: true, fetchPage: fetchExecutionHistoriesPage, key: 'account-execution-history', onError: handleListError, preserveWhenDisabled: true });
   const posts = postsList.items;
+  const routines = routinesList.items;
   const likes = likesList.items;
   const executionHistories = executionHistoriesList.items;
 
@@ -208,14 +231,17 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
   }
 
   async function toggleLike(postIdentifier: string) {
-    const routine = [...posts, ...likes].find((item) => item.id === postIdentifier);
-    if (routine === undefined) return;
+    const routine = [...posts, ...routines, ...likes].find((item) => item.id === postIdentifier);
+    if (routine === undefined || routine.liked === null || routine.likes === null) return;
     const type = routine.liked ? 'unlike' : 'like';
-    const updateLike = (item: Routine) => item.id === postIdentifier ? { ...item, liked: !routine.liked, likes: item.likes + (routine.liked ? -1 : 1) } : item;
+    const updateLike = <Item extends AccountRoutine>(item: Item): Item => item.id === postIdentifier && item.liked !== null && item.likes !== null ? { ...item, liked: !routine.liked, likes: item.likes + (routine.liked ? -1 : 1) } : item;
+    const previousLikeOverride = likeOverridesRef.current.get(postIdentifier);
+    likeOverridesRef.current.set(postIdentifier, { liked: !routine.liked, likes: routine.likes + (routine.liked ? -1 : 1) });
     setLikingPostIdentifiers((current) => new Set(current).add(postIdentifier));
     setLikeAnimations((current) => new Map(current).set(postIdentifier, type));
     setLikeError(false);
     postsList.setItems((current) => current.map(updateLike));
+    routinesList.setItems((current) => current.map(updateLike));
     likesList.setItems((current) => current.map(updateLike));
     try {
       if (routine.liked) {
@@ -224,8 +250,11 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
         await likeService.create(postIdentifier);
       }
     } catch (error) {
-      const rollback = (item: Routine) => item.id === postIdentifier ? routine : item;
+      const rollback = <Item extends AccountRoutine>(item: Item): Item => item.id === postIdentifier ? { ...item, liked: routine.liked, likes: routine.likes } : item;
+      if (previousLikeOverride === undefined) likeOverridesRef.current.delete(postIdentifier);
+      else likeOverridesRef.current.set(postIdentifier, previousLikeOverride);
       postsList.setItems((current) => current.map(rollback));
+      routinesList.setItems((current) => current.map(rollback));
       likesList.setItems((current) => current.map(rollback));
       if (error instanceof RoutineLikeUnauthorizedError) {
         clearAuthenticated();
@@ -387,15 +416,18 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
 
     likes: likesList.total ?? (likesList.error ? likes.length : null),
     posts: postsList.total ?? (postsList.error ? posts.length : null),
+    routines: routinesList.total ?? (routinesList.error ? routines.length : null),
   };
   const displayedTabs = isOwnAccount
     ? [
-      ...tabs,
+      tabs[0],
+      { label: messages.account.tabs.routines, value: 'routines' as const },
+      ...tabs.slice(1),
       ...(profile.visibility === 'private' ? [{ label: messages.account.tabs.followRequests, value: 'followRequests' as const }] : []),
       { label: messages.account.tabs.sentFollowRequests, value: 'sentFollowRequests' as const },
     ]
     : tabs.slice(0, 3);
-  const tabClassName = `account-tabs account-tabs--${['zero', 'one', 'two', 'three', 'four', 'five', 'six'][displayedTabs.length]}`;
+  const tabClassName = `account-tabs account-tabs--${['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'][displayedTabs.length]}`;
 
   return (
     <section className="account-page">
@@ -449,13 +481,14 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
         </section>
         {!isOwnAccount && <><Menu anchorEl={actionMenuAnchor} id="account-action-menu" onClose={() => setActionMenuAnchor(null)} open={actionMenuAnchor !== null}><MenuItem disabled={isBlocking || isBlocked} onClick={() => { setActionMenuAnchor(null); void blockAccount(); }}><ListItemIcon className="account-action-menu__icon"><BlockOutlinedIcon fontSize="small" /></ListItemIcon>{isBlocking ? messages.publicAccount.blocking : isBlocked ? messages.publicAccount.blocked : messages.report.accountMenuBlock}</MenuItem><MenuItem onClick={() => { setActionMenuAnchor(null); setIsReportDialogOpen(true); }}><ListItemIcon className="account-action-menu__icon"><FlagOutlinedIcon fontSize="small" /></ListItemIcon>{messages.report.accountMenuReport}</MenuItem></Menu><ReportDialog onClose={() => setIsReportDialogOpen(false)} onUnauthorized={() => { clearAuthenticated(); navigate('/login'); }} open={isReportDialogOpen} service={reportService} targetAccountIdentifier={profile.accountIdentifier} /></>}
 
-        {activeTab === 'posts' && <AccountPostsList canReport={(routine) => isOwnAccount ? profile.accountIdentifier !== routine.accountId : currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId)} error={postsList.error} likeAnimations={likeAnimations} likeError={likeError} likingPostIdentifiers={likingPostIdentifiers} onLike={toggleLike} onReport={setReportingRoutine} posts={posts} retry={postsList.retry} sentinelRef={postsList.sentinelRef} />}
+        {activeTab === 'posts' && <AccountPostsList canReport={(routine) => isOwnAccount ? profile.accountIdentifier !== routine.accountId : currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId)} error={postsList.error} isInitialLoading={postsList.isInitialLoading} likeAnimations={likeAnimations} likeError={likeError} likingPostIdentifiers={likingPostIdentifiers} onLike={toggleLike} onReport={setReportingRoutine} onSelectExecution={(routineId, executionId) => navigate(`/routines/${routineId}/executions/${executionId}`)} posts={posts} retry={postsList.retry} sentinelRef={postsList.sentinelRef} />}
+        {activeTab === 'routines' && <AccountRoutinesList error={routinesList.error} likeAnimations={likeAnimations} likingPostIdentifiers={likingPostIdentifiers} onLike={toggleLike} retry={routinesList.retry} routines={routines} sentinelRef={routinesList.sentinelRef} status={routinesList.total === null && !routinesList.error ? 'loading' : routinesList.error && routines.length === 0 ? 'error' : 'loaded'} />}
         {activeTab === 'likes' && <AccountLikesList canReport={(routine) => isOwnAccount ? profile.accountIdentifier !== routine.accountId : currentAccountIdentifier === null || (currentAccountIdentifier !== undefined && currentAccountIdentifier !== routine.accountId)} error={likesList.error} likeAnimations={likeAnimations} likeError={likeError} likingPostIdentifiers={likingPostIdentifiers} likes={likes} onLike={toggleLike} onReport={setReportingRoutine} retry={likesList.retry} sentinelRef={likesList.sentinelRef} status={likesList.total === null && !likesList.error ? 'loading' : likesList.error && likes.length === 0 ? 'error' : 'loaded'} />}
         {activeTab === 'executionHistory' && <ExecutionHistoryList error={executionHistoriesList.error} histories={executionHistories} onSelect={(history) => navigate(`/routines/${history.routineId}/executions/${history.id}`)} retry={executionHistoriesList.retry} sentinelRef={executionHistoriesList.sentinelRef} />}
         {activeTab === 'blockedAccounts' && <AccountRelationListState accounts={blockedAccounts} action={(account) => <button className="account-relation-card-with-action__button" disabled={unblockingAccountIdentifier === account.accountIdentifier} onClick={(event) => { event.stopPropagation(); void removeBlock(account); }} type="button"><BlockIcon />{unblockingAccountIdentifier === account.accountIdentifier ? messages.account.unblocking : messages.account.unblock}</button>} actionError={unblockError ? messages.account.unblockError : null} emptyMessage={messages.account.blockedAccountsEmpty} errorMessage={messages.account.blockedAccountsError} loadingMessage={messages.account.blockedAccountsLoading} status={blockedAccountsStatus} />}
         {activeTab === 'followRequests' && <AccountRelationListState accounts={followRequests} action={(account) => <div className="account-relation-card-with-action__actions"><button className="account-relation-card-with-action__button" disabled={processingFollowRequestAccountIdentifier === account.accountIdentifier} onClick={(event) => { event.stopPropagation(); void processFollowRequest(account, 'approve'); }} type="button">{messages.account.followRequestApprove}</button><button className="account-relation-card-with-action__button account-relation-card-with-action__button--secondary" disabled={processingFollowRequestAccountIdentifier === account.accountIdentifier} onClick={(event) => { event.stopPropagation(); void processFollowRequest(account, 'reject'); }} type="button">{messages.account.followRequestReject}</button></div>} actionError={followRequestActionError ? messages.account.followRequestActionError : null} emptyMessage={messages.account.followRequestsEmpty} errorMessage={messages.account.followRequestsError} loadingMessage={messages.account.followRequestsLoading} status={followRequestsStatus} />}
         {activeTab === 'sentFollowRequests' && <AccountRelationListState accounts={sentFollowRequests} action={(account) => <button className="account-relation-card-with-action__button" disabled={cancellingSentFollowRequestAccountIdentifier === account.accountIdentifier} onClick={(event) => { event.stopPropagation(); void cancelSentFollowRequest(account); }} type="button">{cancellingSentFollowRequestAccountIdentifier === account.accountIdentifier ? messages.account.sentFollowRequestCancelling : messages.account.sentFollowRequestCancel}</button>} actionError={sentFollowRequestCancelError} emptyMessage={messages.account.sentFollowRequestsEmpty} errorMessage={messages.account.sentFollowRequestsError} loadingMessage={messages.account.sentFollowRequestsLoading} status={sentFollowRequestsStatus} />}
-        {reportingRoutine !== null && <ReportDialog onClose={() => setReportingRoutine(null)} onUnauthorized={() => { clearAuthenticated(); navigate('/login'); }} open service={reportService} targetAccountIdentifier={reportingRoutine.accountId} targetPostIdentifier={reportingRoutine.id} />}
+        {reportingRoutine !== null && reportingRoutine.id !== null && <ReportDialog onClose={() => setReportingRoutine(null)} onUnauthorized={() => { clearAuthenticated(); navigate('/login'); }} open service={reportService} targetAccountIdentifier={reportingRoutine.accountId} targetPostIdentifier={reportingRoutine.id} />}
       </div>
     </section>
   );

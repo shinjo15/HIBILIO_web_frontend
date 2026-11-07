@@ -130,6 +130,69 @@ describe('createAccountService', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/my/posts?page=1&number_of_items_per_page=40', { credentials: 'include', method: 'GET' });
   });
 
+  it('GET /api/my/posts のルーティン投稿と実行投稿を種類別の表示モデルへ変換する', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      items: [
+        {
+          account_identifier: '11111111-1111-4111-8111-111111111111', account_name: '投稿者', customization_count: 1, execution_count: 3,
+          liked: true, post_category: 'routine', post_identifier: 'routine-post-1', post_like_count: 2, posted_at: '2026-09-03T12:00:00+00:00',
+          routine_actions: [], routine_execution_identifier: null, routine_execution_minutes: 30, routine_identifier: 'routine-1', routine_name: '朝の集中ルーティン', tags: [],
+        },
+        {
+          account_identifier: '11111111-1111-4111-8111-111111111111', account_name: '投稿者', customization_count: 1, executed_action_count: 2, execution_count: 3,
+          post_category: 'action', post_identifier: 'execution-post-1', post_like_count: 0, posted_at: '2026-09-04T12:00:00+00:00', routine_actions: [],
+          routine_execution_identifier: '22222222-2222-4222-8222-222222222222', routine_execution_memo: '集中できました', routine_execution_minutes: 30,
+          routine_identifier: 'routine-1', routine_name: '朝の集中ルーティン', support_count: 4, supported: true, tags: [],
+        },
+      ], total: 2,
+    })));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createAccountService().listPostsPage?.(2)).resolves.toMatchObject({
+      items: [
+        { id: 'routine-post-1', liked: true, postCategory: 'routine' },
+        { executedActionCount: 2, executionMemo: '集中できました', id: 'execution-post-1', postCategory: 'action', routineExecutionId: '22222222-2222-4222-8222-222222222222', supportCount: 4, supported: true },
+      ], total: 2,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/posts?page=2&number_of_items_per_page=40', { credentials: 'include', method: 'GET' });
+  });
+
+  it('GET /api/my/posts の posted_at が null の実行投稿を日付なしの表示モデルへ変換する', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      items: [{
+        account_identifier: '11111111-1111-4111-8111-111111111111', account_name: '投稿者', customization_count: 1, executed_action_count: 2, execution_count: 3,
+        icon_image_url: null, post_category: 'action', post_identifier: '22222222-2222-4222-8222-222222222222', post_like_count: 0, posted_at: null,
+        routine_actions: [], routine_execution_identifier: '33333333-3333-4333-8333-333333333333', routine_execution_memo: null, routine_execution_minutes: 30,
+        routine_identifier: 'routine-1', routine_name: '朝の集中ルーティン', support_count: 4, supported: true, tags: [],
+      }], total: 1,
+    })));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createAccountService().listPosts()).resolves.toMatchObject([{
+      createdAt: null,
+      id: '22222222-2222-4222-8222-222222222222',
+      postCategory: 'action',
+      routineExecutionId: '33333333-3333-4333-8333-333333333333',
+    }]);
+  });
+
+  it('GET /api/my/routines の未投稿ルーティンを投稿操作なしの表示モデルへ変換する', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      items: [{
+        account_identifier: '11111111-1111-4111-8111-111111111111', account_name: '投稿者', customization_count: 1, execution_count: 3,
+        icon_image_url: null, liked: null, post_identifier: null, post_like_count: null, post_support_count: null, posted_at: null,
+        routine_actions: [{ action_minutes: 15, action_name: '読書', routine_action_identifier: 'action-1' }], routine_execution_minutes: 15,
+        routine_identifier: 'routine-1', routine_name: '未投稿ルーティン', tags: [{ tag_identifier: 'tag-1', tag_name: '読書' }],
+      }], total: 1,
+    })));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createAccountService().listRoutinesPage?.(2)).resolves.toMatchObject({
+      items: [{ id: null, liked: null, likes: null, routineId: 'routine-1', title: '未投稿ルーティン' }], total: 1,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/routines?page=2&number_of_items_per_page=40', { credentials: 'include', method: 'GET' });
+  });
+
   it('GET /api/my/likes の契約をいいね表示モデルへ変換する', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       items: [{

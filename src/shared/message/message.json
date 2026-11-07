@@ -243,6 +243,10 @@
     "loading": "アカウント情報を読み込んでいます…",
     "minuteUnit": "分",
     "postsEmpty": "投稿したルーティンはまだありません",
+    "postsLoading": "投稿を読み込んでいます…",
+    "routinesEmpty": "作成したルーティンはまだありません",
+    "routinesError": "作成したルーティンを読み込めませんでした。時間をおいて再試行してください。",
+    "routinesLoading": "作成したルーティンを読み込んでいます…",
     "settings": "設定",
     "support": "応援",
     "tabs": {
@@ -253,7 +257,8 @@
       "sentFollowRequests": "送信済みフォローリクエスト",
 
       "likes": "いいね",
-      "posts": "投稿"
+      "posts": "投稿",
+      "routines": "ルーティン"
     },
     "title": "アカウント"
   },

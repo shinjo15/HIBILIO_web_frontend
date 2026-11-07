@@ -6,15 +6,17 @@ import messages from '../message/message.json';
 import { AccountAvatar } from './AccountImage';
 import './executionHistoryCard.css';
 
-type ExecutionHistoryCardProps = {
+type ExecutionHistoryCardExecution = Omit<AccountExecutionSummary, 'postedAt'> & { postedAt: string | null };
+
+type ExecutionHistoryCardProps<T extends ExecutionHistoryCardExecution> = {
   author?: { iconImageUrl: string | null; name: string };
   dateLabel?: string;
-  execution: AccountExecutionSummary;
+  execution: T;
   onReport?: () => void;
-  onSelect: (execution: AccountExecutionSummary) => void;
+  onSelect: (execution: T) => void;
 };
 
-export function ExecutionHistoryCard({ author, dateLabel, execution, onReport, onSelect }: ExecutionHistoryCardProps) {
+export function ExecutionHistoryCard<T extends ExecutionHistoryCardExecution>({ author, dateLabel, execution, onReport, onSelect }: ExecutionHistoryCardProps<T>) {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const avatarClasses: Record<string, string> = {
     H: 'routine-card__avatar--h',
@@ -33,7 +35,7 @@ export function ExecutionHistoryCard({ author, dateLabel, execution, onReport, o
         <div className="account-page__card-header execution-history-card__header">
           {author !== undefined && <div className="routine-card__author execution-history-card__author"><AccountAvatar className={`routine-card__avatar ${avatarClass}`} iconImageUrl={author.iconImageUrl} initial={authorInitial ?? ''} /><span className="routine-card__handle"><span className="execution-history-card__author-name">{author.name}</span><span className="execution-history-card__action-label"> がルーティンを実行</span></span></div>}
           <h2 className="account-page__card-title">{execution.routineTitle}</h2>
-          <div className={`execution-history-card__metadata${onReport !== undefined ? ' execution-history-card__metadata--with-menu' : ''}`}><span className="account-page__card-date">{dateLabel ?? new Date(execution.postedAt).toLocaleDateString('ja-JP')}</span></div>
+          <div className={`execution-history-card__metadata${onReport !== undefined ? ' execution-history-card__metadata--with-menu' : ''}`}><span className="account-page__card-date">{dateLabel ?? (execution.postedAt === null ? '' : new Date(execution.postedAt).toLocaleDateString('ja-JP'))}</span></div>
         </div>
         {execution.memo !== null && <p className="account-profile__handle">{execution.memo}</p>}
       </div>
