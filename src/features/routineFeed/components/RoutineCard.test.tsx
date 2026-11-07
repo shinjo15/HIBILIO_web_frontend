@@ -97,6 +97,7 @@ describe('RoutineCard', () => {
     expect(screen.getByText('3')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'いいねする' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '投稿のメニュー' })).not.toBeInTheDocument();
+    expect(screen.queryByText('がルーティンを投稿')).not.toBeInTheDocument();
     expect(screen.queryByText(/日前$/)).not.toBeInTheDocument();
   });
 

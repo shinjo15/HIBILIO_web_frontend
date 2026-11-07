@@ -28,6 +28,7 @@ const accountService: AccountService = {
   listSentFollowRequests: async () => [],
   listLikes: async () => [],
   listPosts: async () => [],
+  listRoutines: async () => [],
 };
 
 function Location() {

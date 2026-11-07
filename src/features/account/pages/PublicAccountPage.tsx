@@ -37,6 +37,7 @@ export function PublicAccountPage({ blockService = accountBlockService, currentA
     listLikesPage: service.listLikesPage === undefined ? undefined : async (page) => service.listLikesPage?.(accountId, page) ?? { items: [], total: 0 },
     listPosts: async () => service.listPosts(accountId),
     listPostsPage: service.listPostsPage === undefined ? undefined : async (page) => service.listPostsPage?.(accountId, page) ?? { items: [], total: 0 },
+    listRoutines: async () => [],
   }), [accountId, loadedProfile, service]);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { apiFetch } from '../../../shared/api/apiFetch';
-import { parseAccountPostsPage, parseLikedRoutinesPage } from './accountRoutinePosts';
+import { parseLikedRoutinesPage, parseMyPostsPage, parseMyRoutinesPage } from './accountRoutinePosts';
 import { parseAccountRoutineExecutionsPage } from './accountRoutineExecutions';
 import type { Routine } from '../../routineFeed/domain/routine';
 import type { PageResult } from '../../../shared/hooks/useInfiniteList';
@@ -12,6 +12,7 @@ import {
   type AccountExecutionSummary,
   type AccountProfile,
   type AccountRelation,
+  type AccountRoutine,
 } from '../domain/account';
 
 const getMyAccountResponseSchema = z.object({
@@ -67,6 +68,10 @@ type AccountPostsAdapter = {
   listPosts: (page?: number) => Promise<unknown>;
 };
 
+type AccountRoutinesAdapter = {
+  listRoutines: (page?: number) => Promise<unknown>;
+};
+
 type AccountProfileAdapter = {
   getProfile: () => Promise<unknown>;
 };
@@ -106,8 +111,10 @@ export type AccountService = {
   listSentFollowRequests: () => Promise<AccountRelation[]>;
   listLikes: () => Promise<Routine[]>;
   listLikesPage?: (page: number) => Promise<PageResult<Routine>>;
-  listPosts: () => Promise<Routine[]>;
-  listPostsPage?: (page: number) => Promise<PageResult<Routine>>;
+  listPosts: () => Promise<AccountRoutine[]>;
+  listPostsPage?: (page: number) => Promise<PageResult<AccountRoutine>>;
+  listRoutines: () => Promise<AccountRoutine[]>;
+  listRoutinesPage?: (page: number) => Promise<PageResult<AccountRoutine>>;
 };
 
 const accountExecutionApiAdapter: AccountExecutionAdapter = {
@@ -249,11 +256,21 @@ const accountPostsApiAdapter: AccountPostsAdapter = {
   },
 };
 
+const accountRoutinesApiAdapter: AccountRoutinesAdapter = {
+  listRoutines: async (page = 1) => {
+    const response = await apiFetch(`/api/my/routines?page=${page}&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' });
+    if (response.status === 401) throw new AccountUnauthorizedError('My routines require authentication');
+    if (!response.ok) throw new Error(`Failed to fetch my routines: ${response.status}`);
+    return response.json();
+  },
+};
+
 export function createAccountService(
   executionAdapter: AccountExecutionAdapter = accountExecutionApiAdapter,
   likesAdapter: AccountLikesAdapter = accountLikesApiAdapter,
   profileAdapter: AccountProfileAdapter = accountProfileApiAdapter,
   postsAdapter: AccountPostsAdapter = accountPostsApiAdapter,
+  routinesAdapter: AccountRoutinesAdapter = accountRoutinesApiAdapter,
 
   blocksAdapter: AccountBlocksAdapter = accountBlocksApiAdapter,
   receivedFollowRequestsAdapter: ReceivedFollowRequestsAdapter = receivedFollowRequestsApiAdapter,
@@ -261,7 +278,8 @@ export function createAccountService(
 ): AccountService {
   const listExecutionHistoriesPage = async (page: number) => parseAccountRoutineExecutionsPage(await executionAdapter.listExecutionHistories(page));
   const listLikesPage = async (page: number) => parseLikedRoutinesPage(await likesAdapter.listLikes(page));
-  const listPostsPage = async (page: number) => parseAccountPostsPage(await postsAdapter.listPosts(page));
+  const listPostsPage = async (page: number) => parseMyPostsPage(await postsAdapter.listPosts(page));
+  const listRoutinesPage = async (page: number) => parseMyRoutinesPage(await routinesAdapter.listRoutines(page));
 
   return {
     getExecutionHistory: async (executionId) => {
@@ -309,6 +327,8 @@ export function createAccountService(
     listLikesPage,
     listPosts: async () => (await listPostsPage(1)).items,
     listPostsPage,
+    listRoutines: async () => (await listRoutinesPage(1)).items,
+    listRoutinesPage,
   };
 }
 
