@@ -126,6 +126,6 @@ describe('createPublicAccountService', () => {
     await expect(service.listExecutionHistoriesPage?.('account-1', 4)).resolves.toMatchObject({ items: [{ id: 'execution-1' }], total: 5 });
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/accounts/account-1/posts?page=2&number_of_items_per_page=40', { credentials: 'include', method: 'GET' });
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/accounts/account-1/likes?page=3&number_of_items_per_page=40', { credentials: 'include', method: 'GET' });
-    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/accounts/account-1/routine-executions?page=4&number_of_items_per_page=40', { credentials: 'include' });
+    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/accounts/account-1/routine-executions?page=4&number_of_items_per_page=40', { credentials: 'include', method: 'GET' });
   });
 });

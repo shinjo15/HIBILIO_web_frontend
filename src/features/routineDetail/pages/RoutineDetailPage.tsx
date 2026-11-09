@@ -87,7 +87,7 @@ function RoutineDetailContent({ routine, service }: { routine: RoutineDetailView
   return (
     <section className="routine-detail-page">
       <header className="routine-detail-header">
-        <Link className="routine-detail-header__back" to="/">
+        <Link className="routine-detail-header__back" to="/feed">
           <BackIcon />
           <span>{messages.routineDetail.backToFeed}</span>
         </Link>
@@ -296,7 +296,7 @@ function RoutineDetailContent({ routine, service }: { routine: RoutineDetailView
 function DetailState({ message }: { message: string }) {
   return (
     <section className="routine-detail-page routine-detail-page--state">
-      <Link className="routine-detail-header__back" to="/">
+      <Link className="routine-detail-header__back" to="/feed">
         <BackIcon />
         <span>{messages.routineDetail.backToFeed}</span>
       </Link>

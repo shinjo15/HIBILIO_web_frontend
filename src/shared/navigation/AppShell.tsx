@@ -1,6 +1,7 @@
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
+import ViewAgendaOutlinedIcon from '@mui/icons-material/ViewAgendaOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import SendIcon from '@mui/icons-material/Send';
 import {
@@ -29,12 +30,15 @@ type NavigationItem = {
 };
 
 const navigationItems: NavigationItem[] = [
-  { icon: <HomeOutlinedIcon fontSize="small" />, label: messages.navigation.feed, path: '/' },
+  { icon: <HomeOutlinedIcon fontSize="small" />, label: messages.navigation.home, path: '/home' },
+  { icon: <ViewAgendaOutlinedIcon fontSize="small" />, label: messages.navigation.feed, path: '/feed' },
   { icon: <SearchOutlinedIcon fontSize="small" />, label: messages.navigation.search, path: '/search' },
   { icon: <AccountCircleOutlinedIcon fontSize="small" />, label: messages.navigation.account, path: '/account' },
 ];
 
 function selectedPath(pathname: string): string {
+  if (pathname === '/home') return '/home';
+  if (pathname === '/' || pathname === '/feed') return '/feed';
   if (pathname === '/account' || pathname === '/account/settings') {
     return '/account';
   }
@@ -47,7 +51,7 @@ function selectedPath(pathname: string): string {
     return '/search';
   }
 
-  return '/';
+  return '/feed';
 }
 
 export function AppShell() {
@@ -74,7 +78,7 @@ export function AppShell() {
   }, []);
 
   function protectedPath(path: string): string {
-    return authenticationStatus !== 'unauthenticated' || path === '/' || path === '/search' ? path : '/login';
+    return authenticationStatus !== 'unauthenticated' || path === '/feed' || path === '/home' || path === '/search' ? path : '/login';
   }
 
   return (
@@ -205,7 +209,6 @@ export function AppShell() {
             </ButtonBase>
           );
         })}
-        <Box aria-hidden="true" className="hibilio-mobile-nav__spacer" />
       </Box>
     </Box>
   );

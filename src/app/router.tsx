@@ -8,12 +8,14 @@ import { AccountExecutionHistoryPage } from '../features/account/pages/AccountEx
 import { PublicAccountPage } from '../features/account/pages/PublicAccountPage';
 import { ContactSupportPage } from '../features/contactSupport/pages/ContactSupportPage';
 import { SettingsPage } from '../features/settings/pages/SettingsPage';
-import { RoutineFeedPage } from '../features/routineFeed/pages/RoutineFeedPage';
 import { RoutineCreatePage } from '../features/routineCreate/pages/RoutineCreatePage';
 import { CustomizedRoutineCreatePage } from '../features/routineCreate/pages/CustomizedRoutineCreatePage';
 import { RoutineDetailPage } from '../features/routineDetail/pages/RoutineDetailPage';
 import { RoutineExecutionPage } from '../features/routineExecution/pages/RoutineExecutionPage';
 import { SearchPage } from '../features/search/pages/SearchPage';
+import { HomePage } from '../features/home/pages/HomePage';
+import { InitialPage } from '../features/home/pages/InitialPage';
+import { FeedPage } from '../features/routineFeed/pages/FeedPage';
 import { AppShell } from '../shared/navigation/AppShell';
 import { ScrollManager } from './ScrollManager';
 
@@ -39,7 +41,9 @@ export const router = createBrowserRouter([
       {
         element: <AppShell />,
         children: [
-          { element: <RoutineFeedPage />, index: true },
+          { element: <InitialPage />, index: true },
+          { element: <HomePage />, path: 'home' },
+          { element: <FeedPage />, path: 'feed' },
           {
             element: <RequireAuthentication />,
             children: [

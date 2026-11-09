@@ -278,6 +278,14 @@ describe('createAccountService', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/my/routine-executions?page=4&number_of_items_per_page=40', { credentials: 'include', method: 'GET' });
   });
 
+  it('認証切替でいいね・実行履歴のページ取得が401なら未認証エラーを返す', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
+    const service = createAccountService();
+
+    await expect(service.listLikesPage?.(1)).rejects.toMatchObject({ name: 'AccountUnauthorizedError' });
+    await expect(service.listExecutionHistoriesPage?.(1)).rejects.toMatchObject({ name: 'AccountUnauthorizedError' });
+  });
+
   it('GET /api/my/blocks のicon_image_urlをブロック中アカウントへ変換する', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       blocks: [{

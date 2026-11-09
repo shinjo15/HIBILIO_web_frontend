@@ -25,7 +25,7 @@ type RoutineCreatePageProps = {
 export function RoutineCreatePage({
   initialForm,
   mode = 'create',
-  returnPath = '/',
+  returnPath = '/feed',
   service = routineCreateService,
 }: RoutineCreatePageProps) {
   const navigate = useNavigate();
