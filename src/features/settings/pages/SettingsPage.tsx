@@ -25,12 +25,20 @@ export function SettingsPage() {
     <SettingsContent
       onBack={() => navigate('/account')}
       onContactSupport={() => navigate('/contact-support')}
+      onRetryLikeNotification={settings.retryLikeNotification}
+      onRetrySupportNotification={settings.retrySupportNotification}
+      onRetryNotifications={settings.retryNotifications}
       onRetryUiMode={retryUiMode}
       onSignOut={() => void signOut()}
       onUiModeChange={(nextUiMode) => void setUiMode(nextUiMode)}
       onToggleLikeNotification={settings.toggleLikeNotification}
-      onTogglePrivateAccount={settings.togglePrivateAccount}
       onToggleSupportNotification={settings.toggleSupportNotification}
+      notificationStatus={settings.notificationStatus}
+      likeNotificationDisabled={settings.isLikeNotificationSaving || settings.likeNotificationError || settings.notificationAuthenticationFailed}
+      likeNotificationError={settings.likeNotificationError}
+      supportNotificationDisabled={settings.isSupportNotificationSaving || settings.supportNotificationError || settings.notificationAuthenticationFailed}
+      supportNotificationError={settings.supportNotificationError}
+      onTogglePrivateAccount={settings.togglePrivateAccount}
       onRetryPrivateAccount={settings.retryVisibility}
       privateAccountDisabled={settings.isVisibilityLoading || settings.isVisibilitySaving || settings.visibilityLoadError}
       settings={settings.settings}

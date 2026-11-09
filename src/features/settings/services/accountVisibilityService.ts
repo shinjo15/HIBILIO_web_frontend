@@ -1,10 +1,11 @@
-import { CsrfTokenError, getCsrfToken } from '../../auth/services/authSession';
+import { enqueueAccountMutation } from '../../../shared/api/accountMutationQueue';
 import { apiFetch } from '../../../shared/api/apiFetch';
+import { CsrfTokenError, getAuthenticationGeneration, getCsrfToken } from '../../auth/services/authSession';
 
 export type AccountVisibility = 'private' | 'public';
 
 export type AccountVisibilityService = {
-  update: (visibility: AccountVisibility) => Promise<void>;
+  update: (visibility: AccountVisibility, sessionGeneration?: number) => Promise<void>;
 };
 
 export class AccountVisibilityUnauthorizedError extends Error {
@@ -14,29 +15,40 @@ export class AccountVisibilityUnauthorizedError extends Error {
   }
 }
 
-let inFlightUpdate: Promise<void> | null = null;
+export class AccountVisibilitySessionChangedError extends Error {
+  constructor() {
+    super('Account visibility session changed');
+    this.name = 'AccountVisibilitySessionChangedError';
+  }
+}
 
-export function getInFlightAccountVisibilityUpdate(): Promise<void> | null {
-  return inFlightUpdate;
+const inFlightUpdates = new Map<number, Promise<void>>();
+
+export function getInFlightAccountVisibilityUpdate(sessionGeneration: number): Promise<void> | null {
+  return inFlightUpdates.get(sessionGeneration) ?? null;
 }
 
 export function resetAccountVisibilityServiceForTesting(): void {
-  inFlightUpdate = null;
+  inFlightUpdates.clear();
 }
 
 export function createAccountVisibilityService(): AccountVisibilityService {
   return {
-    update: async (visibility) => {
-      if (inFlightUpdate !== null) return inFlightUpdate;
+    update: async (visibility, sessionGeneration = getAuthenticationGeneration()) => {
+      const inFlightUpdate = inFlightUpdates.get(sessionGeneration);
+      if (inFlightUpdate !== undefined) return inFlightUpdate;
 
-      inFlightUpdate = (async () => {
+      const updating = enqueueAccountMutation(async () => {
         try {
+          if (sessionGeneration !== getAuthenticationGeneration()) throw new AccountVisibilitySessionChangedError();
+          const csrfToken = await getCsrfToken();
+          if (sessionGeneration !== getAuthenticationGeneration()) throw new AccountVisibilitySessionChangedError();
           const response = await apiFetch('/api/my/account/visibility', {
             body: JSON.stringify({ visibility }),
             credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
-              'X-CSRF-TOKEN': await getCsrfToken(),
+              'X-CSRF-TOKEN': csrfToken,
             },
             method: 'PATCH',
           });
@@ -47,11 +59,11 @@ export function createAccountVisibilityService(): AccountVisibilityService {
           if (error instanceof CsrfTokenError && error.status === 401) throw new AccountVisibilityUnauthorizedError();
           throw error;
         } finally {
-          inFlightUpdate = null;
+          inFlightUpdates.delete(sessionGeneration);
         }
-      })();
-
-      return inFlightUpdate;
+      });
+      inFlightUpdates.set(sessionGeneration, updating);
+      return updating;
     },
   };
 }

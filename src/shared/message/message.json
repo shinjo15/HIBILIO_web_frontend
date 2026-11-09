@@ -356,6 +356,9 @@
     "uiModeLight": "ライト",
     "uiModeSystem": "システム設定を利用する",
     "likeNotification": "いいね通知",
+    "likeNotificationUpdateError": "いいね通知の変更に失敗しました。時間をおいて再試行してください。",
+    "notificationError": "通知設定を読み込めませんでした。時間をおいて再試行してください。",
+    "notificationLoading": "通知設定を読み込んでいます。",
     "privateAccount": "鍵アカウント",
     "retry": "再試行",
     "sections": {
@@ -365,6 +368,7 @@
     },
     "signOut": "ログアウト",
     "supportNotification": "応援通知",
+    "supportNotificationUpdateError": "応援通知の変更に失敗しました。時間をおいて再試行してください。",
     "title": "設定",
     "visibilityError": "公開設定を読み込めないか、保存できませんでした。もう一度お試しください。"
   },

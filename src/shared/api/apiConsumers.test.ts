@@ -14,6 +14,9 @@ import { routineLikeService } from '../../features/routineFeed/services/routineL
 import { routineFeedService } from '../../features/routineFeed/services/routineFeedService';
 import { searchService } from '../../features/search/services/searchService';
 import { accountVisibilityService } from '../../features/settings/services/accountVisibilityService';
+import { likeNotificationService } from '../../features/settings/services/likeNotificationService';
+import { supportNotificationService } from '../../features/settings/services/supportNotificationService';
+import { uiModeService } from '../../app/uiModeService';
 
 const origin = 'https://api.hibilio.com';
 
@@ -85,6 +88,31 @@ describe('production API consumers', () => {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': 'api-only-token' },
       method: 'PATCH',
+    });
+  });
+
+  it('4種類の設定変更はorigin切替後もCSRF取得とCookie付きPATCHを維持する', async () => {
+    vi.stubEnv('VITE_API_ORIGIN', origin);
+    const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>((url) => Promise.resolve(url.endsWith('/api/csrf-token')
+      ? new Response(JSON.stringify({ csrf_token: 'api-only-token' }))
+      : new Response(null, { status: 204 })));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await accountVisibilityService.update('private');
+    await likeNotificationService.update(true);
+    await supportNotificationService.update(true);
+    await uiModeService.update('dark');
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      `${origin}/api/csrf-token`, `${origin}/api/my/account/visibility`,
+      `${origin}/api/csrf-token`, `${origin}/api/my/account/like-notifications`,
+      `${origin}/api/csrf-token`, `${origin}/api/my/account/support-notifications`,
+      `${origin}/api/csrf-token`, `${origin}/api/my/account/ui-mode`,
+    ]);
+    fetchMock.mock.calls.forEach(([url, init]) => {
+      expect(url).toMatch(origin);
+      expect(init).toMatchObject({ credentials: 'include' });
+      if (init?.method === 'PATCH') expect(init).toMatchObject({ headers: expect.objectContaining({ 'X-CSRF-TOKEN': 'api-only-token' }) });
     });
   });
 });

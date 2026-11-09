@@ -4,7 +4,7 @@ import { createAccountService } from './accountService';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('createAccountService', () => {
-  it('GET /api/my/account の契約をプロフィール表示モデルへ変換する', async () => {
+  it('GET /api/my/account の契約を公開プロフィール表示モデルへ変換し、本人専用の通知値を含めない', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       account_bio: null,
       account_identifier: '11111111-1111-4111-8111-111111111111',
@@ -43,6 +43,50 @@ describe('createAccountService', () => {
     const service = createAccountService();
 
     await expect(service.getProfile()).rejects.toMatchObject({ name: 'AccountUnauthorizedError' });
+  });
+
+  it('GET /api/my/account の1つの応答から公開設定と本人専用通知設定を分離して返す', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      account_bio: null,
+      account_identifier: '11111111-1111-4111-8111-111111111111',
+      account_name: 'ログインアカウント',
+      favorite_tags: [],
+      header_image_url: null,
+      icon_image_url: null,
+      like_notifications_enabled: false,
+      social_links: [],
+      support_notifications_enabled: true,
+      visibility: 'private',
+    })));
+    vi.stubGlobal('fetch', fetchMock);
+    const service = createAccountService();
+
+    await expect(service.getMySettings!()).resolves.toEqual({
+      isPrivateAccount: true,
+      notificationSettings: {
+        isLikeNotificationEnabled: false,
+        isSupportNotificationEnabled: true,
+      },
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/account', { credentials: 'include', method: 'GET' });
+  });
+
+  it('古い本人応答に通知fieldsがなくても公開設定を返し、通知だけ未取得として扱う', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      account_bio: null,
+      account_identifier: '11111111-1111-4111-8111-111111111111',
+      account_name: 'ログインアカウント',
+      favorite_tags: [],
+      header_image_url: null,
+      icon_image_url: null,
+      social_links: [],
+      visibility: 'private',
+    }))));
+
+    await expect(createAccountService().getMySettings!()).resolves.toEqual({
+      isPrivateAccount: true,
+      notificationSettings: null,
+    });
   });
 
   it('GET /api/routine-executions/{id} の契約を実行詳細表示モデルへ変換する', async () => {
