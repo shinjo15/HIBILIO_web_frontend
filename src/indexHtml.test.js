@@ -66,6 +66,10 @@ function readPngPixel(png, x, y) {
 }
 
 describe('document favicon', () => {
+  it('declares the specified Google AdSense account ownership meta tag', () => {
+    expect(indexHtml).toContain('<meta name="google-adsense-account" content="ca-pub-7362961447612472">');
+  });
+
   it('keeps the viewport scalable by the user', () => {
     const viewport = indexHtml.match(/<meta name="viewport" content="([^"]+)" \/>/)?.[1];
 
