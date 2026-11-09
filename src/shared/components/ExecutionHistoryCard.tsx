@@ -6,7 +6,7 @@ import messages from '../message/message.json';
 import { AccountAvatar } from './AccountImage';
 import './executionHistoryCard.css';
 
-type ExecutionHistoryCardExecution = Omit<AccountExecutionSummary, 'postedAt'> & { postedAt: string | null };
+type ExecutionHistoryCardExecution = AccountExecutionSummary;
 
 type ExecutionHistoryCardProps<T extends ExecutionHistoryCardExecution> = {
   author?: { iconImageUrl: string | null; name: string };
@@ -41,7 +41,7 @@ export function ExecutionHistoryCard<T extends ExecutionHistoryCardExecution>({ 
       </div>
       <div className="account-page__card-metrics">
         <span>{messages.account.achieved} <strong>{execution.executedActionCount}</strong></span>
-        <span>{messages.account.support} <strong>{execution.supportCount}</strong></span>
+        {execution.supportCount !== null && <span>{messages.account.support} <strong>{execution.supportCount}</strong></span>}
       </div>
       </button>
       {onReport !== undefined && <IconButton aria-controls={menuAnchor !== null ? `execution-report-menu-${execution.id}` : undefined} aria-expanded={menuAnchor !== null} aria-haspopup="menu" aria-label={messages.report.postMenu} className="execution-history-card__more" onClick={(event) => { event.stopPropagation(); setMenuAnchor(event.currentTarget); }} size="small"><MoreVertIcon /></IconButton>}

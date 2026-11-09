@@ -83,7 +83,7 @@ export function createPublicAccountService(adapter: PublicAccountAdapter = publi
       if (!response.ok) throw new Error(`Failed to fetch public liked routines: ${response.status}`);
       return parseLikedRoutinesPage(await response.json());
     });
-  const listExecutionHistoriesPage = async (accountIdentifier: string, page: number) => apiFetch(`/api/accounts/${accountIdentifier}/routine-executions?page=${page}&number_of_items_per_page=40`)
+  const listExecutionHistoriesPage = async (accountIdentifier: string, page: number) => apiFetch(`/api/accounts/${accountIdentifier}/routine-executions?page=${page}&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' })
     .then(async (response) => {
       if (!response.ok) throw new Error(`Failed to fetch public routine executions: ${response.status}`);
       return parseAccountRoutineExecutionsPage(await response.json());

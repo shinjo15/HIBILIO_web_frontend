@@ -232,7 +232,7 @@ describe('RoutineDetailPage', () => {
     renderPage(service, '/routines/missing');
 
     expect(await screen.findByText('ルーティンが見つかりませんでした。')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '一覧へ戻る' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: '一覧へ戻る' })).toHaveAttribute('href', '/feed');
   });
 
   it('実行する操作から実行画面の URL へ遷移する', async () => {

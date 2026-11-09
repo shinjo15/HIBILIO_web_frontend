@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/refs, react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type PageResult<Item> = { items: Item[]; total: number };
@@ -8,10 +8,11 @@ type UseInfiniteListOptions<Item> = {
   fetchPage: (page: number) => Promise<PageResult<Item>>;
   key: string;
   onError?: (error: unknown) => void;
+  observerRoot?: Element | null;
   preserveWhenDisabled?: boolean;
 };
 
-export function useInfiniteList<Item>({ enabled = true, fetchPage, key, onError, preserveWhenDisabled = false }: UseInfiniteListOptions<Item>) {
+export function useInfiniteList<Item>({ enabled = true, fetchPage, key, observerRoot = null, onError, preserveWhenDisabled = false }: UseInfiniteListOptions<Item>) {
   const [items, setItems] = useState<Item[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(enabled);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -24,6 +25,8 @@ export function useInfiniteList<Item>({ enabled = true, fetchPage, key, onError,
   const initializedKey = useRef<string | null>(null);
   const itemCount = useRef(0);
   const latestTotal = useRef<number | null>(null);
+  const sentinelIsIntersecting = useRef(false);
+  const continueAfterSuccessfulLoad = useRef(false);
 
   const load = useCallback(async (reset: boolean) => {
     if (loading.current) return;
@@ -42,15 +45,13 @@ export function useInfiniteList<Item>({ enabled = true, fetchPage, key, onError,
     try {
       const result = await fetchPage(page);
       if (generation.current !== currentGeneration) return;
-      setItems((current) => {
-        const nextItems = reset ? result.items : [...current, ...result.items];
-        itemCount.current = nextItems.length;
-        return nextItems;
-      });
+      itemCount.current = reset ? result.items.length : itemCount.current + result.items.length;
+      setItems((current) => reset ? result.items : [...current, ...result.items]);
       setTotal(result.total);
       latestTotal.current = result.total;
       nextPage.current = page + 1;
       loaded.current = true;
+      continueAfterSuccessfulLoad.current = true;
     } catch (error) {
       if (generation.current === currentGeneration) {
         onError?.(error);
@@ -60,8 +61,8 @@ export function useInfiniteList<Item>({ enabled = true, fetchPage, key, onError,
       if (generation.current === currentGeneration) {
         setIsInitialLoading(false);
         setIsLoadingMore(false);
+        loading.current = false;
       }
-      loading.current = false;
     }
   }, [fetchPage, onError]);
 
@@ -91,14 +92,38 @@ export function useInfiniteList<Item>({ enabled = true, fetchPage, key, onError,
     void load(false);
   }, [load]);
 
+  useEffect(() => {
+    if (!continueAfterSuccessfulLoad.current) return;
+    continueAfterSuccessfulLoad.current = false;
+    if (sentinelIsIntersecting.current) loadNextPage();
+  }, [items, loadNextPage, total]);
+
   const sentinelRef = useCallback((element: Element | null) => {
-    if (element === null || typeof IntersectionObserver === 'undefined') return;
+    if (element === null) {
+      sentinelIsIntersecting.current = false;
+      return;
+    }
+    if (typeof IntersectionObserver === 'undefined') return;
     const observer = new IntersectionObserver((entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) loadNextPage();
-    });
+      sentinelIsIntersecting.current = entries.some((entry) => entry.isIntersecting);
+      if (sentinelIsIntersecting.current) loadNextPage();
+    }, { root: observerRoot });
     observer.observe(element);
     return () => observer.disconnect();
-  }, [loadNextPage]);
+  }, [loadNextPage, observerRoot]);
 
-  return { error, isInitialLoading, isLoadingMore, items, loadNextPage, retry: () => void load(items.length === 0), sentinelRef, setItems, total };
+  const isCurrentKey = initializedKey.current === key;
+  const visibleItems = isCurrentKey ? items : [];
+
+  return {
+    error: isCurrentKey ? error : false,
+    isInitialLoading: enabled && !isCurrentKey ? true : isInitialLoading,
+    isLoadingMore,
+    items: visibleItems,
+    loadNextPage,
+    retry: () => void load(visibleItems.length === 0),
+    sentinelRef,
+    setItems,
+    total: isCurrentKey ? total : null,
+  };
 }

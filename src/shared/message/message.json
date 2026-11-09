@@ -5,10 +5,27 @@
   },
   "navigation": {
     "ariaLabel": "メインナビゲーション",
+    "home": "Home",
     "feed": "一覧",
     "search": "検索",
     "account": "アカウント",
     "createRoutine": "ルーティンを投稿"
+  },
+  "home": {
+    "calendarNextMonth": "次の月",
+    "calendarPreviousMonth": "前の月",
+    "calendarTitle": "実行履歴カレンダー",
+    "executionDateUnknown": "投稿日時を表示できません",
+    "executionHistory": "がんばった履歴",
+    "executionHistoryError": "実行履歴を読み込めませんでした。時間をおいて再試行してください。",
+    "executionHistoryLoading": "実行履歴を読み込んでいます…",
+    "executionHistoryUndated": "投稿日時がないため、カレンダーには表示できません。",
+    "executionHistoryUndatedTitle": "投稿日時が不明な履歴",
+    "guestTitle": "ルーティンを始めよう",
+    "likedRoutines": "いいねしたルーティン",
+    "loadMore": "さらに読み込む",
+    "loading": "ホームを読み込んでいます…",
+    "retry": "再試行"
   },
   "search": {
     "title": "検索",

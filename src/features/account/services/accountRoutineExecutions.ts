@@ -5,12 +5,12 @@ import type { PageResult } from '../../../shared/hooks/useInfiniteList';
 const routineExecutionResponseSchema = z.object({
   items: z.array(z.object({
     executed_action_count: z.number().int().nonnegative(),
-    posted_at: z.string().datetime({ offset: true }),
+    posted_at: z.string().datetime({ offset: true }).nullable(),
     routine_execution_identifier: z.string().min(1),
     routine_execution_memo: z.string().nullable(),
     routine_identifier: z.string().min(1),
     routine_name: z.string().min(1),
-    support_count: z.number().int().nonnegative(),
+    support_count: z.number().int().nonnegative().nullable(),
   })),
   total: z.number().int().nonnegative(),
 });

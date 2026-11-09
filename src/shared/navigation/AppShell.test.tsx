@@ -15,7 +15,7 @@ afterEach(() => {
 });
 
 describe('AppShell', () => {
-  it('モバイルナビを一覧、検索、作成、アカウント、空スロットの5等分で並べる', () => {
+  it('モバイルナビをHome、一覧、中央投稿、検索、アカウントの5等分で並べる', () => {
     const router = createMemoryRouter([
       { element: <AppShell />, children: [{ element: <h1>一覧画面</h1>, index: true }] },
     ]);
@@ -25,9 +25,19 @@ describe('AppShell', () => {
     const mobileNav = document.querySelector('.hibilio-mobile-nav');
     expect(mobileNav).not.toBeNull();
     expect(Array.from(mobileNav!.children)).toHaveLength(5);
-    expect(Array.from(mobileNav!.children).slice(0, 4).map((child) => child.getAttribute('aria-label'))).toEqual(['一覧', '検索', 'ルーティンを投稿', 'アカウント']);
-    expect(mobileNav!.children[4]).toHaveAttribute('aria-hidden', 'true');
-    expect(mobileNav!.children[4]).toHaveClass('hibilio-mobile-nav__spacer');
+    expect(Array.from(mobileNav!.children).map((child) => child.getAttribute('aria-label'))).toEqual(['Home', '一覧', 'ルーティンを投稿', '検索', 'アカウント']);
+    expect(document.querySelector('.hibilio-mobile-nav__spacer')).not.toBeInTheDocument();
+  });
+
+  it('HomeはHomeアイコン、一覧は一覧アイコンをPCとモバイルで表示する', () => {
+    const router = createMemoryRouter([
+      { element: <AppShell />, children: [{ element: <h1>一覧画面</h1>, index: true }] },
+    ]);
+
+    render(<RouterProvider router={router} />);
+
+    expect(screen.getAllByTestId('HomeOutlinedIcon')).toHaveLength(2);
+    expect(screen.getAllByTestId('ViewAgendaOutlinedIcon')).toHaveLength(2);
   });
 
   it('PCとモバイルのルーティン新規作成ボタンに拡大表示用のclassを付与する', () => {
@@ -144,6 +154,29 @@ describe('AppShell', () => {
     await user.click(screen.getByRole('button', { name: '検索' }));
 
     expect(screen.getByRole('heading', { name: '検索画面' })).toBeInTheDocument();
+  });
+
+  it('PCとモバイルの一覧メニューは専用routeを選択して遷移できる', async () => {
+    markAuthenticated();
+    const user = userEvent.setup();
+    const router = createMemoryRouter([
+      {
+        element: <AppShell />,
+        children: [
+          { element: <h1>Home画面</h1>, path: 'home' },
+          { element: <h1>一覧画面</h1>, path: 'feed' },
+        ],
+      },
+    ], { initialEntries: ['/feed'] });
+
+    render(<RouterProvider router={router} />);
+
+    expect(screen.getByRole('link', { name: '一覧' })).toHaveAttribute('href', '/feed');
+    expect(screen.getByRole('button', { name: '一覧' })).toHaveAttribute('aria-current', 'page');
+    await user.click(screen.getByRole('button', { name: 'Home' }));
+    expect(screen.getByRole('heading', { name: 'Home画面' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '一覧' }));
+    expect(screen.getByRole('heading', { name: '一覧画面' })).toBeInTheDocument();
   });
 
   it('セッションマーカーがなくてもアカウント API が200ならアカウント画面へ遷移する', async () => {

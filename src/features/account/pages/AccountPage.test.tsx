@@ -764,6 +764,69 @@ describe('AccountPage', () => {
     expect(listRoutinesPage).toHaveBeenCalledTimes(3);
   });
 
+  it('いいねと実行履歴は複数ページをAPI順で保持し、次ページ失敗後に再試行できる', async () => {
+    const user = userEvent.setup();
+    let notifyIntersection: (() => void) | undefined;
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback: IntersectionObserverCallback) {
+        notifyIntersection = () => callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+      }
+
+      disconnect() {}
+      observe() {}
+      unobserve() {}
+      root = null;
+      rootMargin = '';
+      thresholds = [];
+      takeRecords() { return []; }
+    });
+    const secondLike = { ...likedPost, id: 'post-4', title: '二番目のいいね' };
+    const firstExecution = { executedActionCount: 1, id: 'execution-1', memo: '最初の実行', postedAt: '2026-09-04T12:00:00+00:00', routineId: 'routine-1', routineTitle: '最初の実行履歴', supportCount: 2 };
+    const secondExecution = { executedActionCount: 2, id: 'execution-2', memo: '二番目の実行', postedAt: null, routineId: 'routine-2', routineTitle: '二番目の実行履歴', supportCount: null };
+    const listLikesPage = vi.fn()
+      .mockResolvedValueOnce({ items: [likedPost], total: 2 })
+      .mockRejectedValueOnce(new Error('temporary failure'))
+      .mockResolvedValueOnce({ items: [secondLike], total: 2 });
+    const listExecutionHistoriesPage = vi.fn()
+      .mockResolvedValueOnce({ items: [firstExecution], total: 2 })
+      .mockRejectedValueOnce(new Error('temporary failure'))
+      .mockResolvedValueOnce({ items: [secondExecution], total: 2 });
+    renderPage({ ...service, listExecutionHistoriesPage, listLikesPage });
+
+    await screen.findByRole('heading', { name: '山田 由紀' });
+    await user.click(screen.getByRole('tab', { name: '2いいね' }));
+    expect(await screen.findByRole('heading', { name: '夜の読書ルーティン' })).toBeInTheDocument();
+    await waitFor(() => expect(listLikesPage).toHaveBeenCalledTimes(1));
+    notifyIntersection?.();
+    await waitFor(() => expect(listLikesPage).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText('いいねしたルーティンを読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '夜の読書ルーティン' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '再試行' }));
+    expect(await screen.findByRole('heading', { name: '二番目のいいね' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: '2実行履歴' }));
+    expect(await screen.findByRole('button', { name: '最初の実行履歴' })).toBeInTheDocument();
+    await waitFor(() => expect(listExecutionHistoriesPage).toHaveBeenCalledTimes(1));
+    notifyIntersection?.();
+    await waitFor(() => expect(listExecutionHistoriesPage).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText('アカウント情報を読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '最初の実行履歴' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '再試行' }));
+    expect(await screen.findByRole('button', { name: '二番目の実行履歴' })).toBeInTheDocument();
+    const unpublishedExecutionCard = screen.getByRole('button', { name: '二番目の実行履歴' }).closest('.execution-history-card');
+    expect(unpublishedExecutionCard).not.toHaveTextContent('応援');
+    expect(unpublishedExecutionCard?.querySelector('.account-page__card-date')).toHaveTextContent('');
+
+    await user.click(screen.getByRole('tab', { name: '2いいね' }));
+    expect(screen.getByRole('heading', { name: '二番目のいいね' })).toBeInTheDocument();
+    expect(listLikesPage).toHaveBeenNthCalledWith(1, 1);
+    expect(listLikesPage).toHaveBeenNthCalledWith(2, 2);
+    expect(listLikesPage).toHaveBeenNthCalledWith(3, 2);
+    expect(listExecutionHistoriesPage).toHaveBeenNthCalledWith(1, 1);
+    expect(listExecutionHistoriesPage).toHaveBeenNthCalledWith(2, 2);
+    expect(listExecutionHistoriesPage).toHaveBeenNthCalledWith(3, 2);
+  });
+
   it('いいねタブで API 由来の一覧を表示し、ルーティン詳細へ遷移する', async () => {
     const user = userEvent.setup();
     renderPage();

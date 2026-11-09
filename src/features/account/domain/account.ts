@@ -59,12 +59,13 @@ export const likedRoutineSchema = z.object({
 
 export const accountExecutionSummarySchema = z.object({
   executedActionCount: z.number().int().nonnegative(),
+  executedAt: z.string().datetime({ offset: true }).nullable().optional(),
   id: z.string().min(1),
   memo: z.string().nullable(),
-  postedAt: z.string().datetime({ offset: true }),
+  postedAt: z.string().datetime({ offset: true }).nullable(),
   routineId: z.string().min(1),
   routineTitle: z.string().min(1),
-  supportCount: z.number().int().nonnegative(),
+  supportCount: z.number().int().nonnegative().nullable(),
 });
 
 export const accountRoutineSchema = routineSchema.extend({
