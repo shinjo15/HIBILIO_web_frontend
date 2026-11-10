@@ -100,14 +100,14 @@ describe('AccountPage', () => {
     expect(screen.getByRole('tab', { name: '0ルーティン' })).toBeInTheDocument();
   });
 
-  it('他人アカウントではルーティンを取得しない', async () => {
+  it('他人アカウントでも閲覧可能なルーティンを初期取得してタブに表示する', async () => {
     const listRoutinesPage = vi.fn().mockResolvedValue({ items: [firstPost], total: 1 });
     render(<MemoryRouter><AccountPage isOwnAccount={false} service={{ ...service, listRoutinesPage }} /><Location /></MemoryRouter>);
 
     await screen.findByRole('heading', { name: '山田 由紀' });
 
-    expect(listRoutinesPage).not.toHaveBeenCalled();
-    expect(screen.queryByRole('tab', { name: /ルーティン/ })).not.toBeInTheDocument();
+    expect(listRoutinesPage).toHaveBeenCalledWith(1);
+    expect(screen.getByRole('tab', { name: '1ルーティン' })).toBeInTheDocument();
   });
 
   it('ルーティン取得中のタブ切替では再取得も重複表示もしない', async () => {

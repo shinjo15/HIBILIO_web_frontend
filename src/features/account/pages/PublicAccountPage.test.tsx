@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -52,7 +52,7 @@ describe('PublicAccountPage', () => {
     expect(screen.getByText('朝の習慣を続けています。')).toBeInTheDocument();
     expect(screen.getByText('朝活')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /example/ })).toHaveAttribute('href', 'https://x.com/example');
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['0投稿', '0いいね', '0実行履歴']);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['0投稿', '0ルーティン', '0いいね', '0実行履歴']);
   });
 
   it('初期表示でいいね一覧を取得し、API totalと現在の閲覧者基準の liked を表示する', async () => {
@@ -77,6 +77,97 @@ describe('PublicAccountPage', () => {
 
     expect(await screen.findByRole('heading', { name: '公開アカウントがいいねした投稿' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'いいねする' })).toBeInTheDocument();
+  });
+
+  it('実サービス経由で取得したroutine投稿とaction投稿5件をAPI順のカードで表示し、routineだけをいいねできる', async () => {
+    const accountId = '11111111-1111-4111-8111-111111111111';
+    const actionExecutionId = '22222222-2222-4222-8222-222222222222';
+    const posts = [
+      { category: 'routine', executionId: null, id: '33333333-3333-4333-8333-333333333333', liked: false, title: 'ルーティン1' },
+      { category: 'action', executionId: actionExecutionId, id: '44444444-4444-4444-8444-444444444444', liked: false, title: '実行2' },
+      { category: 'routine', executionId: null, id: '55555555-5555-4555-8555-555555555555', liked: true, title: 'ルーティン3' },
+      { category: 'action', executionId: '66666666-6666-4666-8666-666666666666', id: '77777777-7777-4777-8777-777777777777', liked: false, title: '実行4' },
+      { category: 'routine', executionId: null, id: '88888888-8888-4888-8888-888888888888', liked: false, title: 'ルーティン5' },
+    ].map(({ category, executionId, id, liked, title }) => ({
+      account_identifier: accountId,
+      account_name: '公開アカウント',
+      customization_count: 0,
+      customization_origin: null,
+      executed_action_count: category === 'action' ? 2 : 0,
+      execution_count: 3,
+      icon_image_url: null,
+      liked,
+      post_category: category,
+      post_identifier: id,
+      post_like_count: 1,
+      post_support_count: 4,
+      posted_at: '2026-09-03T12:00:00+00:00',
+      routine_actions: [{ action_minutes: 20, action_name: '集中', routine_action_identifier: '99999999-9999-4999-8999-999999999999' }],
+      routine_execution_identifier: executionId,
+      routine_execution_memo: category === 'action' ? '実行メモ' : null,
+      routine_execution_minutes: 20,
+      routine_identifier: `routine-${id}`,
+      routine_name: title,
+      support_count: category === 'action' ? 4 : undefined,
+      supported: false,
+      tags: [],
+    }));
+    const fetchMock = vi.fn((url: string) => {
+      if (url === `/api/accounts/${accountId}`) return Promise.resolve(new Response(JSON.stringify({ account_bio: null, account_identifier: accountId, account_name: '公開アカウント', favorite_tags: [], header_image_url: null, icon_image_url: null, social_links: [], visibility: 'public' })));
+      if (url === `/api/accounts/${accountId}/posts?page=1&number_of_items_per_page=40`) return Promise.resolve(new Response(JSON.stringify({ items: posts, total: 5 })));
+      if (/^\/api\/accounts\/.+\/(likes|routines|routine-executions)\?page=1/.test(url)) return Promise.resolve(new Response(JSON.stringify({ items: [], total: 0 })));
+      if (url === '/api/csrf-token') return Promise.resolve(new Response(JSON.stringify({ csrf_token: 'csrf-token' })));
+      if (url === '/api/likes') return Promise.resolve(new Response(null, { status: 204 }));
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    render(<MemoryRouter initialEntries={[`/accounts/${accountId}`]}><Routes><Route element={<PublicAccountPage currentAccountService={{ getProfile: async () => null }} />} path="/accounts/:accountId" /><Route element={<Location />} path="/routines/:routineId/executions/:executionId" /></Routes></MemoryRouter>);
+
+    expect(await screen.findByRole('tab', { name: '5投稿' })).toBeInTheDocument();
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('.routine-card, .execution-history-card'));
+    expect(cards.map((card) => card.classList.contains('routine-card') ? 'routine' : 'action')).toEqual(['routine', 'action', 'routine', 'action', 'routine']);
+    expect(cards.map((card) => card.textContent?.match(/(?:ルーティン|実行)\d/)?.[0])).toEqual(['ルーティン1', '実行2', 'ルーティン3', '実行4', 'ルーティン5']);
+    expect(within(cards[0]).getByRole('link', { name: 'ルーティン1' })).toHaveAttribute('href', `/routines/routine-${posts[0].post_identifier}`);
+    expect(screen.getAllByRole('button', { name: 'いいねする' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'いいねを取り消す' })).toHaveLength(1);
+    await user.click(within(cards[0]).getByRole('button', { name: 'いいねする' }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('/api/likes', expect.objectContaining({ body: JSON.stringify({ post_identifier: posts[0].post_identifier }), method: 'POST' })));
+
+    await user.click(within(cards[1]).getByRole('button', { name: '実行2' }));
+    expect(await screen.findByText(`/routines/routine-${posts[1].post_identifier}/executions/${actionExecutionId}`)).toBeInTheDocument();
+  });
+
+  it('初期表示で閲覧可能なルーティン件数を取得し、タブ切替後に詳細へ遷移できる', async () => {
+    const user = userEvent.setup();
+    const routine = { ...publicPost, title: '公開ルーティン' };
+    const listRoutinesPage = vi.fn().mockResolvedValue({ items: [routine], total: 2 });
+    const service: PublicAccountService = {
+      get: async () => ({ accountIdentifier: 'account-1', bio: null, favoriteTags: [], initial: '公', name: '公開アカウント', socialLinks: [], visibility: 'public' }),
+      listExecutionHistories: async () => [],
+      listLikes: async () => [],
+      listPosts: async () => [],
+      listRoutines: async () => [],
+      listRoutinesPage,
+    };
+
+    render(
+      <MemoryRouter initialEntries={['/accounts/account-1']}>
+        <Routes>
+          <Route element={<PublicAccountPage service={service} />} path="/accounts/:accountId" />
+          <Route element={<Location />} path="/routines/:routineId" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('heading', { name: '公開アカウント' });
+    await waitFor(() => expect(listRoutinesPage).toHaveBeenCalledWith('account-1', 1));
+    await user.click(screen.getByRole('tab', { name: '2ルーティン' }));
+
+    expect(await screen.findByRole('link', { name: '公開ルーティン' })).toHaveAttribute('href', '/routines/routine-1');
+    await user.click(screen.getByRole('link', { name: '公開ルーティン' }));
+    expect(await screen.findByText('/routines/routine-1')).toBeInTheDocument();
   });
 
   it('ログイン中の自分の公開プロフィールではフォロー・ブロック操作を表示しない', async () => {
@@ -112,7 +203,7 @@ describe('PublicAccountPage', () => {
     expect(screen.getByText('鍵Accountの自己紹介')).toBeInTheDocument();
     expect(document.querySelector('.account-profile__avatar .account-avatar__image')).toHaveAttribute('src', 'https://example.com/icons/private.webp');
     expect(screen.getByRole('button', { name: 'フォロー中' })).toBeDisabled();
-    expect(screen.getAllByRole('tab')).toHaveLength(3);
+    expect(screen.getAllByRole('tab')).toHaveLength(4);
   });
 
   it('承認済み鍵Accountの初期表示は詳細取得を一度だけ行う', async () => {
