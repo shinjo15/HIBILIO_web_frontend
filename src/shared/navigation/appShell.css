@@ -16,6 +16,12 @@
   z-index: 1100;
 }
 
+.hibilio-notifications.MuiIconButton-root {
+  position: fixed;
+  right: calc(env(safe-area-inset-right) + 12px);
+  top: calc(env(safe-area-inset-top) + 12px);
+  z-index: 1201;
+}
 
 .hibilio-mobile-nav__create-trigger.MuiButtonBase-root {
   overflow: visible;
@@ -123,5 +129,14 @@
 @media (min-width: 1200px) {
   .hibilio-mobile-nav.MuiBox-root {
     display: none;
+  }
+
+  .hibilio-notifications.MuiIconButton-root {
+    background-color: var(--hibilio-color-card);
+    border: 1px solid var(--hibilio-color-border);
+  }
+
+  .hibilio-notifications.MuiIconButton-root:hover {
+    background-color: var(--hibilio-color-muted) !important;
   }
 }

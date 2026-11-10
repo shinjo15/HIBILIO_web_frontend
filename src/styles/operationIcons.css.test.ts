@@ -19,6 +19,11 @@ describe('operationIcons.css', () => {
     expect(appShellCss).toMatch(/\.hibilio-desktop-nav\s+\.MuiSvgIcon-root\s*\{[^}]*font-size:\s*25px\s*!important;/);
   });
 
+  it('通知ベルはPCだけカード背景とborder tokenを使い、hover時は既存のmuted背景にする', () => {
+    expect(appShellCss).toMatch(/@media \(min-width: 1200px\)\s*\{[\s\S]*?\.hibilio-notifications\.MuiIconButton-root\s*\{[^}]*background-color:\s*var\(--hibilio-color-card\);[^}]*border:\s*1px solid var\(--hibilio-color-border\);/);
+    expect(appShellCss).toMatch(/@media \(min-width: 1200px\)\s*\{[\s\S]*?\.hibilio-notifications\.MuiIconButton-root:hover\s*\{[^}]*background-color:\s*var\(--hibilio-color-muted\)\s*!important;/);
+  });
+
   it('ブロック解除の操作アイコンを約16pxにする', () => {
     expect(accountRelationListCss).toMatch(/\.account-relation-card-with-action__button svg\s*\{[^}]*height:\s*16px;[^}]*width:\s*16px;/);
   });

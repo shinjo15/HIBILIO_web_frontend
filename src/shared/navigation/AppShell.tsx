@@ -1,5 +1,6 @@
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import AddIcon from '@mui/icons-material/Add';
+import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import ViewAgendaOutlinedIcon from '@mui/icons-material/ViewAgendaOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
@@ -8,6 +9,7 @@ import {
   Box,
   ButtonBase,
   Drawer,
+  IconButton,
   List,
   ListItemButton,
   ListItemIcon,
@@ -210,6 +212,7 @@ export function AppShell() {
           );
         })}
       </Box>
+      {authenticationStatus === 'authenticated' && location.pathname !== '/notifications' && <IconButton aria-label={messages.navigation.notifications} className="hibilio-notifications" onClick={() => navigate('/notifications')} sx={{ color: 'text.secondary' }}><NotificationsNoneOutlinedIcon /></IconButton>}
     </Box>
   );
 }

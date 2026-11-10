@@ -5,11 +5,30 @@
   },
   "navigation": {
     "ariaLabel": "メインナビゲーション",
+    "notifications": "通知",
     "home": "Home",
     "feed": "一覧",
     "search": "検索",
     "account": "アカウント",
     "createRoutine": "ルーティンを投稿"
+  },
+  "notifications": {
+    "closeAnnouncement": "お知らせを閉じる",
+    "emptyAnnouncements": "お知らせはまだありません",
+    "emptyNotifications": "通知はまだありません",
+    "error": "通知を読み込めませんでした。時間をおいて再試行してください。",
+    "loadMore": "さらに読み込む",
+    "loading": "通知を読み込んでいます…",
+    "loadingMore": "さらに読み込んでいます…",
+    "markRead": "既読にする",
+    "markReadError": "既読にできませんでした。もう一度お試しください。",
+    "openAnnouncement": "お知らせを全文表示",
+    "read": "既読",
+    "retry": "再試行",
+    "tabsAriaLabel": "通知の表示切り替え",
+    "tabs": { "announcements": "お知らせ", "notifications": "通知" },
+    "title": "通知",
+    "unread": "未読"
   },
   "home": {
     "calendarNextMonth": "次の月",

@@ -16,6 +16,7 @@ import { SearchPage } from '../features/search/pages/SearchPage';
 import { HomePage } from '../features/home/pages/HomePage';
 import { InitialPage } from '../features/home/pages/InitialPage';
 import { FeedPage } from '../features/routineFeed/pages/FeedPage';
+import { NotificationsPage } from '../features/notifications/pages/NotificationsPage';
 import { AppShell } from '../shared/navigation/AppShell';
 import { ScrollManager } from './ScrollManager';
 
@@ -51,6 +52,7 @@ export const router = createBrowserRouter([
               { element: <ContactSupportPage />, path: 'contact-support' },
               { element: <ProfileEditPage />, path: 'account/edit' },
               { element: <SettingsPage />, path: 'account/settings' },
+              { element: <NotificationsPage />, path: 'notifications' },
               { element: <RoutineCreatePage />, path: 'routines/new' },
               { element: <CustomizedRoutineCreatePage />, path: 'routines/:routineId/customize' },
             ],
