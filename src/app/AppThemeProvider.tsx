@@ -57,7 +57,7 @@ export function AppThemeProvider({ children }: AppThemeProviderProps) {
       setUiModeState(loadedUiMode);
       return true;
     } catch (error) {
-      if (error instanceof UiModeUnauthorizedError) clearAuthenticated();
+      if (isCurrent() && error instanceof UiModeUnauthorizedError) clearAuthenticated();
       if (isCurrent()) {
         setUiModeState(null);
         setUiModeError(true);

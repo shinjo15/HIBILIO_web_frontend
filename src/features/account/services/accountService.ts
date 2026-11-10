@@ -21,6 +21,7 @@ const getMyAccountResponseSchema = z.object({
   account_name: z.string().min(1),
   header_image_url: z.string().url().nullish().transform((url) => url ?? null),
   icon_image_url: z.string().url().nullish().transform((url) => url ?? null),
+
   favorite_tags: z.array(z.object({
     tag_identifier: z.string().min(1),
     tag_name: z.string().min(1),
@@ -31,6 +32,21 @@ const getMyAccountResponseSchema = z.object({
   })),
   visibility: z.enum(['public', 'private']),
 });
+
+const getMyNotificationSettingsResponseSchema = z.object({
+  like_notifications_enabled: z.boolean(),
+  support_notifications_enabled: z.boolean(),
+});
+
+export type MyNotificationSettings = {
+  isLikeNotificationEnabled: boolean;
+  isSupportNotificationEnabled: boolean;
+};
+
+export type MyAccountSettings = {
+  isPrivateAccount: boolean;
+  notificationSettings: MyNotificationSettings | null;
+};
 
 const accountRelationListResponseSchema = z.object({
   blocks: z.array(z.object({
@@ -102,6 +118,7 @@ export class AccountUnauthorizedError extends Error {
 
 export type AccountService = {
   getExecutionHistory: (executionId: string) => Promise<AccountExecutionHistory | null>;
+  getMySettings?: () => Promise<MyAccountSettings>;
   getProfile: () => Promise<AccountProfile | null>;
   listExecutionHistories: () => Promise<AccountExecutionSummary[]>;
   listExecutionHistoriesPage?: (page: number) => Promise<PageResult<AccountExecutionSummary>>;
@@ -317,6 +334,18 @@ export function createAccountService(
         socialLinks: profile.social_links.map((link) => ({ socialType: link.social_type, socialUrl: link.social_url })),
         visibility: profile.visibility,
       });
+    },
+    getMySettings: async () => {
+      const response = await profileAdapter.getProfile();
+      const account = getMyAccountResponseSchema.parse(response);
+      const notificationSettings = getMyNotificationSettingsResponseSchema.safeParse(response);
+      return {
+        isPrivateAccount: account.visibility === 'private',
+        notificationSettings: notificationSettings.success ? {
+          isLikeNotificationEnabled: notificationSettings.data.like_notifications_enabled,
+          isSupportNotificationEnabled: notificationSettings.data.support_notifications_enabled,
+        } : null,
+      };
     },
     listExecutionHistories: async () => (await listExecutionHistoriesPage(1)).items,
     listExecutionHistoriesPage,

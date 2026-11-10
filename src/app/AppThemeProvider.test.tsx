@@ -124,6 +124,27 @@ describe('AppThemeProvider', () => {
     await waitFor(() => expect(screen.getAllByText('light')).toHaveLength(2));
   });
 
+  it('前アカウントのテーマGETが401でも、再ログイン済みの認証状態を破棄しない', async () => {
+    let resolveFirstLoad: (response: Response) => void = () => undefined;
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(() => new Promise<Response>((resolve) => { resolveFirstLoad = resolve; }))
+      .mockResolvedValueOnce(accountResponse('light'));
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ addEventListener: vi.fn(), matches: false, removeEventListener: vi.fn() })));
+    vi.stubGlobal('fetch', fetchMock);
+    markAuthenticated();
+
+    render(<AppThemeProvider><ThemeControls /></AppThemeProvider>);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    clearAuthenticated();
+    markAuthenticated();
+    await screen.findByText('light');
+
+    resolveFirstLoad(new Response(null, { status: 401 }));
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    expect(getAuthenticationStatus()).toBe('authenticated');
+  });
+
   it('保存中にログアウトして別アカウントへログインしても、新アカウントの保存状態を無効化しない', async () => {
     let resolveFirstPatch: (response: Response) => void = () => undefined;
     let resolveSecondLoad: (response: Response) => void = () => undefined;

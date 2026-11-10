@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { getAuthenticationGeneration, getCsrfToken, CsrfTokenError } from '../features/auth/services/authSession';
+import { enqueueAccountMutation } from '../shared/api/accountMutationQueue';
 import { apiFetch } from '../shared/api/apiFetch';
 
 export type UiMode = 'dark' | 'light' | 'system';
@@ -41,7 +42,7 @@ export function resetUiModeServiceForTesting(): void {
 
 export function createUiModeService(): UiModeService {
   return {
-    load: async (sessionGeneration = 0) => {
+    load: async (sessionGeneration = getAuthenticationGeneration()) => {
       const inFlightLoad = inFlightLoads.get(sessionGeneration);
       if (inFlightLoad !== undefined) return inFlightLoad;
 
@@ -59,12 +60,13 @@ export function createUiModeService(): UiModeService {
 
       return loading;
     },
-    update: async (uiMode, sessionGeneration = 0) => {
+    update: async (uiMode, sessionGeneration = getAuthenticationGeneration()) => {
       const inFlightUpdate = inFlightUpdates.get(sessionGeneration);
       if (inFlightUpdate !== undefined) return inFlightUpdate;
 
-      const updating = (async () => {
+      const updating = enqueueAccountMutation(async () => {
         try {
+          if (sessionGeneration !== getAuthenticationGeneration()) throw new UiModeSessionChangedError();
           const csrfToken = await getCsrfToken();
           if (sessionGeneration !== getAuthenticationGeneration()) throw new UiModeSessionChangedError();
           const response = await apiFetch('/api/my/account/ui-mode', {
@@ -84,7 +86,7 @@ export function createUiModeService(): UiModeService {
         } finally {
           inFlightUpdates.delete(sessionGeneration);
         }
-      })();
+      });
       inFlightUpdates.set(sessionGeneration, updating);
 
       return updating;

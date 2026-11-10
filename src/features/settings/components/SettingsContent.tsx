@@ -13,13 +13,21 @@ import messages from '../../../shared/message/message.json';
 type SettingsContentProps = {
   onBack: () => void;
   onContactSupport: () => void;
+  onRetryLikeNotification: () => void;
+  onRetrySupportNotification: () => void;
   onRetryUiMode: () => void;
+  onRetryNotifications: () => void;
   onSignOut: () => void;
   onUiModeChange: (uiMode: UiMode) => void;
   onToggleLikeNotification: () => void;
-  onTogglePrivateAccount: () => void;
   onToggleSupportNotification: () => void;
+  onTogglePrivateAccount: () => void;
   onRetryPrivateAccount: () => void;
+  notificationStatus: 'error' | 'loading' | 'ready';
+  likeNotificationDisabled: boolean;
+  likeNotificationError: boolean;
+  supportNotificationDisabled: boolean;
+  supportNotificationError: boolean;
   privateAccountDisabled: boolean;
   settings: Settings;
   systemThemeMode: ThemeMode;
@@ -40,13 +48,21 @@ type SettingToggleRowProps = {
 export function SettingsContent({
   onBack,
   onContactSupport,
+  onRetryLikeNotification,
+  onRetrySupportNotification,
   onRetryUiMode,
+  onRetryNotifications,
   onSignOut,
   onUiModeChange,
   onToggleLikeNotification,
-  onTogglePrivateAccount,
   onToggleSupportNotification,
+  onTogglePrivateAccount,
   onRetryPrivateAccount,
+  notificationStatus,
+  likeNotificationDisabled,
+  likeNotificationError,
+  supportNotificationDisabled,
+  supportNotificationError,
   privateAccountDisabled,
   settings,
   systemThemeMode,
@@ -74,8 +90,14 @@ export function SettingsContent({
           {visibilityError && <div className="settings-visibility-error" role="alert"><span>{messages.settings.visibilityError}</span><button onClick={onRetryPrivateAccount} type="button">{messages.settings.retry}</button></div>}
         </SettingsSection>
         <SettingsSection title={messages.settings.sections.notifications}>
-          <SettingToggleRow checked={settings.isLikeNotificationEnabled} icon={<NotificationsOutlinedIcon fontSize="small" />} label={messages.settings.likeNotification} onChange={onToggleLikeNotification} />
-          <SettingToggleRow checked={settings.isSupportNotificationEnabled} icon={<NotificationsOutlinedIcon fontSize="small" />} label={messages.settings.supportNotification} onChange={onToggleSupportNotification} />
+          {notificationStatus === 'ready' && <>
+            <SettingToggleRow checked={settings.isLikeNotificationEnabled} disabled={likeNotificationDisabled} icon={<NotificationsOutlinedIcon fontSize="small" />} label={messages.settings.likeNotification} onChange={onToggleLikeNotification} />
+            <SettingToggleRow checked={settings.isSupportNotificationEnabled} disabled={supportNotificationDisabled} icon={<NotificationsOutlinedIcon fontSize="small" />} label={messages.settings.supportNotification} onChange={onToggleSupportNotification} />
+            {likeNotificationError && <div className="settings-visibility-error" role="alert"><span>{messages.settings.likeNotificationUpdateError}</span><button onClick={onRetryLikeNotification} type="button">{messages.settings.retry}</button></div>}
+            {supportNotificationError && <div className="settings-visibility-error" role="alert"><span>{messages.settings.supportNotificationUpdateError}</span><button onClick={onRetrySupportNotification} type="button">{messages.settings.retry}</button></div>}
+          </>}
+          {notificationStatus === 'loading' && <p role="status">{messages.settings.notificationLoading}</p>}
+          {notificationStatus === 'error' && <div className="settings-visibility-error" role="alert"><span>{messages.settings.notificationError}</span><button onClick={onRetryNotifications} type="button">{messages.settings.retry}</button></div>}
         </SettingsSection>
         <div className="settings-page__sign-out-section">
           <button className="settings-page__contact-support" onClick={onContactSupport} type="button">

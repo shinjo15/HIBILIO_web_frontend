@@ -5,8 +5,9 @@ import { StrictMode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { AppThemeProvider } from '../../../app/AppThemeProvider';
-import { getAuthenticationStatus, markAuthenticated, resetAuthenticationForTesting } from '../../auth/services/authSession';
+import { clearAuthenticated, getAuthenticationStatus, markAuthenticated, resetAuthenticationForTesting } from '../../auth/services/authSession';
 import { resetAccountVisibilityServiceForTesting } from '../services/accountVisibilityService';
+import { resetLikeNotificationServiceForTesting } from '../services/likeNotificationService';
 import { SettingsPage } from './SettingsPage';
 
 function Location() {
@@ -30,7 +31,12 @@ function renderPage() {
   );
 }
 
-function accountResponse(visibility: 'private' | 'public', uiMode: 'dark' | 'light' | 'system' = 'system'): Response {
+function accountResponse(
+  visibility: 'private' | 'public',
+  uiMode: 'dark' | 'light' | 'system' = 'system',
+  likeNotificationsEnabled = false,
+  supportNotificationsEnabled = false,
+): Response {
   return new Response(JSON.stringify({
     account_bio: null,
     account_identifier: '11111111-1111-4111-8111-111111111111',
@@ -38,7 +44,9 @@ function accountResponse(visibility: 'private' | 'public', uiMode: 'dark' | 'lig
     favorite_tags: [],
     header_image_url: null,
     icon_image_url: null,
+    like_notifications_enabled: likeNotificationsEnabled,
     social_links: [],
+    support_notifications_enabled: supportNotificationsEnabled,
     ui_mode: uiMode,
     visibility,
   }), { status: 200 });
@@ -62,11 +70,245 @@ afterEach(() => {
   cleanup();
   document.documentElement.classList.remove('hibilio-theme-dark');
   resetAccountVisibilityServiceForTesting();
+  resetLikeNotificationServiceForTesting();
   resetAuthenticationForTesting();
   vi.unstubAllGlobals();
 });
 
 describe('SettingsPage', () => {
+  it('通知設定の取得中は保存済みOFFに見えるスイッチを描画せず、読み込み表示にする', async () => {
+    let resolveAccount: (response: Response) => void = () => undefined;
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => new Promise<Response>((resolve) => {
+      resolveAccount = resolve;
+    })));
+    renderPage();
+
+    expect(screen.getByText('通知設定を読み込んでいます。')).toHaveAttribute('role', 'status');
+    expect(screen.queryByRole('switch', { name: 'いいね通知' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: '応援通知' })).not.toBeInTheDocument();
+
+    resolveAccount(accountResponse('public', 'system', false, true));
+  });
+
+  it('古いbackendの通知fields欠落時も鍵アカウントは現在値のまま操作でき、通知だけ再試行表示にする', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      account_bio: null,
+      account_identifier: '11111111-1111-4111-8111-111111111111',
+      account_name: 'ログインアカウント',
+      favorite_tags: [],
+      header_image_url: null,
+      icon_image_url: null,
+      social_links: [],
+      ui_mode: 'system',
+      visibility: 'private',
+    }), { status: 200 })));
+    renderPage();
+
+    expect(await screen.findByRole('switch', { name: '鍵アカウント', checked: true })).toBeEnabled();
+    expect(screen.getByText('通知設定を読み込めませんでした。時間をおいて再試行してください。').closest('[role="alert"]')).toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: 'いいね通知' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: '応援通知' })).not.toBeInTheDocument();
+  });
+
+  it('通知取得が401なら認証を破棄し、通知値を偽表示しない', async () => {
+    markAuthenticated();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
+    renderPage();
+
+    await waitFor(() => expect(getAuthenticationStatus()).toBe('unauthenticated'));
+    expect(screen.queryByRole('switch', { name: 'いいね通知' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: '応援通知' })).not.toBeInTheDocument();
+    expect(screen.getByText('通知設定を読み込めませんでした。時間をおいて再試行してください。').closest('[role="alert"]')).toBeInTheDocument();
+  });
+
+  it('認証世代切替後に古い設定GETが401でも新しい認証を破棄しない', async () => {
+    let resolveAccount: (response: Response) => void = () => undefined;
+    const fetchMock = vi.fn().mockImplementation(() => new Promise<Response>((resolve) => {
+      resolveAccount = resolve;
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+    renderPage();
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    clearAuthenticated();
+    markAuthenticated();
+    resolveAccount(new Response(null, { status: 401 }));
+
+    await waitFor(() => expect(getAuthenticationStatus()).toBe('authenticated'));
+  });
+
+  it('画面を開き直した後に古い本人取得が完了しても、通知の新しい値を上書きしない', async () => {
+    const resolvers: Array<(response: Response) => void> = [];
+    const fetchMock = vi.fn().mockImplementation(() => new Promise<Response>((resolve) => {
+      resolvers.push(resolve);
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+    renderPage();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    cleanup();
+    renderPage();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+
+    resolvers[1](accountResponse('public', 'system', false, true));
+    expect(await screen.findByRole('switch', { name: '応援通知', checked: true })).toBeEnabled();
+
+    resolvers[0](accountResponse('public', 'system', false, false));
+    await waitFor(() => expect(screen.getByRole('switch', { name: '応援通知' })).toHaveAttribute('aria-checked', 'true'));
+  });
+
+  it('いいね通知と応援通知をそれぞれ CSRF と Cookie 付き PATCH で保存し、再取得した成功値を表示する', async () => {
+    const user = userEvent.setup();
+    let likeNotificationsEnabled = false;
+    let supportNotificationsEnabled = true;
+    const fetchMock = vi.fn((path: string, init?: RequestInit) => {
+      if (path === '/api/my/account') return Promise.resolve(accountResponse('public', 'system', likeNotificationsEnabled, supportNotificationsEnabled));
+      if (path === '/api/csrf-token') return Promise.resolve(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }));
+      if (path === '/api/my/account/like-notifications') {
+        likeNotificationsEnabled = JSON.parse(init?.body as string).like_notifications_enabled;
+        return Promise.resolve(new Response(null, { status: 204 }));
+      }
+      if (path === '/api/my/account/support-notifications') {
+        supportNotificationsEnabled = JSON.parse(init?.body as string).support_notifications_enabled;
+        return Promise.resolve(new Response(null, { status: 204 }));
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderPage();
+
+    const likeNotification = await screen.findByRole('switch', { name: 'いいね通知', checked: false });
+    const supportNotification = await screen.findByRole('switch', { name: '応援通知', checked: true });
+
+    expect(likeNotification).toBeEnabled();
+    expect(supportNotification).toBeEnabled();
+
+    await user.click(likeNotification);
+
+    expect(await screen.findByRole('switch', { name: 'いいね通知', checked: true })).toBeEnabled();
+    expect(supportNotification).toHaveAttribute('aria-checked', 'true');
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/account/like-notifications', {
+      body: JSON.stringify({ like_notifications_enabled: true }),
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': 'csrf-token' },
+      method: 'PATCH',
+    });
+    await user.click(supportNotification);
+
+    expect(await screen.findByRole('switch', { name: '応援通知', checked: false })).toBeEnabled();
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/account/support-notifications', {
+      body: JSON.stringify({ support_notifications_enabled: false }),
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': 'csrf-token' },
+      method: 'PATCH',
+    });
+  });
+
+  it('いいね通知の保存失敗時は再取得値を表示し、再試行で同じ値だけを保存する', async () => {
+    const user = userEvent.setup();
+    let likeNotificationsEnabled = false;
+    let attempts = 0;
+    const fetchMock = vi.fn((path: string, init?: RequestInit) => {
+      if (path === '/api/my/account') return Promise.resolve(accountResponse('public', 'system', likeNotificationsEnabled, true));
+      if (path === '/api/csrf-token') return Promise.resolve(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }));
+      if (path === '/api/my/account/like-notifications') {
+        attempts += 1;
+        if (attempts === 1) return Promise.resolve(new Response(null, { status: 503 }));
+        likeNotificationsEnabled = JSON.parse(init?.body as string).like_notifications_enabled;
+        return Promise.resolve(new Response(null, { status: 204 }));
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderPage();
+
+    await user.click(await screen.findByRole('switch', { name: 'いいね通知', checked: false }));
+
+    expect(await screen.findByText('いいね通知の変更に失敗しました。時間をおいて再試行してください。')).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'いいね通知', checked: false })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: '再試行' }));
+
+    expect(await screen.findByRole('switch', { name: 'いいね通知', checked: true })).toBeEnabled();
+    expect(fetchMock.mock.calls.filter(([path]) => path === '/api/my/account/like-notifications')).toHaveLength(2);
+  });
+
+  it('応援通知の保存失敗時は再取得値を表示し、再試行で同じ値だけを保存する', async () => {
+    const user = userEvent.setup();
+    let supportNotificationsEnabled = false;
+    let attempts = 0;
+    const fetchMock = vi.fn((path: string, init?: RequestInit) => {
+      if (path === '/api/my/account') return Promise.resolve(accountResponse('public', 'system', false, supportNotificationsEnabled));
+      if (path === '/api/csrf-token') return Promise.resolve(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }));
+      if (path === '/api/my/account/support-notifications') {
+        attempts += 1;
+        if (attempts === 1) return Promise.resolve(new Response(null, { status: 503 }));
+        supportNotificationsEnabled = JSON.parse(init?.body as string).support_notifications_enabled;
+        return Promise.resolve(new Response(null, { status: 204 }));
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderPage();
+
+    await user.click(await screen.findByRole('switch', { name: '応援通知', checked: false }));
+
+    expect(await screen.findByText('応援通知の変更に失敗しました。時間をおいて再試行してください。')).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: '応援通知', checked: false })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: '再試行' }));
+
+    expect(await screen.findByRole('switch', { name: '応援通知', checked: true })).toBeEnabled();
+    expect(fetchMock.mock.calls.filter(([path]) => path === '/api/my/account/support-notifications')).toHaveLength(2);
+  });
+
+  it('いいね通知 PATCH が401なら認証を破棄し、応援通知は現在値のまま無効にする', async () => {
+    const user = userEvent.setup();
+    markAuthenticated();
+    const fetchMock = vi.fn((path: string) => {
+      if (path === '/api/my/account') return Promise.resolve(accountResponse('public', 'system', false, true));
+      if (path === '/api/csrf-token') return Promise.resolve(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }));
+      if (path === '/api/my/account/like-notifications') return Promise.resolve(new Response(null, { status: 401 }));
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderPage();
+
+    await user.click(await screen.findByRole('switch', { name: 'いいね通知', checked: false }));
+
+    await waitFor(() => expect(getAuthenticationStatus()).toBe('unauthenticated'));
+    expect(screen.getByRole('switch', { name: '応援通知', checked: true })).toBeDisabled();
+  });
+
+  it('いいね通知の保存中は連打を防ぎ、画面を開き直しても完了後の再取得値だけを表示する', async () => {
+    const user = userEvent.setup();
+    let likeNotificationsEnabled = false;
+    let resolvePatch: (response: Response) => void = () => undefined;
+    const fetchMock = vi.fn((path: string, init?: RequestInit) => {
+      if (path === '/api/my/account') return Promise.resolve(accountResponse('public', 'system', likeNotificationsEnabled, true));
+      if (path === '/api/csrf-token') return Promise.resolve(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }));
+      if (path === '/api/my/account/like-notifications') {
+        expect(JSON.parse(init?.body as string)).toEqual({ like_notifications_enabled: true });
+        return new Promise<Response>((resolve) => { resolvePatch = resolve; });
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderPage();
+
+    const likeNotification = await screen.findByRole('switch', { name: 'いいね通知', checked: false });
+    await user.click(likeNotification);
+    expect(likeNotification).toBeDisabled();
+    await user.click(likeNotification);
+    expect(fetchMock.mock.calls.filter(([path]) => path === '/api/my/account/like-notifications')).toHaveLength(1);
+
+    cleanup();
+    renderPage();
+    likeNotificationsEnabled = true;
+    resolvePatch(new Response(null, { status: 204 }));
+
+    expect(await screen.findByRole('switch', { name: 'いいね通知', checked: true })).toBeEnabled();
+    expect(fetchMock.mock.calls.filter(([path]) => path === '/api/my/account/like-notifications')).toHaveLength(1);
+  });
+
   it('StrictMode のeffect再setup後も公開範囲を保存して操作可能な状態へ戻す', async () => {
     const user = userEvent.setup();
     let visibility: 'private' | 'public' = 'public';
@@ -104,7 +346,7 @@ describe('SettingsPage', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(null), { status: 200 })));
     renderPage();
 
-    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect((await screen.findAllByRole('alert')).length).toBe(2);
     expect(screen.getByRole('switch', { name: '鍵アカウント' })).toBeDisabled();
   });
 
@@ -165,7 +407,9 @@ describe('SettingsPage', () => {
         favorite_tags: [],
         header_image_url: null,
         icon_image_url: null,
+        like_notifications_enabled: false,
         social_links: [],
+        support_notifications_enabled: false,
         visibility: 'private',
       }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }))
@@ -175,19 +419,9 @@ describe('SettingsPage', () => {
     renderPage();
 
     const privateAccount = await screen.findByRole('switch', { name: '鍵アカウント', checked: true });
-    const likeNotification = screen.getByRole('switch', { name: 'いいね通知' });
-    const supportNotification = screen.getByRole('switch', { name: '応援通知' });
-
-    expect(likeNotification).toHaveAttribute('aria-checked', 'true');
-    expect(supportNotification).toHaveAttribute('aria-checked', 'true');
-
     await user.click(privateAccount);
-    await user.click(likeNotification);
-    await user.click(supportNotification);
 
     expect(await screen.findByRole('switch', { name: '鍵アカウント', checked: false })).toBeEnabled();
-    expect(likeNotification).toHaveAttribute('aria-checked', 'false');
-    expect(supportNotification).toHaveAttribute('aria-checked', 'false');
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/my/account', { credentials: 'include', method: 'GET' });
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/csrf-token', { credentials: 'include', method: 'GET' });
     expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/my/account/visibility', {
@@ -316,16 +550,18 @@ describe('SettingsPage', () => {
         favorite_tags: [],
         header_image_url: null,
         icon_image_url: null,
+        like_notifications_enabled: false,
         social_links: [],
+        support_notifications_enabled: false,
         visibility: 'private',
       }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     renderPage();
 
-    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect((await screen.findAllByRole('alert')).length).toBe(2);
     expect(screen.getByRole('switch', { name: '鍵アカウント' })).toBeDisabled();
 
-    await user.click(screen.getByRole('button', { name: '再試行' }));
+    await user.click(screen.getAllByRole('button', { name: '再試行' })[0]);
 
     expect(await screen.findByRole('switch', { name: '鍵アカウント', checked: true })).toBeEnabled();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -349,7 +585,9 @@ describe('SettingsPage', () => {
       favorite_tags: [],
       header_image_url: null,
       icon_image_url: null,
+      like_notifications_enabled: false,
       social_links: [],
+      support_notifications_enabled: false,
       visibility: 'public',
     }), { status: 200 }));
 
@@ -367,7 +605,9 @@ describe('SettingsPage', () => {
         favorite_tags: [],
         header_image_url: null,
         icon_image_url: null,
+        like_notifications_enabled: false,
         social_links: [],
+        support_notifications_enabled: false,
         visibility: 'public',
       }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }))
@@ -428,7 +668,9 @@ describe('SettingsPage', () => {
         favorite_tags: [],
         header_image_url: null,
         icon_image_url: null,
+        like_notifications_enabled: false,
         social_links: [],
+        support_notifications_enabled: false,
         visibility: 'public',
       }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }))
