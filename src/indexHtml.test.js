@@ -70,6 +70,14 @@ describe('document favicon', () => {
     expect(indexHtml).toContain('<meta name="google-adsense-account" content="ca-pub-7362961447612472">');
   });
 
+  it('declares the specified Google Tag Manager bootstrap snippets without removing the AdSense ownership tag', () => {
+    const head = indexHtml.match(/<head>([\s\S]*?)<\/head>/)?.[1];
+
+    expect(head).toContain('<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-MD7H6T6R"></script>');
+    expect(head).toContain('<script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag("js", new Date());</script>');
+    expect(head).toContain('<meta name="google-adsense-account" content="ca-pub-7362961447612472">');
+  });
+
   it('keeps the viewport scalable by the user', () => {
     const viewport = indexHtml.match(/<meta name="viewport" content="([^"]+)" \/>/)?.[1];
 
