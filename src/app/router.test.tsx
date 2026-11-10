@@ -13,6 +13,10 @@ describe('router', () => {
   it('認証済みユーザー向けにお問い合わせ画面のルートを提供する', () => {
     expect(flattenRoutes(router.routes).some((route) => route.path === 'contact-support')).toBe(true);
   });
+
+  it('認証済みユーザー向けに通知画面のルートを提供する', () => {
+    expect(flattenRoutes(router.routes).some((route) => route.path === 'notifications')).toBe(true);
+  });
 });
 
 function flattenRoutes(routes: typeof router.routes): typeof router.routes {

@@ -205,6 +205,23 @@ describe('AppShell', () => {
     expect(screen.getByRole('heading', { name: 'アカウント画面' })).toBeInTheDocument();
   });
 
+  it('ログイン時だけ共通の画面右上固定通知ベルから通知画面へ遷移できる', async () => {
+    markAuthenticated();
+    const user = userEvent.setup();
+    const router = createMemoryRouter([
+      { element: <AppShell />, children: [{ element: <h1>一覧画面</h1>, index: true }, { element: <h1>通知画面</h1>, path: 'notifications' }] },
+    ]);
+
+    render(<RouterProvider router={router} />);
+
+    const notificationBell = screen.getByRole('button', { name: '通知' });
+    expect(document.querySelectorAll('.hibilio-notifications')).toHaveLength(1);
+    expect(notificationBell).toHaveClass('hibilio-notifications');
+    await user.click(notificationBell);
+    expect(screen.getByRole('heading', { name: '通知画面' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '通知' })).not.toBeInTheDocument();
+  });
+
   it('セッションマーカーがなくアカウント API が401ならログイン画面へ遷移する', async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn()
