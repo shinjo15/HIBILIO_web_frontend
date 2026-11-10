@@ -212,7 +212,7 @@ export function AppShell() {
           );
         })}
       </Box>
-      {authenticationStatus === 'authenticated' && location.pathname !== '/notifications' && <IconButton aria-label={messages.navigation.notifications} className="hibilio-notifications" onClick={() => navigate('/notifications')} sx={{ color: 'text.secondary' }}><NotificationsNoneOutlinedIcon /></IconButton>}
+      {authenticationStatus === 'authenticated' && location.pathname === '/home' && <IconButton aria-label={messages.navigation.notifications} className="hibilio-notifications" onClick={() => navigate('/notifications')} sx={{ color: 'text.secondary' }}><NotificationsNoneOutlinedIcon /></IconButton>}
     </Box>
   );
 }

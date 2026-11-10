@@ -205,17 +205,36 @@ describe('AppShell', () => {
     expect(screen.getByRole('heading', { name: 'アカウント画面' })).toBeInTheDocument();
   });
 
-  it('ログイン時だけ共通の画面右上固定通知ベルから通知画面へ遷移できる', async () => {
+  it.each([
+    ['/home', true],
+    ['/account', false],
+    ['/accounts/account-1', false],
+    ['/account/settings', false],
+    ['/feed', false],
+    ['/notifications', false],
+    ['/routines/new', false],
+    ['/routines/routine-1/customize', false],
+  ])('ログイン時の通知ベルは%sでのみ表示条件を満たす', (path, isVisible) => {
+    markAuthenticated();
+    const router = createMemoryRouter([
+      { element: <AppShell />, children: [{ element: <h1>画面</h1>, path: '*' }] },
+    ], { initialEntries: [path] });
+
+    render(<RouterProvider router={router} />);
+
+    expect(document.querySelectorAll('.hibilio-notifications')).toHaveLength(isVisible ? 1 : 0);
+  });
+
+  it('ログイン時のHome画面ではPC・モバイル共通の画面右上固定通知ベルから通知画面へ遷移できる', async () => {
     markAuthenticated();
     const user = userEvent.setup();
     const router = createMemoryRouter([
-      { element: <AppShell />, children: [{ element: <h1>一覧画面</h1>, index: true }, { element: <h1>通知画面</h1>, path: 'notifications' }] },
-    ]);
+      { element: <AppShell />, children: [{ element: <h1>Home画面</h1>, path: 'home' }, { element: <h1>通知画面</h1>, path: 'notifications' }] },
+    ], { initialEntries: ['/home'] });
 
     render(<RouterProvider router={router} />);
 
     const notificationBell = screen.getByRole('button', { name: '通知' });
-    expect(document.querySelectorAll('.hibilio-notifications')).toHaveLength(1);
     expect(notificationBell).toHaveClass('hibilio-notifications');
     await user.click(notificationBell);
     expect(screen.getByRole('heading', { name: '通知画面' })).toBeInTheDocument();
