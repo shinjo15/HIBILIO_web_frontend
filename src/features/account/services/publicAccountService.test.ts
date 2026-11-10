@@ -128,4 +128,50 @@ describe('createPublicAccountService', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/accounts/account-1/likes?page=3&number_of_items_per_page=40', { credentials: 'include', method: 'GET' });
     expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/accounts/account-1/routine-executions?page=4&number_of_items_per_page=40', { credentials: 'include', method: 'GET' });
   });
+
+  it('他人の投稿APIが返す実行投稿を、null の投稿日と応援状態を保って本人投稿と同じ表示モデルへ変換する', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      items: [{
+        account_identifier: '11111111-1111-4111-8111-111111111111',
+        account_name: '実行者',
+        customization_count: 0,
+        customization_origin: null,
+        executed_action_count: 2,
+        execution_count: 3,
+        icon_image_url: null,
+        liked: false,
+        post_category: 'action',
+        post_identifier: '22222222-2222-4222-8222-222222222222',
+        post_like_count: 0,
+        post_support_count: 4,
+        posted_at: null,
+        routine_actions: [],
+        routine_execution_identifier: '33333333-3333-4333-8333-333333333333',
+        routine_execution_memo: null,
+        routine_execution_minutes: null,
+        routine_identifier: 'routine-1',
+        routine_name: '朝の集中ルーティン',
+        support_count: 4,
+        supported: true,
+        tags: [],
+      }],
+      total: 1,
+    })));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createPublicAccountService().listPostsPage?.('account-1', 1)).resolves.toMatchObject({
+      items: [{
+        createdAt: null,
+        executedActionCount: 2,
+        executionMemo: null,
+        id: '22222222-2222-4222-8222-222222222222',
+        postCategory: 'action',
+        routineExecutionId: '33333333-3333-4333-8333-333333333333',
+        supportCount: 4,
+        supported: true,
+      }],
+      total: 1,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/api/accounts/account-1/posts?page=1&number_of_items_per_page=40', { credentials: 'include', method: 'GET' });
+  });
 });

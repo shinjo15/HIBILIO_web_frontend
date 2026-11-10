@@ -113,7 +113,7 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
     return { items, total: items.length };
   }, [service]);
   const postsList = useInfiniteList({ enabled: activeTab === 'posts', fetchPage: fetchPostsPage, key: 'account-posts', onError: handleListError, preserveWhenDisabled: true });
-  const routinesList = useInfiniteList({ enabled: isOwnAccount, fetchPage: fetchRoutinesPage, key: 'account-routines', onError: handleListError, preserveWhenDisabled: true });
+  const routinesList = useInfiniteList({ fetchPage: fetchRoutinesPage, key: 'account-routines', onError: handleListError, preserveWhenDisabled: true });
   const likesList = useInfiniteList({ enabled: true, fetchPage: fetchLikesPage, key: 'account-likes', onError: handleListError, preserveWhenDisabled: true });
   const executionHistoriesList = useInfiniteList({ enabled: true, fetchPage: fetchExecutionHistoriesPage, key: 'account-execution-history', onError: handleListError, preserveWhenDisabled: true });
   const posts = postsList.items;
@@ -426,7 +426,7 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
       ...(profile.visibility === 'private' ? [{ label: messages.account.tabs.followRequests, value: 'followRequests' as const }] : []),
       { label: messages.account.tabs.sentFollowRequests, value: 'sentFollowRequests' as const },
     ]
-    : tabs.slice(0, 3);
+    : [tabs[0], { label: messages.account.tabs.routines, value: 'routines' as const }, ...tabs.slice(1, 3)];
   const tabClassName = `account-tabs account-tabs--${['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'][displayedTabs.length]}`;
 
   return (

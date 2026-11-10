@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { apiFetch } from '../../../shared/api/apiFetch';
-import { parseAccountPostsPage, parseLikedRoutinesPage } from './accountRoutinePosts';
+import { parseLikedRoutinesPage, parseMyPostsPage, parseMyRoutinesPage } from './accountRoutinePosts';
 import { parseAccountRoutineExecutionsPage } from './accountRoutineExecutions';
 import type { Routine } from '../../routineFeed/domain/routine';
-import { accountProfileSchema, type AccountExecutionSummary, type AccountProfile } from '../domain/account';
+import { accountProfileSchema, type AccountExecutionSummary, type AccountProfile, type AccountRoutine } from '../domain/account';
 import type { PageResult } from '../../../shared/hooks/useInfiniteList';
 
 const detailedPublicAccountResponseSchema = z.object({
@@ -57,8 +57,10 @@ export type PublicAccountService = {
   listExecutionHistoriesPage?: (accountIdentifier: string, page: number) => Promise<PageResult<AccountExecutionSummary>>;
   listLikes: (accountIdentifier: string) => Promise<Routine[]>;
   listLikesPage?: (accountIdentifier: string, page: number) => Promise<PageResult<Routine>>;
-  listPosts: (accountIdentifier: string) => Promise<Routine[]>;
-  listPostsPage?: (accountIdentifier: string, page: number) => Promise<PageResult<Routine>>;
+  listPosts: (accountIdentifier: string) => Promise<AccountRoutine[]>;
+  listPostsPage?: (accountIdentifier: string, page: number) => Promise<PageResult<AccountRoutine>>;
+  listRoutines?: (accountIdentifier: string) => Promise<AccountRoutine[]>;
+  listRoutinesPage?: (accountIdentifier: string, page: number) => Promise<PageResult<AccountRoutine>>;
 };
 
 const publicAccountApiAdapter: PublicAccountAdapter = {
@@ -91,7 +93,12 @@ export function createPublicAccountService(adapter: PublicAccountAdapter = publi
   const listPostsPage = async (accountIdentifier: string, page: number) => apiFetch(`/api/accounts/${accountIdentifier}/posts?page=${page}&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' })
     .then(async (response) => {
       if (!response.ok) throw new Error(`Failed to fetch public routine posts: ${response.status}`);
-      return parseAccountPostsPage(await response.json());
+      return parseMyPostsPage(await response.json());
+    });
+  const listRoutinesPage = async (accountIdentifier: string, page: number) => apiFetch(`/api/accounts/${accountIdentifier}/routines?page=${page}&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' })
+    .then(async (response) => {
+      if (!response.ok) throw new Error(`Failed to fetch public routines: ${response.status}`);
+      return parseMyRoutinesPage(await response.json());
     });
 
   return {
@@ -138,6 +145,8 @@ export function createPublicAccountService(adapter: PublicAccountAdapter = publi
     listExecutionHistoriesPage,
     listPosts: async (accountIdentifier) => (await listPostsPage(accountIdentifier, 1)).items,
     listPostsPage,
+    listRoutines: async (accountIdentifier) => (await listRoutinesPage(accountIdentifier, 1)).items,
+    listRoutinesPage,
   };
 }
 
