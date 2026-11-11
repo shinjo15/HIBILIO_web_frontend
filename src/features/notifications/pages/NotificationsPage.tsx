@@ -5,6 +5,7 @@ import { clearAuthenticated, getAuthenticationGeneration, getAuthenticationStatu
 import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
 import messages from '../../../shared/message/message.json';
 import { notificationService, NotificationUnauthorizedError, type NotificationService, type PersonalNotification } from '../services/notificationService';
+import { unreadNotificationCountChangedEvent } from '../services/unreadNotificationCount';
 import '../notifications.css';
 
 type NotificationsPageProps = { service?: NotificationService };
@@ -48,6 +49,7 @@ export function NotificationsPage({ service = notificationService }: Notificatio
       await service.markAsRead(notification.id);
       if (getAuthenticationGeneration() !== requestGeneration) return;
       notifications.setItems((current) => current.map((item) => item.id === notification.id ? { ...item, status: 'read' } : item));
+      window.dispatchEvent(new Event(unreadNotificationCountChangedEvent));
       setReadErrorState((current) => {
         if (current.generation !== requestGeneration || !current.identifiers.has(notification.id)) return current;
         const identifiers = new Set(current.identifiers);

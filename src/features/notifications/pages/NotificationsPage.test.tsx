@@ -60,6 +60,33 @@ describe('NotificationsPage', () => {
     await waitFor(() => expect(notification).not.toHaveClass('notifications-page__item--unread'));
   });
 
+  it('既読PATCH成功時だけ未読件数の再取得イベントを送信する', async () => {
+    const user = userEvent.setup();
+    const markAsRead = vi.fn().mockResolvedValue(undefined);
+    const refreshCount = vi.fn();
+    window.addEventListener('unread-notification-count-changed', refreshCount);
+    renderPage(serviceWithNotifications([unread], markAsRead));
+
+    await user.click(await screen.findByRole('button', { name: new RegExp(unread.content) }));
+
+    await waitFor(() => expect(refreshCount).toHaveBeenCalledOnce());
+    window.removeEventListener('unread-notification-count-changed', refreshCount);
+  });
+
+  it('既読PATCH失敗時は未読件数の再取得イベントを送信しない', async () => {
+    const user = userEvent.setup();
+    const markAsRead = vi.fn().mockRejectedValue(new Error('failed'));
+    const refreshCount = vi.fn();
+    window.addEventListener('unread-notification-count-changed', refreshCount);
+    renderPage(serviceWithNotifications([unread], markAsRead));
+
+    await user.click(await screen.findByRole('button', { name: new RegExp(unread.content) }));
+
+    await screen.findByRole('alert');
+    expect(refreshCount).not.toHaveBeenCalled();
+    window.removeEventListener('unread-notification-count-changed', refreshCount);
+  });
+
   it('未読通知の操作名に未読状態と日時を含める', async () => {
     renderPage(serviceWithNotifications([unread]));
 
