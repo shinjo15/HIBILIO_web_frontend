@@ -8,6 +8,7 @@ export const accountProfileSchema = z.object({
   headerImageUrl: z.string().url().nullable().optional(),
   initial: z.string().min(1).max(1),
   iconImageUrl: z.string().url().nullable().optional(),
+  level: z.number().int().min(1).optional(),
   name: z.string().min(1),
   socialLinks: z.array(z.object({ socialType: z.string().min(1), socialUrl: z.string().url() })),
   visibility: z.enum(['public', 'private']),

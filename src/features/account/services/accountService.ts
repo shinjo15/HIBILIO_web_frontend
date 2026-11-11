@@ -21,6 +21,7 @@ const getMyAccountResponseSchema = z.object({
   account_name: z.string().min(1),
   header_image_url: z.string().url().nullish().transform((url) => url ?? null),
   icon_image_url: z.string().url().nullish().transform((url) => url ?? null),
+  level: z.number().int().min(1).optional(),
 
   favorite_tags: z.array(z.object({
     tag_identifier: z.string().min(1),
@@ -330,6 +331,7 @@ export function createAccountService(
         headerImageUrl: profile.header_image_url,
         initial: profile.account_name.charAt(0),
         iconImageUrl: profile.icon_image_url,
+        level: profile.level,
         name: profile.account_name,
         socialLinks: profile.social_links.map((link) => ({ socialType: link.social_type, socialUrl: link.social_url })),
         visibility: profile.visibility,

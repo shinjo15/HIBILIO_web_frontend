@@ -59,6 +59,41 @@ afterEach(() => {
 });
 
 describe('AccountPage', () => {
+  it.each([1, 2])('本人アカウント名の横に API の level=%i をそのまま表示する', async (level) => {
+    renderPage({
+      ...service,
+      getProfile: async () => ({ accountIdentifier: '11111111-1111-4111-8111-111111111111', bio: null, favoriteTags: [], headerImageUrl: null, initial: '山', iconImageUrl: null, level, name: '山田 由紀', socialLinks: [], visibility: 'public' }),
+    });
+
+    expect(await screen.findByText(`Lv. ${level}`)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '山田 由紀' }).parentElement).toHaveClass('account-profile__name-row');
+  });
+
+  it('他人プロフィールには level を表示しない', async () => {
+    render(<MemoryRouter><AccountPage isOwnAccount={false} service={{
+      ...service,
+      getProfile: async () => ({ accountIdentifier: '22222222-2222-4222-8222-222222222222', bio: null, favoriteTags: [], headerImageUrl: null, initial: '他', iconImageUrl: null, level: 0, name: '他人アカウント', socialLinks: [], visibility: 'public' }),
+    }} /><Location /></MemoryRouter>);
+
+    await screen.findByRole('heading', { name: '他人アカウント' });
+    expect(screen.queryByText('Lv. 0')).not.toBeInTheDocument();
+  });
+
+  it('本人プロフィール API の失敗時は level を表示せず既存エラーを表示する', async () => {
+    renderPage({ ...service, getProfile: async () => { throw new Error('failed'); } });
+
+    expect(await screen.findByText('アカウント情報を読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
+    expect(screen.queryByText(/Lv\./)).not.toBeInTheDocument();
+  });
+
+  it('本人プロフィール API が401なら認証状態を削除してログインへ遷移する', async () => {
+    markAuthenticated();
+    renderPage({ ...service, getProfile: async () => { throw new AccountUnauthorizedError(); } });
+
+    expect(await screen.findByText('/login')).toBeInTheDocument();
+    expect(isAuthenticated()).toBe(false);
+  });
+
   it('初期表示でいいねとブロック中を取得し、それぞれの件数を表示する', async () => {
     const listLikesPage = vi.fn().mockResolvedValue({ items: [likedPost], total: 4 });
     const listBlockedAccounts = vi.fn().mockResolvedValue([
