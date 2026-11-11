@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import messages from '../../../shared/message/message.json';
-import { isHttpVideoUrl } from '../../routineDetail/domain/routineVideo';
 
 const routineNameSchema = z.string().trim()
   .min(1, messages.routineCreate.validation.routineNameRequired)
@@ -30,8 +29,7 @@ const actionMinutesSchema = optionalMinutesSchema(
   messages.routineCreate.validation.actionMinutesMin,
 );
 
-const optionalVideoUrlSchema = z.string().optional().transform((value) => value ?? '')
-  .refine((value) => value === '' || isHttpVideoUrl(value), messages.routineCreate.validation.videoUrlInvalid);
+const optionalVideoUrlSchema = z.string().optional().transform((value) => value ?? '');
 
 export const routineCreateActionSchema = z.object({
   actionMemo: actionMemoSchema,
@@ -69,9 +67,30 @@ export const routineCreateRequestSchema = z.object({
   video_url: z.string().min(1).optional(),
 });
 
-export type RoutineCreateActionViewModel = z.input<typeof routineCreateActionSchema>;
-export type RoutineCreateViewModel = z.input<typeof routineCreateFormSchema>;
+export type RoutineCreateActionViewModel = z.input<typeof routineCreateActionSchema> & {
+  clientId?: string;
+};
+export type RoutineCreateViewModel = Omit<z.input<typeof routineCreateFormSchema>, 'actions'> & {
+  actions: RoutineCreateActionViewModel[];
+};
 export type RoutineCreateRequest = z.infer<typeof routineCreateRequestSchema>;
+
+let actionClientId = 0;
+
+function createActionClientId(): string {
+  actionClientId += 1;
+  return `routine-create-action-${actionClientId}`;
+}
+
+export function ensureRoutineCreateActionClientIds(form: RoutineCreateViewModel): RoutineCreateViewModel {
+  return {
+    ...form,
+    actions: form.actions.map((action) => ({
+      ...action,
+      clientId: action.clientId ?? createActionClientId(),
+    })),
+  };
+}
 
 export function createInitialRoutineCreateViewModel(): RoutineCreateViewModel {
   return {
@@ -88,6 +107,7 @@ export function createEmptyAction(): RoutineCreateActionViewModel {
     actionMemo: '',
     actionMinutes: '',
     actionName: '',
+    clientId: createActionClientId(),
     videoUrl: '',
   };
 }
@@ -185,6 +205,7 @@ export function createCustomizedRoutineViewModel(parent: {
       actionMemo: step.memo ?? '',
       actionMinutes: step.minutes?.toString() ?? '',
       actionName: step.action,
+      clientId: createActionClientId(),
       videoUrl: '',
     })),
     parentRoutineIdentifier: parent.id,

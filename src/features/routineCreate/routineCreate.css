@@ -138,6 +138,21 @@
   font-size: 12px;
 }
 
+.routine-create-field__help,
+.routine-create-field__error {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.routine-create-field__help {
+  color: var(--hibilio-color-muted-text);
+}
+
+.routine-create-field__error {
+  color: var(--hibilio-color-primary);
+}
+
 .routine-create-required {
   color: var(--hibilio-color-primary);
 }

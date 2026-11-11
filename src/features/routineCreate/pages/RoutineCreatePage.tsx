@@ -172,6 +172,7 @@ export function RoutineCreatePage({
         <div className="routine-create-content">
           <RoutineCreateForm
             errorMessage={routineCreate.errorMessage}
+            fieldErrors={routineCreate.fieldErrors}
             form={routineCreate.form}
             isSubmitting={routineCreate.status === 'submitting'}
             onAddAction={routineCreate.addAction}
