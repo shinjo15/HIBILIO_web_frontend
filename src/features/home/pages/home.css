@@ -56,9 +56,18 @@
 
 .home-page__profile-copy {
   display: grid;
+  flex: 1 1 0;
   gap: 2px;
   min-width: 0;
   padding-bottom: 2px;
+}
+
+.home-page__profile-name-row {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  min-width: 0;
 }
 
 .home-page__profile-name {
@@ -68,6 +77,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.home-page__profile-name-row .home-page__profile-name {
+  flex: 0 1 auto;
+  max-width: 100%;
+  min-width: 0;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .home-page__profile-bio {

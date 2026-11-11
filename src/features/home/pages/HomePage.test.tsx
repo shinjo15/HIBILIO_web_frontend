@@ -32,7 +32,7 @@ describe('HomePage', () => {
     expect(document.querySelectorAll('header.home-page__header > .app-brand-header')).toHaveLength(1);
   });
 
-  it('ログイン済みなら本人のプロフィールアイコン、名前、改行を含む自己紹介をそのまま上部に表示する', async () => {
+  it('ログイン済みなら本人のプロフィールアイコン、名前の直後のlevel、改行を含む自己紹介をそのまま上部に表示する', async () => {
     markAuthenticated();
     const bio = '今日の目標を決める。\n無理なく続ける。';
     const getProfile = vi.fn().mockResolvedValue({
@@ -42,6 +42,7 @@ describe('HomePage', () => {
       headerImageUrl: null,
       iconImageUrl: null,
       initial: '長',
+      level: 2,
       name: 'とても長い表示名でもホームのレイアウトを崩さないアカウント',
       socialLinks: [],
       visibility: 'public' as const,
@@ -50,10 +51,24 @@ describe('HomePage', () => {
     render(<MemoryRouter><HomePage service={createService({ getProfile })} /></MemoryRouter>);
 
     expect(await screen.findByText('とても長い表示名でもホームのレイアウトを崩さないアカウント')).toBeInTheDocument();
+    expect(screen.getByText('Lv. 2')).toHaveClass('account-profile__level');
+    expect(document.querySelector('.home-page__profile-name-row')).toContainElement(screen.getByText('Lv. 2'));
     const displayedBio = document.querySelector('.home-page__profile-bio') as HTMLElement;
     expect(displayedBio).toHaveTextContent(bio, { normalizeWhitespace: false });
     expect(document.querySelector('.home-page__profile-avatar')).toHaveTextContent('長');
     expect(document.querySelector('.home-page__profile-copy')).toContainElement(displayedBio);
+    expect(getProfile).toHaveBeenCalledTimes(1);
+  });
+
+  it('旧セッションのプロフィールでlevelが未提供なら、既存の名前と自己紹介だけを表示する', async () => {
+    markAuthenticated();
+    const getProfile = vi.fn().mockResolvedValue({ ...profile, bio: '既存の自己紹介', name: '旧セッションの本人' });
+
+    render(<MemoryRouter><HomePage service={createService({ getProfile })} /></MemoryRouter>);
+
+    expect(await screen.findByText('旧セッションの本人')).toBeInTheDocument();
+    expect(screen.queryByText(/Lv\./)).not.toBeInTheDocument();
+    expect(screen.getByText('既存の自己紹介')).toHaveClass('home-page__profile-bio');
     expect(getProfile).toHaveBeenCalledTimes(1);
   });
 

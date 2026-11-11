@@ -247,6 +247,32 @@
   margin: 0;
 }
 
+.account-profile__name-row {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.account-profile__name-row .account-profile__name {
+  flex: 0 1 auto;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.account-profile__level {
+  border-left: 1px solid var(--hibilio-color-border);
+  color: var(--hibilio-color-primary);
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding-left: 8px;
+  white-space: nowrap;
+}
+
 .account-profile__handle,
 .account-profile__bio {
   color: var(--hibilio-color-muted-text);

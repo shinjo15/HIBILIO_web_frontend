@@ -279,6 +279,7 @@
     "sentFollowRequestCancelling": "取り消しています…",
 
     "likedRoutine": "いいねしたルーティン",
+    "level": "Lv.",
     "likesEmpty": "いいねしたルーティンはまだありません",
     "likesError": "いいねしたルーティンを読み込めませんでした。時間をおいて再試行してください。",
     "likesLoading": "いいねしたルーティンを読み込んでいます…",

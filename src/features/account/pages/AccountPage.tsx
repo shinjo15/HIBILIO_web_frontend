@@ -448,7 +448,7 @@ export function AccountPage({ blockService = accountBlockService, currentAccount
               {!isOwnAccount && showPublicActions && <><button aria-label={isFollowing ? messages.publicAccount.following : isFollowed ? messages.publicAccount.followed : messages.publicAccount.follow} className={isFollowed ? 'account-page__follow account-page__follow--followed' : 'account-page__follow'} disabled={isFollowing || isFollowed} onClick={() => void followAccount()} type="button"><FollowIcon />{isFollowing ? messages.publicAccount.following : isFollowed ? messages.publicAccount.followed : messages.publicAccount.follow}</button><IconButton aria-controls={actionMenuAnchor !== null ? 'account-action-menu' : undefined} aria-expanded={actionMenuAnchor !== null} aria-haspopup="menu" aria-label={messages.report.accountMenu} className="account-page__more" onClick={(event) => setActionMenuAnchor(event.currentTarget)} size="small"><MoreVertIcon /></IconButton></>}
             </div>
             <div className="account-profile__details">
-              <h1 className="account-profile__name">{profile.name}</h1>
+              {isOwnAccount ? <div className="account-profile__name-row"><h1 className="account-profile__name">{profile.name}</h1>{profile.level !== undefined && <span className="account-profile__level">{messages.account.level} {profile.level}</span>}</div> : <h1 className="account-profile__name">{profile.name}</h1>}
               {profile.bio !== null && <p className="account-profile__bio">{profile.bio}</p>}
               {profile.socialLinks.length > 0 && <div className="account-profile__social-links">
                 {profile.socialLinks.map((link) => {

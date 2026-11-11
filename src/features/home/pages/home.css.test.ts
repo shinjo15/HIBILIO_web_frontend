@@ -32,6 +32,11 @@ describe('home.css calendar future days', () => {
     expect(css).toMatch(/\.home-page__profile-bio\s*\{[^}]*color:\s*var\(--hibilio-color-muted-text\);[^}]*font-size:\s*12px;[^}]*min-width:\s*0;[^}]*overflow-wrap:\s*anywhere;[^}]*white-space:\s*pre-wrap;/);
   });
 
+  it('levelを名前の直後に同じ色・区切り・枠なしで置き、長い名前でもlevelを見切れさせない', () => {
+    expect(css).toMatch(/\.home-page__profile-name-row\s*\{[^}]*align-items:\s*baseline;[^}]*display:\s*flex;[^}]*flex-wrap:\s*wrap;[^}]*min-width:\s*0;/);
+    expect(css).toMatch(/\.home-page__profile-name-row \.home-page__profile-name\s*\{[^}]*flex:\s*0 1 auto;[^}]*max-width:\s*100%;[^}]*min-width:\s*0;[^}]*overflow-wrap:\s*anywhere;/);
+  });
+
   it('プロフィールの枠と画像未設定時のAvatar背景をライト・ダーク共通tokenで描画する', () => {
     expect(tokens).toMatch(/:root\s*\{[^}]*--hibilio-color-card:\s*[^;]+;/);
     expect(tokens).toMatch(/:root\s*\{[^}]*--hibilio-color-border:\s*[^;]+;/);

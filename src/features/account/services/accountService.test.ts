@@ -4,6 +4,56 @@ import { createAccountService } from './accountService';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('createAccountService', () => {
+  it.each([1, 2])('GET /api/my/account の level=%i を計算や補正をせず本人プロフィール表示モデルへ渡す', async (level) => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      account_bio: null,
+      account_identifier: '11111111-1111-4111-8111-111111111111',
+      account_name: 'ログインアカウント',
+      favorite_tags: [],
+      header_image_url: null,
+      icon_image_url: null,
+      level,
+      social_links: [],
+      visibility: 'public',
+    })));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createAccountService().getProfile()).resolves.toMatchObject({ level });
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/account', { credentials: 'include', method: 'GET' });
+  });
+
+  it('GET /api/my/account の不正な level をプロフィール表示モデルに渡さない', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      account_bio: null,
+      account_identifier: '11111111-1111-4111-8111-111111111111',
+      account_name: 'ログインアカウント',
+      favorite_tags: [],
+      header_image_url: null,
+      icon_image_url: null,
+      level: -1,
+      social_links: [],
+      visibility: 'public',
+    }))));
+
+    await expect(createAccountService().getProfile()).rejects.toThrow();
+  });
+
+  it('GET /api/my/account の最低値未満の level をプロフィール表示モデルに渡さない', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      account_bio: null,
+      account_identifier: '11111111-1111-4111-8111-111111111111',
+      account_name: 'ログインアカウント',
+      favorite_tags: [],
+      header_image_url: null,
+      icon_image_url: null,
+      level: 0,
+      social_links: [],
+      visibility: 'public',
+    }))));
+
+    await expect(createAccountService().getProfile()).rejects.toThrow();
+  });
+
   it('GET /api/my/account の契約を公開プロフィール表示モデルへ変換し、本人専用の通知値を含めない', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       account_bio: null,

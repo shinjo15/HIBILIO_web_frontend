@@ -124,7 +124,7 @@ export function HomePage({ likeService = routineLikeService, service = accountSe
     <main className="home-page">
       <header className="home-page__header"><AppBrandHeader /></header>
       <div className="home-page__content">
-        {displayedProfile !== null && <header className="home-page__profile"><AccountAvatar className="home-page__profile-avatar" iconImageUrl={displayedProfile.iconImageUrl ?? null} initial={displayedProfile.initial} /><div className="home-page__profile-copy"><span className="home-page__profile-name">{displayedProfile.name}</span>{displayedProfile.bio !== null && displayedProfile.bio !== '' && <span className="home-page__profile-bio">{displayedProfile.bio}</span>}</div></header>}
+        {displayedProfile !== null && <header className="home-page__profile"><AccountAvatar className="home-page__profile-avatar" iconImageUrl={displayedProfile.iconImageUrl ?? null} initial={displayedProfile.initial} /><div className="home-page__profile-copy"><div className="home-page__profile-name-row"><span className="home-page__profile-name">{displayedProfile.name}</span>{displayedProfile.level !== undefined && <span className="account-profile__level">{messages.account.level} {displayedProfile.level}</span>}</div>{displayedProfile.bio !== null && displayedProfile.bio !== '' && <span className="home-page__profile-bio">{displayedProfile.bio}</span>}</div></header>}
         <section aria-labelledby="home-liked-routines-title" className="home-page__section">
           <h1 id="home-liked-routines-title">{messages.home.likedRoutines}</h1>
           {likes.isInitialLoading && <p className="home-page__state">{messages.account.likesLoading}</p>}
