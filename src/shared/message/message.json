@@ -414,6 +414,7 @@
     "routineMemo": "説明（任意）",
     "routineMemoPlaceholder": "どんなルーティンか、目的や効果を簡単に",
     "videoUrl": "動画リンク（任意）",
+    "videoUrlHelp": "YouTube動画のURLのみ登録できます。",
     "videoUrlPlaceholder": "https://…",
     "routineExecutionMinutes": "ルーティン全体の所要時間（分・任意）",
     "routineExecutionMinutesPlaceholder": "例：30",

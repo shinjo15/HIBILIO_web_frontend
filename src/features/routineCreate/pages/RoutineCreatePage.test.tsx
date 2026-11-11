@@ -2,8 +2,13 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import messages from '../../../shared/message/message.json';
 import { RoutineCreatePage } from './RoutineCreatePage';
-import { RoutineCreateUnauthorizedError, type RoutineCreateService } from '../services/routineCreateService';
+import {
+  RoutineCreateApiError,
+  RoutineCreateUnauthorizedError,
+  type RoutineCreateService,
+} from '../services/routineCreateService';
 
 afterEach(() => {
   cleanup();
@@ -380,6 +385,52 @@ describe('RoutineCreatePage', () => {
     expect(screen.getByText('ルーティンを投稿しました。')).toBeInTheDocument();
   });
 
+  it('送信中はルーティン動画URLを編集できず、422後に再編集できる', async () => {
+    const user = userEvent.setup();
+    let rejectCreate: ((error: Error) => void) | undefined;
+    const create = vi.fn().mockImplementation(() => new Promise<void>((_, reject) => { rejectCreate = reject; }));
+    renderPage({ create });
+
+    await fillMinimumForm(user);
+    const routineVideoInput = screen.getByLabelText('動画リンク（任意）');
+    await user.type(routineVideoInput, 'https://example.com/routine');
+    submitForm();
+
+    expect(routineVideoInput).toBeDisabled();
+    await user.type(routineVideoInput, '?v=dQw4w9WgXcQ');
+    expect(routineVideoInput).toHaveValue('https://example.com/routine');
+
+    rejectCreate?.(new RoutineCreateApiError('入力内容を確認してください。', { video_url: 'ルーティンの動画URLエラー' }));
+
+    expect(await screen.findByText('ルーティンの動画URLエラー')).toBeInTheDocument();
+    expect(routineVideoInput).toBeEnabled();
+    await user.type(routineVideoInput, '?v=dQw4w9WgXcQ');
+    expect(routineVideoInput).toHaveValue('https://example.com/routine?v=dQw4w9WgXcQ');
+  });
+
+  it('送信中はステップ動画URLを編集できず、422後に再編集できる', async () => {
+    const user = userEvent.setup();
+    let rejectCreate: ((error: Error) => void) | undefined;
+    const create = vi.fn().mockImplementation(() => new Promise<void>((_, reject) => { rejectCreate = reject; }));
+    renderPage({ create });
+
+    await fillMinimumForm(user);
+    const actionVideoInput = screen.getByLabelText('ステップ1の動画リンク（任意）');
+    await user.type(actionVideoInput, 'https://example.com/action');
+    submitForm();
+
+    expect(actionVideoInput).toBeDisabled();
+    await user.type(actionVideoInput, '?v=dQw4w9WgXcQ');
+    expect(actionVideoInput).toHaveValue('https://example.com/action');
+
+    rejectCreate?.(new RoutineCreateApiError('入力内容を確認してください。', { 'routine_actions.0.video_url': 'ステップの動画URLエラー' }));
+
+    expect(await screen.findByText('ステップの動画URLエラー')).toBeInTheDocument();
+    expect(actionVideoInput).toBeEnabled();
+    await user.type(actionVideoInput, '?v=dQw4w9WgXcQ');
+    expect(actionVideoInput).toHaveValue('https://example.com/action?v=dQw4w9WgXcQ');
+  });
+
   it('送信失敗時に API error を表示する', async () => {
     const user = userEvent.setup();
     const create = vi.fn().mockRejectedValue(new Error('failed'));
@@ -389,5 +440,72 @@ describe('RoutineCreatePage', () => {
     submitForm();
 
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('ルーティンを投稿できませんでした。時間をおいて再試行してください。'));
+  });
+
+  it('動画URLの422エラーを対応する欄に表示し、修正した欄だけクリアして入力を保持する', async () => {
+    const user = userEvent.setup();
+    const create = vi.fn().mockRejectedValue(new RoutineCreateApiError('入力内容を確認してください。', {
+      'routine_actions.0.video_url': 'ステップの動画URLエラー',
+      video_url: 'ルーティンの動画URLエラー',
+    }));
+    renderPage({ create });
+
+    await fillMinimumForm(user);
+    const routineVideoInput = screen.getByLabelText('動画リンク（任意）');
+    const actionVideoInput = screen.getByLabelText('ステップ1の動画リンク（任意）');
+    await user.type(routineVideoInput, 'https://example.com/routine');
+    await user.type(actionVideoInput, 'https://example.com/action');
+    submitForm();
+
+    expect(await screen.findByText('ルーティンの動画URLエラー')).toBeInTheDocument();
+    expect(screen.getByText('ステップの動画URLエラー')).toBeInTheDocument();
+    expect(routineVideoInput).toHaveValue('https://example.com/routine');
+    expect(actionVideoInput).toHaveValue('https://example.com/action');
+
+    await user.type(actionVideoInput, '?v=dQw4w9WgXcQ');
+    expect(screen.queryByText('ステップの動画URLエラー')).not.toBeInTheDocument();
+    expect(screen.getByText('ルーティンの動画URLエラー')).toBeInTheDocument();
+    expect(actionVideoInput).toHaveValue('https://example.com/action?v=dQw4w9WgXcQ');
+  });
+
+  it('ステップ動画URLの422エラーをステップIDに関連付け、描画できない422キーは汎用エラーとして併記する', async () => {
+    const user = userEvent.setup();
+    const create = vi.fn().mockRejectedValue(new RoutineCreateApiError('入力内容を確認してください。', {
+      'routine_actions.0.video_url': '一番目の動画URLエラー',
+      routine_name: '描画先のないエラー',
+      video_url: 'ルーティンの動画URLエラー',
+    }));
+    renderPage({ create });
+
+    await fillMinimumForm(user);
+    await user.click(screen.getByRole('button', { name: 'ステップを追加' }));
+    await user.clear(screen.getAllByPlaceholderText('行動の内容')[0]);
+    await user.type(screen.getAllByPlaceholderText('行動の内容')[0], '一番目');
+    await user.type(screen.getAllByPlaceholderText('行動の内容')[1], '二番目');
+    submitForm();
+
+    const routineVideoInput = screen.getByLabelText('動画リンク（任意）');
+    const firstActionVideoInput = screen.getByLabelText('ステップ1の動画リンク（任意）');
+
+    expect(await screen.findByText('一番目の動画URLエラー')).toBeInTheDocument();
+    expect(screen.getByText('ルーティンの動画URLエラー')).toBeInTheDocument();
+    expect(screen.getByText('入力内容を確認してください。')).toBeInTheDocument();
+    expect(routineVideoInput).toHaveAttribute('aria-describedby', expect.stringContaining('routine-video-url-help'));
+    expect(routineVideoInput).toHaveAttribute('aria-describedby', expect.stringContaining('routine-video-url-error'));
+    expect(firstActionVideoInput).toHaveAttribute('aria-describedby', expect.stringContaining('routine-action-video-url-help-0'));
+    expect(firstActionVideoInput).toHaveAttribute('aria-describedby', expect.stringContaining('routine-action-video-url-error-0'));
+
+    await user.click(screen.getByRole('button', { name: '下へ移動 1' }));
+
+    expect(screen.getByLabelText('ステップ2の動画リンク（任意）')).toHaveAccessibleDescription(
+      `${messages.routineCreate.videoUrlHelp} 一番目の動画URLエラー`,
+    );
+    expect(screen.getByText('一番目の動画URLエラー')).toBeInTheDocument();
+    expect(screen.queryByLabelText('ステップ1の動画リンク（任意）')).toHaveAccessibleDescription(messages.routineCreate.videoUrlHelp);
+
+    await user.click(screen.getByRole('button', { name: 'ステップを削除 2' }));
+
+    expect(screen.queryByText('一番目の動画URLエラー')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('ステップ1の動画リンク（任意）')).toHaveAccessibleDescription(messages.routineCreate.videoUrlHelp);
   });
 });

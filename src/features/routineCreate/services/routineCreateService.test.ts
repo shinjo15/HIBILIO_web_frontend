@@ -33,7 +33,7 @@ describe('routineCreateService', () => {
     });
   });
 
-  it('空の動画URLを省略し、不正なURLを adapter に送信しない', async () => {
+  it('空の動画URLを省略し、動画URLの可否はAPIへ委ねる', async () => {
     const create = vi.fn().mockResolvedValue(undefined);
     const service = createRoutineCreateService({ create });
 
@@ -43,8 +43,12 @@ describe('routineCreateService', () => {
       routine_name: 'テストルーティン',
     });
 
-    await expect(service.create({ ...validForm, videoUrl: 'javascript:alert(1)' })).rejects.toThrow();
-    expect(create).toHaveBeenCalledTimes(1);
+    await service.create({ ...validForm, videoUrl: 'javascript:alert(1)' });
+    expect(create).toHaveBeenLastCalledWith({
+      routine_actions: [{ routine_action_name: '始める' }],
+      routine_name: 'テストルーティン',
+      video_url: 'javascript:alert(1)',
+    });
   });
 
   it('CSRF取得後、全体とアクションの動画URLをJSON bodyと必要なヘッダーでPOSTする', async () => {
@@ -140,5 +144,33 @@ describe('routineCreateService', () => {
       routine_actions: [{ routine_action_name: '始める' }],
       routine_name: 'テストルーティン',
     })).rejects.toBeInstanceOf(RoutineCreateUnauthorizedError);
+  });
+
+  it('作成 API の 422 errors をフィールドごとのエラーとして返す', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ json: async () => ({ csrf_token: 'csrf-token' }), ok: true })
+      .mockResolvedValueOnce({
+        json: async () => ({
+          errors: {
+            'routine_actions.0.video_url': ['ステップの動画URLエラー'],
+            video_url: ['ルーティンの動画URLエラー'],
+          },
+          message: '入力内容を確認してください。',
+        }),
+        ok: false,
+        status: 422,
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(routineCreateApiAdapter.create({
+      routine_actions: [{ routine_action_name: '始める', video_url: 'https://example.com/action-video' }],
+      routine_name: 'テストルーティン',
+      video_url: 'https://example.com/routine-video',
+    })).rejects.toMatchObject({
+      fieldErrors: {
+        'routine_actions.0.video_url': 'ステップの動画URLエラー',
+        video_url: 'ルーティンの動画URLエラー',
+      },
+    });
   });
 });

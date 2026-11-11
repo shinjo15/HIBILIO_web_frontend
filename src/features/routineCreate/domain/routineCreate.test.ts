@@ -50,7 +50,7 @@ describe('routineCreate domain', () => {
     });
   });
 
-  it('全体と各ステップの HTTP(S) 動画リンクを対応する payload に含める', () => {
+  it('全体と各ステップの動画URLを対応する payload に含め、空欄は省略する', () => {
     expect(toRoutineCreateRequest({
       ...form,
       actions: [{ ...form.actions[0], videoUrl: 'https://youtu.be/dQw4w9WgXcQ' }],
@@ -59,7 +59,7 @@ describe('routineCreate domain', () => {
       routine_actions: [{ video_url: 'https://youtu.be/dQw4w9WgXcQ' }],
       video_url: 'https://example.com/routine-video',
     });
-    expect(validateRoutineCreateForm({ ...form, videoUrl: 'javascript:alert(1)' }).success).toBe(false);
+    expect(validateRoutineCreateForm({ ...form, videoUrl: 'javascript:alert(1)' }).success).toBe(true);
   });
 
   it('カスタマイズ元のルーティンだけを作成リクエストへ含める', () => {

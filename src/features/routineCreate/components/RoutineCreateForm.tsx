@@ -9,6 +9,7 @@ import type { RoutineCreateTag } from '../services/routineCreateService';
 
 type RoutineCreateFormProps = {
   errorMessage: string | null;
+  fieldErrors: Record<string, string>;
   form: RoutineCreateViewModel;
   isSubmitting: boolean;
   onAddAction: () => void;
@@ -27,6 +28,7 @@ type RoutineCreateFormProps = {
 
 export function RoutineCreateForm({
   errorMessage,
+  fieldErrors,
   form,
   isSubmitting,
   onAddAction,
@@ -87,8 +89,11 @@ export function RoutineCreateForm({
       <div className="routine-create-field">
         <label className="routine-create-field__label" htmlFor="routine-video-url">{messages.routineCreate.videoUrl}</label>
         <input
+          aria-describedby={['routine-video-url-help', fieldErrors.video_url === undefined ? undefined : 'routine-video-url-error'].filter(Boolean).join(' ')}
+          aria-invalid={fieldErrors.video_url === undefined ? undefined : true}
           autoComplete="url"
           className="routine-create-input"
+          disabled={isSubmitting}
           id="routine-video-url"
           maxLength={2048}
           onChange={(event) => onUpdateField('videoUrl', event.target.value)}
@@ -96,6 +101,8 @@ export function RoutineCreateForm({
           type="url"
           value={form.videoUrl ?? ''}
         />
+        <p className="routine-create-field__help" id="routine-video-url-help">{messages.routineCreate.videoUrlHelp}</p>
+        {fieldErrors.video_url !== undefined && <p className="routine-create-field__error" id="routine-video-url-error" role="alert">{fieldErrors.video_url}</p>}
       </div>
 
       <div className="routine-create-field routine-create-field--duration">
@@ -135,11 +142,12 @@ export function RoutineCreateForm({
           {form.actions.map((action, index) => (
             <RoutineCreateAction
               action={action}
+              errorMessage={action.clientId === undefined ? undefined : fieldErrors[`routine_actions.${action.clientId}.video_url`]}
               index={index}
               isFirst={index === 0}
               isLast={index === form.actions.length - 1}
               isSubmitting={isSubmitting}
-              key={`routine-action-${index}`}
+              key={action.clientId ?? `routine-action-${index}`}
               onMove={onMoveAction}
               onRemove={onRemoveAction}
               onUpdate={onUpdateAction}
@@ -159,6 +167,7 @@ export function RoutineCreateForm({
 
 type RoutineCreateActionProps = {
   action: RoutineCreateActionViewModel;
+  errorMessage?: string;
   index: number;
   isFirst: boolean;
   isLast: boolean;
@@ -171,6 +180,7 @@ type RoutineCreateActionProps = {
 
 function RoutineCreateAction({
   action,
+  errorMessage,
   index,
   isFirst,
   isLast,
@@ -265,11 +275,14 @@ function RoutineCreateAction({
 
       <div className="routine-create-action__field">
         <label className="routine-create-sr-only" htmlFor={`routine-action-video-url-${index}`}>
-          {messages.routineCreate.actionVideoUrl}
+          {`ステップ${index + 1}の${messages.routineCreate.actionVideoUrl}`}
         </label>
         <input
+          aria-describedby={[`routine-action-video-url-help-${index}`, errorMessage === undefined ? undefined : `routine-action-video-url-error-${index}`].filter(Boolean).join(' ')}
+          aria-invalid={errorMessage === undefined ? undefined : true}
           autoComplete="url"
           className="routine-create-input"
+          disabled={isSubmitting}
           id={`routine-action-video-url-${index}`}
           maxLength={2048}
           onChange={(event) => onUpdate(index, 'videoUrl', event.target.value)}
@@ -277,6 +290,8 @@ function RoutineCreateAction({
           type="url"
           value={action.videoUrl ?? ''}
         />
+        <p className="routine-create-field__help" id={`routine-action-video-url-help-${index}`}>{messages.routineCreate.videoUrlHelp}</p>
+        {errorMessage !== undefined && <p className="routine-create-field__error" id={`routine-action-video-url-error-${index}`} role="alert">{errorMessage}</p>}
       </div>
     </article>
   );

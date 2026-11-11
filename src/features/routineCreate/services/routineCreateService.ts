@@ -9,6 +9,7 @@ import {
 } from '../domain/routineCreate';
 
 const apiErrorSchema = z.object({
+  errors: z.record(z.string(), z.array(z.string()).min(1)).optional(),
   message: z.string().optional(),
 });
 
@@ -33,7 +34,7 @@ const favoriteTagsResponseSchema = z.object({
 export type RoutineCreateTag = { identifier: string; label: string };
 
 export class RoutineCreateApiError extends Error {
-  constructor(message: string) {
+  constructor(message: string, readonly fieldErrors: Record<string, string> = {}) {
     super(message);
     this.name = 'RoutineCreateApiError';
   }
@@ -88,9 +89,15 @@ async function createRoutine(request: RoutineCreateRequest): Promise<void> {
   }
 
   const parsedError = apiErrorSchema.safeParse(await response.json().catch(() => ({})));
-  throw new RoutineCreateApiError(parsedError.success && parsedError.data.message !== undefined
-    ? parsedError.data.message
-    : messages.routineCreate.error);
+  const fieldErrors = parsedError.success
+    ? Object.fromEntries(Object.entries(parsedError.data.errors ?? {}).map(([field, errors]) => [field, errors[0]]))
+    : {};
+  throw new RoutineCreateApiError(
+    parsedError.success && parsedError.data.message !== undefined
+      ? parsedError.data.message
+      : messages.routineCreate.error,
+    fieldErrors,
+  );
 }
 
 export const routineCreateApiAdapter: RoutineCreateAdapter = {
