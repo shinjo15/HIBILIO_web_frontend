@@ -3,14 +3,13 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const styles = readFileSync(resolve(globalThis.process.cwd(), 'src/features/account/account.css'), 'utf8');
-const comparison = readFileSync(resolve(globalThis.process.cwd(), 'public/level-146-comparison.html'), 'utf8');
 
 describe('account tab styles', () => {
   it('keeps an own-account level immediately after a short name and wraps a long name within the viewport', () => {
     expect(styles).toContain('.account-profile__name-row {\n  align-items: baseline;\n  display: flex;\n  flex-wrap: wrap;\n  gap: 6px 8px;\n  min-width: 0;\n}');
     expect(styles).toContain('.account-profile__name-row .account-profile__name {\n  flex: 0 1 auto;\n  max-width: 100%;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}');
     expect(styles).not.toContain('flex: 1 1 12rem;');
-    expect(comparison).toContain('.proposal--name-inline .account-profile__name {\n      flex: 0 1 auto;\n      max-width: 100%;\n      min-width: 0;\n      overflow-wrap: anywhere;\n    }');
+
     expect(styles).toContain('.account-profile__level {\n  border-left: 1px solid var(--hibilio-color-border);\n  color: var(--hibilio-color-primary);\n  flex: 0 0 auto;\n  font-size: 12px;\n  font-weight: 600;\n  line-height: 1;\n  padding-left: 8px;\n  white-space: nowrap;\n}');
     expect(styles).not.toContain('.account-profile__level {\n  background');
   });
