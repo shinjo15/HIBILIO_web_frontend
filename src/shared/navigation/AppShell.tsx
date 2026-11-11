@@ -6,6 +6,7 @@ import ViewAgendaOutlinedIcon from '@mui/icons-material/ViewAgendaOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import SendIcon from '@mui/icons-material/Send';
 import {
+  Badge,
   Box,
   ButtonBase,
   Drawer,
@@ -16,9 +17,10 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import { useEffect, useId, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Link as RouterLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { getAuthenticationStatus, restoreAuthentication, subscribeToAuthentication } from '../../features/auth/services/authSession';
+import { clearAuthenticated, getAuthenticationGeneration, getAuthenticationStatus, restoreAuthentication, subscribeToAuthentication } from '../../features/auth/services/authSession';
+import { getUnreadNotificationCount, NotificationCountUnauthorizedError, unreadNotificationCountChangedEvent } from '../../features/notifications/services/unreadNotificationCount';
 import { HibilioMark } from '../brand/HibilioMark';
 import messages from '../message/message.json';
 import './appShell.css';
@@ -63,7 +65,13 @@ export function AppShell() {
   const isRoutineCreate = location.pathname === '/routines/new'
     || /^\/routines\/[^/]+\/customize$/.test(location.pathname);
   const authenticationStatus = useSyncExternalStore(subscribeToAuthentication, getAuthenticationStatus, getAuthenticationStatus);
+  const authenticationGeneration = useSyncExternalStore(subscribeToAuthentication, getAuthenticationGeneration, getAuthenticationGeneration);
   const [canSubmitRoutineCreate, setCanSubmitRoutineCreate] = useState(false);
+  const unreadNotificationCount = useUnreadNotificationCount({
+    authenticationGeneration,
+    enabled: authenticationStatus === 'authenticated' && location.pathname === '/home',
+    visitKey: location.key,
+  });
   const routineCreateGuideId = useId();
 
   useEffect(() => {
@@ -212,9 +220,89 @@ export function AppShell() {
           );
         })}
       </Box>
-      {authenticationStatus === 'authenticated' && location.pathname === '/home' && <IconButton aria-label={messages.navigation.notifications} className="hibilio-notifications" onClick={() => navigate('/notifications')} sx={{ color: 'text.secondary' }}><NotificationsNoneOutlinedIcon /></IconButton>}
+      {authenticationStatus === 'authenticated' && location.pathname === '/home' && <IconButton aria-label={notificationBellAccessibleName(unreadNotificationCount)} className="hibilio-notifications" color={unreadNotificationCount.status === 'known' && unreadNotificationCount.count > 0 ? 'primary' : 'inherit'} onClick={() => navigate('/notifications')} sx={unreadNotificationCount.status === 'known' && unreadNotificationCount.count > 0 ? undefined : { color: 'text.secondary' }}><Badge badgeContent={unreadNotificationCount.status === 'known' ? unreadNotificationCount.count : 0} color="primary" invisible={unreadNotificationCount.status !== 'known' || unreadNotificationCount.count === 0} max={Number.MAX_SAFE_INTEGER}><NotificationsNoneOutlinedIcon /></Badge></IconButton>}
     </Box>
   );
+}
+
+type UnreadNotificationCountState =
+  | { count: number; generation: number; status: 'known'; visitKey: string }
+  | { generation: number; status: 'error' | 'loading'; visitKey: string };
+
+function notificationBellAccessibleName(countState: UnreadNotificationCountState): string {
+  if (countState.status === 'loading') return messages.navigation.notificationsCountLoading;
+  if (countState.status === 'error') return messages.navigation.notificationsCountError;
+  if (countState.status === 'known' && countState.count > 0) return messages.navigation.notificationsUnread.replace('{count}', String(countState.count));
+  return messages.navigation.notificationsNoUnread;
+}
+
+function useUnreadNotificationCount({
+  authenticationGeneration,
+  enabled,
+  visitKey,
+}: {
+  authenticationGeneration: number;
+  enabled: boolean;
+  visitKey: string;
+}): UnreadNotificationCountState {
+  const [countState, setCountState] = useState<UnreadNotificationCountState>({ generation: -1, status: 'loading', visitKey: '' });
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const requestRef = useRef({ generation: -1, identifier: 0, inFlight: false, refreshPending: false });
+
+  const refresh = useCallback((afterRead = false) => {
+    if (!enabled) return;
+    const current = requestRef.current;
+    if (current.generation === authenticationGeneration && current.inFlight) {
+      if (afterRead) requestRef.current = { ...current, refreshPending: true };
+      return;
+    }
+    const identifier = current.identifier + 1;
+    requestRef.current = { generation: authenticationGeneration, identifier, inFlight: true, refreshPending: false };
+    void getUnreadNotificationCount().then((unreadCount) => {
+      const completed = requestRef.current;
+      if (completed.generation !== authenticationGeneration || completed.identifier !== identifier || getAuthenticationGeneration() !== authenticationGeneration) return;
+      if (completed.refreshPending) {
+        requestRef.current = { ...completed, inFlight: false, refreshPending: false };
+        setRefreshVersion((version) => version + 1);
+        return;
+      }
+      requestRef.current = { ...completed, inFlight: false };
+      setCountState({ count: unreadCount, generation: authenticationGeneration, status: 'known', visitKey });
+    }).catch((error: unknown) => {
+      const completed = requestRef.current;
+      if (completed.generation !== authenticationGeneration || completed.identifier !== identifier || getAuthenticationGeneration() !== authenticationGeneration) return;
+      if (completed.refreshPending) {
+        requestRef.current = { ...completed, inFlight: false, refreshPending: false };
+        setRefreshVersion((version) => version + 1);
+        return;
+      }
+      requestRef.current = { ...completed, inFlight: false };
+      setCountState({ generation: authenticationGeneration, status: 'error', visitKey });
+      if (error instanceof NotificationCountUnauthorizedError) clearAuthenticated();
+    });
+  }, [authenticationGeneration, enabled, visitKey]);
+
+  useEffect(() => {
+    if (!enabled) {
+      requestRef.current = { ...requestRef.current, identifier: requestRef.current.identifier + 1, inFlight: false, refreshPending: false };
+      return;
+    }
+
+    refresh();
+    const refreshOnFocus = () => refresh();
+    window.addEventListener('focus', refreshOnFocus);
+    const refreshAfterRead = () => refresh(true);
+    window.addEventListener(unreadNotificationCountChangedEvent, refreshAfterRead);
+    return () => {
+      window.removeEventListener('focus', refreshOnFocus);
+      window.removeEventListener(unreadNotificationCountChangedEvent, refreshAfterRead);
+      requestRef.current = { ...requestRef.current, identifier: requestRef.current.identifier + 1, inFlight: false, refreshPending: false };
+    };
+  }, [enabled, refresh, refreshVersion]);
+
+  return enabled && countState.generation === authenticationGeneration && countState.visitKey === visitKey
+    ? countState
+    : { generation: authenticationGeneration, status: 'loading', visitKey };
 }
 
 function RoutineCreateMobileTrigger({

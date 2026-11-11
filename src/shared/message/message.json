@@ -6,6 +6,10 @@
   "navigation": {
     "ariaLabel": "メインナビゲーション",
     "notifications": "通知",
+    "notificationsCountLoading": "通知、未読件数を確認中",
+    "notificationsCountError": "通知、未読件数を取得できませんでした",
+    "notificationsNoUnread": "通知、未読はありません",
+    "notificationsUnread": "通知、未読が{count}件あります",
     "home": "Home",
     "feed": "一覧",
     "search": "検索",
