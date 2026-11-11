@@ -350,10 +350,11 @@ describe('RoutineCreatePage', () => {
     await fillMinimumForm(user);
     submitForm();
     expect(create).toHaveBeenCalledWith({
-      actions: [{ actionMemo: '', actionMinutes: '', actionName: '水を飲む' }],
+      actions: [{ actionMemo: '', actionMinutes: '', actionName: '水を飲む', videoUrl: '' }],
       routineExecutionMinutes: '',
       routineMemo: '',
       routineName: '朝の習慣',
+      videoUrl: '',
     });
 
     resolveCreate?.();

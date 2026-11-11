@@ -1,5 +1,8 @@
 import { z } from 'zod';
 import { formatDuration } from '../../routineFeed/domain/routine';
+import { isHttpVideoUrl } from './routineVideo';
+
+const routineVideoUrlSchema = z.string().refine(isHttpVideoUrl);
 
 export const routineDetailStepDtoSchema = z.object({
   action: z.string().min(1),
@@ -8,6 +11,7 @@ export const routineDetailStepDtoSchema = z.object({
   memo: z.string().min(1).optional(),
   minutes: z.number().int().positive().optional(),
   time: z.string().min(1).optional(),
+  videoUrl: routineVideoUrlSchema.nullable().optional(),
 });
 
 export const executionPostDtoSchema = z.object({
@@ -56,6 +60,7 @@ export const routineDetailDtoSchema = z.object({
   steps: z.array(routineDetailStepDtoSchema).min(1),
   tags: z.array(z.string().min(1)).max(5),
   title: z.string().min(1),
+  videoUrl: routineVideoUrlSchema.nullish(),
 });
 
 export type RoutineDetailDto = z.infer<typeof routineDetailDtoSchema>;
@@ -89,6 +94,7 @@ export type RoutineDetailViewModel = {
   steps: RoutineDetailDto['steps'];
   tags: string[];
   title: string;
+  videoUrl: string | null;
   customizationsList: Array<{
     authorName: string;
     description: string;
@@ -141,5 +147,6 @@ export function toRoutineDetailViewModel(input: unknown): RoutineDetailViewModel
     steps: dto.steps,
     tags: dto.tags,
     title: dto.title,
+    videoUrl: dto.videoUrl ?? null,
   };
 }

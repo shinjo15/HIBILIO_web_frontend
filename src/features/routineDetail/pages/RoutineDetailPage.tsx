@@ -9,6 +9,7 @@ import {
 import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
 import messages from '../../../shared/message/message.json';
 import { AccountAvatar } from '../../../shared/components/AccountImage';
+import { RoutineVideoLink } from '../components/RoutineVideoLink';
 import '../routineDetail.css';
 
 type RoutineDetailPageProps = { service?: RoutineDetailService };
@@ -125,6 +126,7 @@ function RoutineDetailContent({ routine, service }: { routine: RoutineDetailView
             <div className="routine-detail-tags">
               {routine.tags.map((tag) => <span className="routine-detail-tag" key={tag}>{tag}</span>)}
             </div>
+            {routine.videoUrl !== null && <RoutineVideoLink videoUrl={routine.videoUrl} />}
           </div>
 
           <div className="routine-detail-steps-section">
@@ -171,6 +173,7 @@ function RoutineDetailContent({ routine, service }: { routine: RoutineDetailView
                           {stepMemoOpen && <p className="routine-detail-step__memo" id={stepMemoId}>{step.memo}</p>}
                         </>
                       )}
+                      {step.videoUrl !== null && step.videoUrl !== undefined && <RoutineVideoLink videoUrl={step.videoUrl} />}
                     </div>
                   </div>
                   );

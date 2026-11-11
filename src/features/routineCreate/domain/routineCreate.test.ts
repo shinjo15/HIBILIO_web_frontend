@@ -50,6 +50,18 @@ describe('routineCreate domain', () => {
     });
   });
 
+  it('全体と各ステップの HTTP(S) 動画リンクを対応する payload に含める', () => {
+    expect(toRoutineCreateRequest({
+      ...form,
+      actions: [{ ...form.actions[0], videoUrl: 'https://youtu.be/dQw4w9WgXcQ' }],
+      videoUrl: 'https://example.com/routine-video',
+    })).toMatchObject({
+      routine_actions: [{ video_url: 'https://youtu.be/dQw4w9WgXcQ' }],
+      video_url: 'https://example.com/routine-video',
+    });
+    expect(validateRoutineCreateForm({ ...form, videoUrl: 'javascript:alert(1)' }).success).toBe(false);
+  });
+
   it('カスタマイズ元のルーティンだけを作成リクエストへ含める', () => {
     const request = toRoutineCreateRequest(createCustomizedRoutineViewModel({
       description: '',

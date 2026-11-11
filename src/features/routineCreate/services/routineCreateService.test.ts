@@ -16,19 +16,38 @@ const validForm = {
 afterEach(() => vi.restoreAllMocks());
 
 describe('routineCreateService', () => {
-  it('変換済み payload を adapter に渡す', async () => {
+  it('全体とアクションの動画URLを変換済み payload として adapter に渡す', async () => {
     const create = vi.fn().mockResolvedValue(undefined);
     const service = createRoutineCreateService({ create });
 
-    await service.create(validForm);
+    await service.create({
+      ...validForm,
+      actions: [{ ...validForm.actions[0], videoUrl: 'https://example.com/action-video' }],
+      videoUrl: 'https://example.com/routine-video',
+    });
 
+    expect(create).toHaveBeenCalledWith({
+      routine_actions: [{ routine_action_name: '始める', video_url: 'https://example.com/action-video' }],
+      routine_name: 'テストルーティン',
+      video_url: 'https://example.com/routine-video',
+    });
+  });
+
+  it('空の動画URLを省略し、不正なURLを adapter に送信しない', async () => {
+    const create = vi.fn().mockResolvedValue(undefined);
+    const service = createRoutineCreateService({ create });
+
+    await service.create({ ...validForm, actions: [{ ...validForm.actions[0], videoUrl: '' }], videoUrl: '' });
     expect(create).toHaveBeenCalledWith({
       routine_actions: [{ routine_action_name: '始める' }],
       routine_name: 'テストルーティン',
     });
+
+    await expect(service.create({ ...validForm, videoUrl: 'javascript:alert(1)' })).rejects.toThrow();
+    expect(create).toHaveBeenCalledTimes(1);
   });
 
-  it('API の空の 201 成功を正常終了として扱う', async () => {
+  it('CSRF取得後、全体とアクションの動画URLをJSON bodyと必要なヘッダーでPOSTする', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({
         json: async () => ({ csrf_token: 'csrf-token' }),
@@ -38,19 +57,28 @@ describe('routineCreateService', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     await routineCreateApiAdapter.create({
-      routine_actions: [{ routine_action_name: '始める' }],
+      routine_actions: [{ routine_action_name: '始める', video_url: 'https://example.com/action-video' }],
       routine_name: 'テストルーティン',
+      video_url: 'https://example.com/routine-video',
     });
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/csrf-token', {
       credentials: 'include',
       method: 'GET',
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines', expect.objectContaining({
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines', {
+      body: JSON.stringify({
+        routine_actions: [{ routine_action_name: '始める', video_url: 'https://example.com/action-video' }],
+        routine_name: 'テストルーティン',
+        video_url: 'https://example.com/routine-video',
+      }),
       credentials: 'include',
-      headers: expect.objectContaining({ 'X-CSRF-TOKEN': 'csrf-token' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': 'csrf-token',
+      },
       method: 'POST',
-    }));
+    });
   });
 
   it('不正なフォームを adapter に送信しない', async () => {

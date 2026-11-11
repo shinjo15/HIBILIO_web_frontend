@@ -285,10 +285,12 @@ const routineDetailsResponseSchema = z.object({
     action_minutes: z.number().int().positive().nullable(),
     action_name: z.string().min(1),
     routine_action_identifier: z.string().uuid(),
+    video_url: z.string().url().nullish(),
   })),
   routine_execution_minutes: z.number().int().positive().nullable(),
   routine_memo: z.string().nullable(),
   routine_name: z.string().min(1),
+  video_url: z.string().url().nullish(),
 });
 
 const customizedRoutinesResponseSchema = z.object({
@@ -380,9 +382,11 @@ export const apiRoutineDetailAdapter: RoutineDetailAdapter = {
         id: action.routine_action_identifier,
         minutes: action.action_minutes ?? undefined,
         memo: action.action_memo ?? undefined,
+        videoUrl: action.video_url ?? null,
       })),
       tags: [],
       title: detail.routine_name,
+      videoUrl: detail.video_url ?? null,
     } satisfies RoutineDetailDto;
   },
   listCustomizations: async (routineId, page) => {
