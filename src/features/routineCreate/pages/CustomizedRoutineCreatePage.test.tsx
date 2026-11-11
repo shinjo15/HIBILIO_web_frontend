@@ -17,11 +17,12 @@ const parentRoutine = {
   liked: false,
   likes: 0,
   steps: [
-    { action: '水を飲む', memo: '常温で飲む', minutes: 5 },
-    { action: '散歩する', minutes: 25 },
+    { action: '水を飲む', memo: '常温で飲む', minutes: 5, videoUrl: 'https://example.com/water' },
+    { action: '散歩する', minutes: 25, videoUrl: 'https://example.com/walk' },
   ],
   tags: [],
   title: '朝のルーティン',
+  videoUrl: 'https://example.com/routine',
 };
 
 afterEach(() => cleanup());
@@ -40,7 +41,7 @@ function renderPage(service: RoutineCreateService) {
 }
 
 describe('CustomizedRoutineCreatePage', () => {
-  it('親ルーティンを初期値として表示し、親ルーティン識別子を送信する', async () => {
+  it('親ルーティンを初期値として表示するが、動画URLは引き継がず親ルーティン識別子を送信する', async () => {
     const create = vi.fn().mockRejectedValueOnce(new Error('failed')).mockResolvedValueOnce(undefined);
     renderPage({
       create,
@@ -51,6 +52,9 @@ describe('CustomizedRoutineCreatePage', () => {
     expect(screen.getByDisplayValue('朝のルーティン')).toBeInTheDocument();
     expect(screen.getByDisplayValue('元の説明')).toBeInTheDocument();
     expect(screen.getAllByPlaceholderText('行動の内容')).toHaveLength(2);
+    expect(screen.getAllByPlaceholderText('https://…')).toHaveLength(3);
+    expect(screen.queryByDisplayValue('https://example.com/routine')).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue('https://example.com/water')).not.toBeInTheDocument();
     const submitButton = screen.getByRole('button', { name: '投稿' });
     expect(submitButton).toHaveAttribute('form', 'routine-create-form');
     fireEvent.click(await screen.findByRole('button', { name: '朝活を選択' }));
@@ -62,12 +66,13 @@ describe('CustomizedRoutineCreatePage', () => {
 
     await waitFor(() => expect(create).toHaveBeenCalledWith(expect.objectContaining({
       actions: [
-        { actionMemo: '常温で飲む', actionMinutes: '5', actionName: '水を飲む' },
-        { actionMemo: '', actionMinutes: '25', actionName: '散歩する' },
+        { actionMemo: '常温で飲む', actionMinutes: '5', actionName: '水を飲む', videoUrl: '' },
+        { actionMemo: '', actionMinutes: '25', actionName: '散歩する', videoUrl: '' },
       ],
       parentRoutineIdentifier: '30000000-0000-4000-8000-000000000001',
       routineExecutionMinutes: '30',
       tagIdentifiers: ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'],
+      videoUrl: '',
     })));
     expect(create).toHaveBeenCalledTimes(2);
     expect(await screen.findByText('カスタマイズルーティンを投稿しました。')).toBeInTheDocument();

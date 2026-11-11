@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import messages from '../../../shared/message/message.json';
+import { isHttpVideoUrl } from '../../routineDetail/domain/routineVideo';
 
 const routineNameSchema = z.string().trim()
   .min(1, messages.routineCreate.validation.routineNameRequired)
@@ -29,11 +30,15 @@ const actionMinutesSchema = optionalMinutesSchema(
   messages.routineCreate.validation.actionMinutesMin,
 );
 
+const optionalVideoUrlSchema = z.string().optional().transform((value) => value ?? '')
+  .refine((value) => value === '' || isHttpVideoUrl(value), messages.routineCreate.validation.videoUrlInvalid);
+
 export const routineCreateActionSchema = z.object({
   actionMemo: actionMemoSchema,
   actionMinutes: actionMinutesSchema,
   actionName: actionNameSchema,
   parentRoutineActionIndex: z.number().int().nonnegative().optional(),
+  videoUrl: optionalVideoUrlSchema,
 });
 
 export const routineCreateFormSchema = z.object({
@@ -43,6 +48,7 @@ export const routineCreateFormSchema = z.object({
   routineName: routineNameSchema,
   parentRoutineIdentifier: z.string().uuid().optional(),
   tagIdentifiers: z.array(z.string().uuid()).optional(),
+  videoUrl: optionalVideoUrlSchema,
 });
 
 export const routineCreateActionRequestSchema = z.object({
@@ -50,6 +56,7 @@ export const routineCreateActionRequestSchema = z.object({
   routine_action_memo: z.string().min(1).max(300).optional(),
   routine_action_name: z.string().min(1).max(50),
   parent_routine_action_index: z.number().int().nonnegative().optional(),
+  video_url: z.string().min(1).optional(),
 });
 
 export const routineCreateRequestSchema = z.object({
@@ -59,10 +66,11 @@ export const routineCreateRequestSchema = z.object({
   routine_name: z.string().min(1).max(50),
   parent_routine_identifier: z.string().uuid().optional(),
   tag_identifiers: z.array(z.string().uuid()).optional(),
+  video_url: z.string().min(1).optional(),
 });
 
-export type RoutineCreateActionViewModel = z.infer<typeof routineCreateActionSchema>;
-export type RoutineCreateViewModel = z.infer<typeof routineCreateFormSchema>;
+export type RoutineCreateActionViewModel = z.input<typeof routineCreateActionSchema>;
+export type RoutineCreateViewModel = z.input<typeof routineCreateFormSchema>;
 export type RoutineCreateRequest = z.infer<typeof routineCreateRequestSchema>;
 
 export function createInitialRoutineCreateViewModel(): RoutineCreateViewModel {
@@ -71,6 +79,7 @@ export function createInitialRoutineCreateViewModel(): RoutineCreateViewModel {
     routineExecutionMinutes: '',
     routineMemo: '',
     routineName: '',
+    videoUrl: '',
   };
 }
 
@@ -79,6 +88,7 @@ export function createEmptyAction(): RoutineCreateActionViewModel {
     actionMemo: '',
     actionMinutes: '',
     actionName: '',
+    videoUrl: '',
   };
 }
 
@@ -131,6 +141,10 @@ export function toRoutineCreateRequest(input: unknown): RoutineCreateRequest {
         requestAction.parent_routine_action_index = action.parentRoutineActionIndex;
       }
 
+      if (action.videoUrl !== undefined && action.videoUrl !== '') {
+        requestAction.video_url = action.videoUrl;
+      }
+
       return requestAction;
     }),
     routine_name: form.routineName,
@@ -146,6 +160,10 @@ export function toRoutineCreateRequest(input: unknown): RoutineCreateRequest {
 
   if (form.parentRoutineIdentifier !== undefined) {
     request.parent_routine_identifier = form.parentRoutineIdentifier;
+  }
+
+  if (form.videoUrl !== undefined && form.videoUrl !== '') {
+    request.video_url = form.videoUrl;
   }
 
   if (form.tagIdentifiers !== undefined && form.tagIdentifiers.length > 0) {
@@ -167,10 +185,12 @@ export function createCustomizedRoutineViewModel(parent: {
       actionMemo: step.memo ?? '',
       actionMinutes: step.minutes?.toString() ?? '',
       actionName: step.action,
+      videoUrl: '',
     })),
     parentRoutineIdentifier: parent.id,
     routineExecutionMinutes: parent.durationMinutes?.toString() ?? '',
     routineMemo: parent.description,
     routineName: parent.title,
+    videoUrl: '',
   };
 }

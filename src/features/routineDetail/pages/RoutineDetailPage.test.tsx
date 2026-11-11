@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -87,6 +87,66 @@ describe('RoutineDetailPage', () => {
 
     expect(await screen.findByRole('button', { name: 'いいねを取り消す' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toHaveClass('routine-detail-like--liked');
+  });
+
+  it('全体・アクションのYouTube参考動画は同じラベル・サムネイル・再生オーバーレイ付きリンクで開く', async () => {
+    const user = userEvent.setup();
+    const service = createRoutineDetailService({
+      get: async () => ({
+        ...detail,
+        steps: [{ ...detail.steps[0], videoUrl: 'https://www.youtube.com/watch?v=oHg5SJYRHA0' }],
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      }),
+    });
+
+    renderPage(service);
+
+    const videoLinks = await screen.findAllByRole('link', { name: '動画を開く' });
+    expect(videoLinks).toHaveLength(2);
+    expect(screen.getAllByText('参考動画')).toHaveLength(2);
+    expect(videoLinks[0].parentElement).toHaveClass('routine-video');
+    expect(videoLinks[1].parentElement).toHaveClass('routine-video');
+    expect(videoLinks[0].parentElement).toHaveTextContent('参考動画');
+    expect(videoLinks[1].parentElement).toHaveTextContent('参考動画');
+    expect(videoLinks[0]).toHaveAttribute('href', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    expect(videoLinks[1]).toHaveAttribute('href', 'https://www.youtube.com/watch?v=oHg5SJYRHA0');
+    const expectedThumbnailUrls = [
+      'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
+      'https://i.ytimg.com/vi/oHg5SJYRHA0/hqdefault.jpg',
+    ];
+    videoLinks.forEach((videoLink, index) => {
+      expect(videoLink).toHaveAttribute('target', '_blank');
+      expect(videoLink).toHaveAttribute('rel', 'noopener noreferrer');
+      expect(videoLink.querySelector('.routine-video-link__thumbnail')).toHaveAttribute('src', expectedThumbnailUrls[index]);
+      expect(videoLink.querySelector('.routine-video-link__thumbnail')).toHaveAttribute('alt', '');
+      expect(videoLink.querySelector('.routine-video-link__play-overlay')).toBeInTheDocument();
+      expect(videoLink.querySelector('.routine-video-link__play-icon')).toBeInTheDocument();
+      expect(videoLink.querySelector('.routine-video-link__fallback')).not.toBeInTheDocument();
+    });
+    expect(screen.queryByText('動画を開く')).not.toBeInTheDocument();
+    expect(videoLinks[0].querySelector('.routine-video-link__label, .routine-video-link__external')).not.toBeInTheDocument();
+    expect(videoLinks[1].querySelector('.routine-video-link__label, .routine-video-link__external')).not.toBeInTheDocument();
+
+    for (const videoLink of videoLinks) {
+      const onVideoLinkClick = vi.fn();
+      videoLink.addEventListener('click', onVideoLinkClick);
+      videoLink.focus();
+      await user.keyboard('{Enter}');
+      expect(onVideoLinkClick).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it('YouTubeサムネイルの取得に失敗した場合も外部リンクを残して代替表示する', async () => {
+    const service = createRoutineDetailService({
+      get: async () => ({ ...detail, videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' }),
+    });
+
+    renderPage(service);
+
+    const videoLink = await screen.findByRole('link', { name: '動画を開く' });
+    fireEvent.error(document.querySelector('.routine-video-link__thumbnail')!);
+    expect(videoLink).toHaveAttribute('href', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    expect(videoLink.querySelector('.routine-video-link__fallback')).toBeInTheDocument();
   });
 
   it('APIから受け取った supported を初期の応援済み表示へ反映する', async () => {

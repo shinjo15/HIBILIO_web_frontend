@@ -84,6 +84,20 @@ export function RoutineCreateForm({
         />
       </div>
 
+      <div className="routine-create-field">
+        <label className="routine-create-field__label" htmlFor="routine-video-url">{messages.routineCreate.videoUrl}</label>
+        <input
+          autoComplete="url"
+          className="routine-create-input"
+          id="routine-video-url"
+          maxLength={2048}
+          onChange={(event) => onUpdateField('videoUrl', event.target.value)}
+          placeholder={messages.routineCreate.videoUrlPlaceholder}
+          type="url"
+          value={form.videoUrl ?? ''}
+        />
+      </div>
+
       <div className="routine-create-field routine-create-field--duration">
         <label className="routine-create-field__label" htmlFor="routine-execution-minutes">{messages.routineCreate.routineExecutionMinutes}</label>
         <div className="routine-create-duration-input">
@@ -246,6 +260,22 @@ function RoutineCreateAction({
             placeholder={messages.routineCreate.actionMemoPlaceholder}
             rows={2}
             value={action.actionMemo}
+        />
+      </div>
+
+      <div className="routine-create-action__field">
+        <label className="routine-create-sr-only" htmlFor={`routine-action-video-url-${index}`}>
+          {messages.routineCreate.actionVideoUrl}
+        </label>
+        <input
+          autoComplete="url"
+          className="routine-create-input"
+          id={`routine-action-video-url-${index}`}
+          maxLength={2048}
+          onChange={(event) => onUpdate(index, 'videoUrl', event.target.value)}
+          placeholder={messages.routineCreate.videoUrlPlaceholder}
+          type="url"
+          value={action.videoUrl ?? ''}
         />
       </div>
     </article>

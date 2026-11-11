@@ -47,10 +47,12 @@ describe('routineDetailService', () => {
         action_minutes: 10,
         action_name: '水を飲む',
         routine_action_identifier: '40000000-0000-4000-8000-000000000001',
+        video_url: 'https://example.com/action-video',
       }],
       routine_execution_minutes: 10,
       routine_memo: '説明',
       routine_name: '朝のルーティン',
+      video_url: 'https://example.com/routine-video',
       }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({
         items: [{
@@ -89,8 +91,9 @@ describe('routineDetailService', () => {
       executions: 3,
       liked: true,
       likes: 2,
-      steps: [{ action: '水を飲む', duration: '10分', id: '40000000-0000-4000-8000-000000000001' }],
+      steps: [{ action: '水を飲む', duration: '10分', id: '40000000-0000-4000-8000-000000000001', videoUrl: 'https://example.com/action-video' }],
       title: '朝のルーティン',
+      videoUrl: 'https://example.com/routine-video',
     });
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/routines/30000000-0000-4000-8000-000000000001', { credentials: 'include' });
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/routines/30000000-0000-4000-8000-000000000001/customized?page=1&number_of_items_per_page=40', { credentials: 'include' });
@@ -111,6 +114,18 @@ describe('routineDetailService', () => {
 
   it('不正な API DTO を受け取った場合は表示せずに失敗する', async () => {
     const service = createRoutineDetailService({ get: async () => ({ id: 'invalid' }) });
+
+    await expect(service.get('routine-1')).rejects.toThrow();
+  });
+
+  it('不正なアクション動画URLを含む詳細DTOを表示用に変換しない', async () => {
+    const service = createRoutineDetailService({
+      get: async () => ({
+        ...dto,
+        steps: [{ ...dto.steps[0], videoUrl: 'https://example.com/%zz' }],
+        videoUrl: 'https://example.com/routine-video',
+      }),
+    });
 
     await expect(service.get('routine-1')).rejects.toThrow();
   });
