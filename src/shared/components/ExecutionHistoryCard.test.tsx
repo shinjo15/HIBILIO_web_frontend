@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ExecutionHistoryCard } from './ExecutionHistoryCard';
@@ -66,6 +66,61 @@ describe('ExecutionHistoryCard', () => {
     await user.click(screen.getByRole('button', { name: '朝の集中ルーティン' }));
 
     expect(onSelect).toHaveBeenCalledWith(execution);
+  });
+
+  it('レンダー中もpointer移動を追跡し、ドラッグ後は詳細を選択しない', () => {
+    const onSelect = vi.fn();
+    const { rerender } = render(<ExecutionHistoryCard execution={execution} onSelect={onSelect} />);
+
+    const select = screen.getByRole('button', { name: '朝の集中ルーティン' });
+    fireEvent.pointerDown(select, { clientX: 0, clientY: 0, pointerId: 1 });
+
+    rerender(<ExecutionHistoryCard execution={execution} onSelect={onSelect} />);
+
+    fireEvent.pointerMove(document, { clientX: 9, clientY: 0, pointerId: 1 });
+    fireEvent.click(select, { detail: 1 });
+
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('pointer cancel後の次の通常クリックでは詳細を選択する', () => {
+    const onSelect = vi.fn();
+    render(<ExecutionHistoryCard execution={execution} onSelect={onSelect} />);
+
+    const select = screen.getByRole('button', { name: '朝の集中ルーティン' });
+    fireEvent.pointerDown(select, { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerCancel(document, { pointerId: 1 });
+    fireEvent.pointerDown(select, { clientX: 0, clientY: 0, pointerId: 2 });
+    fireEvent.pointerUp(document, { pointerId: 2 });
+    fireEvent.click(select, { detail: 1 });
+
+    expect(onSelect).toHaveBeenCalledWith(execution);
+  });
+
+  it('複数ポインターで追跡中のドラッグ状態を上書きせず、誤って詳細を選択しない', () => {
+    const onSelect = vi.fn();
+    render(<ExecutionHistoryCard execution={execution} onSelect={onSelect} />);
+
+    const select = screen.getByRole('button', { name: '朝の集中ルーティン' });
+    fireEvent.pointerDown(select, { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: 9, clientY: 0, pointerId: 1 });
+    fireEvent.pointerDown(select, { clientX: 0, clientY: 0, pointerId: 2 });
+    fireEvent.click(select, { detail: 1 });
+
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('unmount時にドキュメントのポインター追跡を解除する', () => {
+    const removeEventListener = vi.spyOn(document, 'removeEventListener');
+    const { unmount } = render(<ExecutionHistoryCard execution={execution} onSelect={vi.fn()} />);
+
+    fireEvent.pointerDown(screen.getByRole('button', { name: '朝の集中ルーティン' }), { clientX: 0, clientY: 0, pointerId: 1 });
+    unmount();
+
+    expect(removeEventListener).toHaveBeenCalledWith('pointermove', expect.any(Function));
+    expect(removeEventListener).toHaveBeenCalledWith('pointerup', expect.any(Function));
+    expect(removeEventListener).toHaveBeenCalledWith('pointercancel', expect.any(Function));
+    removeEventListener.mockRestore();
   });
 
   it('キーボードでもカードを選択し、メニューはEnterで開ける', async () => {

@@ -1,8 +1,8 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 // @ts-expect-error Vitest executes this test in Node, while app code intentionally excludes Node types.
 import { readFileSync } from 'node:fs';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Routine } from '../domain/routine';
 import { RoutineCard } from './RoutineCard';
@@ -27,6 +27,129 @@ const routine: Routine = {
 };
 
 describe('RoutineCard', () => {
+
+  it('カード本体を選ぶとルーティン詳細へ遷移する', async () => {
+    const user = userEvent.setup();
+    render(<MemoryRouter><CurrentPath /><RoutineCard routine={routine} /></MemoryRouter>);
+
+    await user.click(screen.getByRole('article'));
+
+    expect(screen.getByTestId('current-path')).toHaveTextContent('/routines/routine-1');
+  });
+
+  it('カード本体の非操作領域を選ぶと詳細へ遷移し、実リンクとボタンは個別の機能を維持する', async () => {
+    const user = userEvent.setup();
+    const onLike = vi.fn();
+    const { rerender } = render(<MemoryRouter><CurrentPath /><RoutineCard onLike={onLike} routine={routine} /></MemoryRouter>);
+
+    await user.click(screen.getByText('朝活'));
+    expect(screen.getByTestId('current-path')).toHaveTextContent('/routines/routine-1');
+
+    rerender(<MemoryRouter><CurrentPath /><RoutineCard onLike={onLike} routine={routine} /></MemoryRouter>);
+    await user.click(screen.getByAltText(''));
+    expect(screen.getByTestId('current-path')).toHaveTextContent('/routines/routine-1');
+
+    rerender(<MemoryRouter><CurrentPath /><RoutineCard onLike={onLike} routine={routine} /></MemoryRouter>);
+    await user.click(screen.getByText('がルーティンを投稿'));
+    expect(screen.getByTestId('current-path')).toHaveTextContent('/routines/routine-1');
+
+    rerender(<MemoryRouter><CurrentPath /><RoutineCard onLike={onLike} routine={routine} /></MemoryRouter>);
+    await user.click(screen.getByRole('link', { name: '田中 陽介' }));
+    expect(screen.getByTestId('current-path')).toHaveTextContent(`/accounts/${routine.accountId}`);
+
+    rerender(<MemoryRouter><CurrentPath /><RoutineCard onLike={onLike} routine={routine} /></MemoryRouter>);
+    await user.click(screen.getByRole('button', { name: 'いいねする' }));
+    expect(onLike).toHaveBeenCalledWith('post-1');
+    expect(screen.getByTestId('current-path')).toHaveTextContent('/');
+  });
+
+  it('詳細へのキーボード操作は見出しの実リンクだけで行う', async () => {
+    const user = userEvent.setup();
+    render(<MemoryRouter><CurrentPath /><RoutineCard routine={routine} /></MemoryRouter>);
+
+    const card = screen.getByRole('article');
+    const detailLink = screen.getByRole('link', { name: '朝の集中ルーティン' });
+    expect(card).not.toHaveAttribute('tabindex');
+
+    await user.tab();
+    expect(screen.getByRole('link', { name: '田中 陽介' })).toHaveFocus();
+    await user.tab();
+    expect(detailLink).toHaveFocus();
+    expect(fireEvent.keyDown(detailLink, { key: ' ' })).toBe(true);
+    await user.keyboard('{Enter}');
+    expect(screen.getByTestId('current-path')).toHaveTextContent('/routines/routine-1');
+  });
+
+  it('レンダー中もpointer移動を追跡し、ドラッグ後は詳細へ遷移しない', () => {
+    const { rerender } = render(<MemoryRouter><CurrentPath /><RoutineCard routine={routine} /></MemoryRouter>);
+
+    const card = screen.getByRole('article');
+    fireEvent.pointerDown(card, { clientX: 0, clientY: 0, pointerId: 1 });
+
+    rerender(<MemoryRouter><CurrentPath /><RoutineCard routine={routine} /></MemoryRouter>);
+
+    fireEvent.pointerMove(document, { clientX: 9, clientY: 0, pointerId: 1 });
+    fireEvent.click(screen.getByRole('article'), { detail: 1 });
+
+    expect(screen.getByTestId('current-path')).toHaveTextContent('/');
+  });
+
+  it('リンク上のドラッグではリンクを起動せず、通常のリンクとボタン操作を維持する', async () => {
+    const user = userEvent.setup();
+    const onLike = vi.fn();
+    render(<MemoryRouter><CurrentPath /><RoutineCard onLike={onLike} routine={routine} /></MemoryRouter>);
+
+    const detailLink = screen.getByRole('link', { name: '朝の集中ルーティン' });
+    fireEvent.pointerDown(detailLink, { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: 9, clientY: 0, pointerId: 1 });
+    fireEvent.pointerUp(document, { pointerId: 1 });
+    fireEvent.click(detailLink, { detail: 1 });
+    expect(screen.getByTestId('current-path')).toHaveTextContent('/');
+
+    await user.click(detailLink);
+    expect(screen.getByTestId('current-path')).toHaveTextContent('/routines/routine-1');
+
+    await user.click(screen.getByRole('button', { name: 'いいねする' }));
+    expect(onLike).toHaveBeenCalledWith('post-1');
+  });
+
+  it('pointer cancel後の次の通常クリックでは詳細へ遷移する', () => {
+    render(<MemoryRouter><CurrentPath /><RoutineCard routine={routine} /></MemoryRouter>);
+
+    const card = screen.getByRole('article');
+    fireEvent.pointerDown(card, { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerCancel(document, { pointerId: 1 });
+    fireEvent.pointerDown(card, { clientX: 0, clientY: 0, pointerId: 2 });
+    fireEvent.pointerUp(document, { pointerId: 2 });
+    fireEvent.click(card, { detail: 1 });
+
+    expect(screen.getByTestId('current-path')).toHaveTextContent('/routines/routine-1');
+  });
+
+  it('複数ポインターで追跡中のドラッグ状態を上書きせず、誤って詳細へ遷移しない', () => {
+    render(<MemoryRouter><CurrentPath /><RoutineCard routine={routine} /></MemoryRouter>);
+
+    const card = screen.getByRole('article');
+    fireEvent.pointerDown(card, { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: 9, clientY: 0, pointerId: 1 });
+    fireEvent.pointerDown(card, { clientX: 0, clientY: 0, pointerId: 2 });
+    fireEvent.click(card, { detail: 1 });
+
+    expect(screen.getByTestId('current-path')).toHaveTextContent('/');
+  });
+
+  it('unmount時にドキュメントのポインター追跡を解除する', () => {
+    const removeEventListener = vi.spyOn(document, 'removeEventListener');
+    const { unmount } = render(<MemoryRouter><RoutineCard routine={routine} /></MemoryRouter>);
+
+    fireEvent.pointerDown(screen.getByRole('article'), { clientX: 0, clientY: 0, pointerId: 1 });
+    unmount();
+
+    expect(removeEventListener).toHaveBeenCalledWith('pointermove', expect.any(Function));
+    expect(removeEventListener).toHaveBeenCalledWith('pointerup', expect.any(Function));
+    expect(removeEventListener).toHaveBeenCalledWith('pointercancel', expect.any(Function));
+    removeEventListener.mockRestore();
+  });
 
   it('投稿者名に投稿種別を添え、投稿日時を同じヘッダーの右上に表示する', () => {
     render(<MemoryRouter><RoutineCard routine={routine} /></MemoryRouter>);
@@ -157,3 +280,7 @@ describe('RoutineCard', () => {
     expect(onReport).toHaveBeenCalledWith(routine);
   });
 });
+
+function CurrentPath() {
+  return <output data-testid="current-path">{useLocation().pathname}</output>;
+}

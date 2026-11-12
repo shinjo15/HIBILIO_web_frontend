@@ -138,13 +138,16 @@
   border-radius: 12px;
   box-shadow: none;
   color: var(--hibilio-color-on-background);
+  cursor: pointer;
   font-family: Inter, sans-serif;
   overflow: hidden;
   transition: border-color 150ms ease;
 }
 
 .routine-feed-page .MuiPaper-root.routine-card:hover,
-.routine-feed-card-scope .MuiPaper-root.routine-card:hover {
+.routine-feed-card-scope .MuiPaper-root.routine-card:hover,
+.routine-feed-page .MuiPaper-root.routine-card:focus-within,
+.routine-feed-card-scope .MuiPaper-root.routine-card:focus-within {
   border-color: var(--hibilio-color-primary);
 }
 
