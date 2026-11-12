@@ -185,7 +185,7 @@ export function HomePage({ likeService = routineLikeService, service = accountSe
 
   if (authenticationStatus === 'loading') return <p className="home-page__state" role="status">{messages.home.loading}</p>;
   if (authenticationStatus === 'unauthenticated') {
-    return <main className="home-page home-page--guest"><header className="home-page__header"><AppBrandHeader /></header><div className="home-page__content"><section className="home-page__guest"><h1>{messages.home.guestTitle}</h1><Link className="home-page__login" to="/login">{messages.auth.login}</Link></section></div></main>;
+    return <main className="home-page home-page--guest"><header className="home-page__header"><AppBrandHeader /></header><div className="home-page__content"><section className="home-page__guest"><h1>{messages.home.guestTitleBeforeBreak}<br />{messages.home.guestTitleAfterBreak}</h1><p>{messages.home.guestDescription}</p><p className="home-page__guest-note">{messages.home.guestNote}</p><Link className="home-page__login" to="/login">{messages.auth.login}</Link></section></div></main>;
   }
 
   const displayedProfile = profile?.generation === authenticationGeneration ? profile.value : null;
