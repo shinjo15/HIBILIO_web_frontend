@@ -287,6 +287,31 @@ describe('createAccountService', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/my/routines?page=2&number_of_items_per_page=40', { credentials: 'include', method: 'GET' });
   });
 
+  it.each([
+    ['recent-executions', '最近実行したルーティン'],
+    ['most-executed', 'よく実行するルーティン'],
+  ])('GET /api/my/routines/%s は投稿実行数と本人実行数を区別して未投稿ルーティンの表示モデルへ変換する', async (endpoint, title) => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      items: [{
+        account_identifier: '11111111-1111-4111-8111-111111111111', account_name: '投稿者', customization_count: 1, execution_count: 3, my_execution_count: 7,
+        icon_image_url: null, liked: null, post_identifier: null, post_like_count: null, post_support_count: null, posted_at: null,
+        routine_actions: [{ action_minutes: 15, action_name: '読書', routine_action_identifier: 'action-1' }], routine_execution_minutes: 15,
+        routine_identifier: 'routine-1', routine_name: title, tags: [{ tag_identifier: 'tag-1', tag_name: '読書' }],
+      }], total: 1,
+    })));
+    vi.stubGlobal('fetch', fetchMock);
+    const service = createAccountService();
+
+    const page = endpoint === 'recent-executions'
+      ? await service.listRecentExecutedRoutinesPage?.(2)
+      : await service.listMostExecutedRoutinesPage?.(2);
+
+    expect(page).toMatchObject({
+      items: [{ executions: 3, id: null, liked: null, likes: null, myExecutionCount: 7, routineId: 'routine-1', title }], total: 1,
+    });
+    expect(fetchMock).toHaveBeenCalledWith(`/api/my/routines/${endpoint}?page=2&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' });
+  });
+
   it('GET /api/my/likes の契約をいいね表示モデルへ変換する', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       items: [{

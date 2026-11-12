@@ -1,5 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+// @ts-expect-error Vitest executes this test in Node, while app code intentionally excludes Node types.
+import { readFileSync } from 'node:fs';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Routine } from '../domain/routine';
@@ -99,6 +101,34 @@ describe('RoutineCard', () => {
     expect(screen.queryByRole('button', { name: '投稿のメニュー' })).not.toBeInTheDocument();
     expect(screen.queryByText('がルーティンを投稿')).not.toBeInTheDocument();
     expect(screen.queryByText(/日前$/)).not.toBeInTheDocument();
+  });
+
+  it('本人実行回数を受け取った場合だけ、投稿実行数とは別に回数だけのバッジを表示する', () => {
+    render(<MemoryRouter><RoutineCard myExecutionCount={125} routine={{ ...routine, executions: 12 }} /></MemoryRouter>);
+
+    expect(screen.getByText('125回').closest('.routine-card__my-execution-count')).toHaveAccessibleName('本人の実行回数 125回');
+    expect(screen.queryByText('自分の実行 125回')).not.toBeInTheDocument();
+    expect(screen.getByText('12', { selector: '.routine-card__action-value' })).toBeInTheDocument();
+  });
+
+  it('本人実行数バッジは既存カード数値と同じTypographyの12px/16pxを優先し、0と長い数値に対応する', () => {
+    const { rerender } = render(<MemoryRouter><RoutineCard myExecutionCount={0} routine={routine} /></MemoryRouter>);
+
+    expect(screen.getByText('0回').closest('.routine-card__my-execution-count')).toHaveAccessibleName('本人の実行回数 0回');
+
+    rerender(<MemoryRouter><RoutineCard myExecutionCount={Number.MAX_SAFE_INTEGER} routine={routine} /></MemoryRouter>);
+
+    expect(screen.getByText(`${Number.MAX_SAFE_INTEGER}回`).closest('.routine-card__my-execution-count')).toHaveAccessibleName(`本人の実行回数 ${Number.MAX_SAFE_INTEGER}回`);
+    expect(document.querySelector('.routine-card__actions')).toHaveClass('routine-card__actions--with-my-execution-count');
+
+    rerender(<MemoryRouter><RoutineCard routine={routine} /></MemoryRouter>);
+
+    expect(document.querySelector('.routine-card__actions')).not.toHaveClass('routine-card__actions--with-my-execution-count');
+    expect(document.querySelector('.routine-card__my-execution-count')).toBeNull();
+    const css = readFileSync('src/features/routineFeed/routineFeed.css', 'utf8');
+    expect(css).toMatch(/\.routine-card__actions--with-my-execution-count\s*\{[^}]*flex-wrap:\s*wrap;/s);
+    expect(css).toMatch(/\.routine-feed-card-scope \.routine-card__my-execution-count\s*\{[^}]*background:\s*var\(--hibilio-color-primary\);[^}]*color:\s*var\(--hibilio-color-on-primary\);[^}]*max-width:\s*100%;[^}]*overflow-wrap:\s*anywhere;[^}]*white-space:\s*normal;/s);
+    expect(css).toMatch(/\.routine-feed-card-scope \.routine-card__my-execution-count\s*>\s*\.MuiTypography-root\s*\{[^}]*color:\s*inherit;[^}]*font-size:\s*12px;[^}]*line-height:\s*16px;/s);
   });
 
   it('いいねタップは親要素へ伝播しない', async () => {

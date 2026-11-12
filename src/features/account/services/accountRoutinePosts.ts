@@ -56,7 +56,9 @@ const myPostResponseSchema = z.object({
 });
 
 const myPostsResponseSchema = z.object({ items: z.array(myPostResponseSchema), total: z.number().int().nonnegative() });
-const myRoutinesResponseSchema = z.object({ items: z.array(myPostResponseSchema.extend({ liked: z.boolean().nullable(), post_identifier: z.string().min(1).nullable(), post_like_count: z.number().int().nonnegative().nullable(), post_support_count: z.number().int().nonnegative().nullable().optional(), posted_at: z.string().datetime({ offset: true }).nullable() })), total: z.number().int().nonnegative() });
+const myRoutineResponseSchema = myPostResponseSchema.extend({ liked: z.boolean().nullable(), post_identifier: z.string().min(1).nullable(), post_like_count: z.number().int().nonnegative().nullable(), post_support_count: z.number().int().nonnegative().nullable().optional(), posted_at: z.string().datetime({ offset: true }).nullable() });
+const myRoutinesResponseSchema = z.object({ items: z.array(myRoutineResponseSchema), total: z.number().int().nonnegative() });
+const executedRoutinesResponseSchema = z.object({ items: z.array(myRoutineResponseSchema.extend({ my_execution_count: z.number().int().nonnegative() })), total: z.number().int().nonnegative() });
 
 function toRoutine(post: z.infer<typeof routinePostResponseSchema>): Routine {
   return routineSchema.parse({
@@ -98,11 +100,11 @@ function toMyPost(post: z.infer<typeof myPostResponseSchema>): AccountRoutine {
   });
 }
 
-function toMyRoutine(routine: z.infer<typeof myRoutinesResponseSchema>['items'][number]): AccountRoutine {
+function toMyRoutine(routine: z.infer<typeof myRoutineResponseSchema> & { my_execution_count?: number }): AccountRoutine {
   return {
     accountId: routine.account_identifier, authorName: routine.account_name, createdAt: routine.posted_at, customizations: routine.customization_count,
     ...(routine.customization_origin === undefined ? {} : { customizationOrigin: routine.customization_origin === null ? null : { accountName: routine.customization_origin.account_name, iconImageUrl: routine.customization_origin.icon_image_url, routineId: routine.customization_origin.routine_identifier, routineName: routine.customization_origin.routine_name } }),
-    durationMinutes: routine.routine_execution_minutes, executions: routine.execution_count, id: routine.post_identifier, iconImageUrl: routine.icon_image_url, liked: routine.liked, likes: routine.post_like_count, routineId: routine.routine_identifier,
+    durationMinutes: routine.routine_execution_minutes, executions: routine.execution_count, id: routine.post_identifier, iconImageUrl: routine.icon_image_url, liked: routine.liked, likes: routine.post_like_count, ...(routine.my_execution_count === undefined ? {} : { myExecutionCount: routine.my_execution_count }), routineId: routine.routine_identifier,
     steps: routine.routine_actions.map((action) => ({ action: action.action_name, durationMinutes: action.action_minutes })), ...(routine.post_support_count === null || routine.post_support_count === undefined ? {} : { supports: routine.post_support_count }), tags: routine.tags.map((tag) => tag.tag_name), title: routine.routine_name,
   };
 }
@@ -127,6 +129,11 @@ export function parseMyPostsPage(response: unknown): PageResult<AccountRoutine> 
 
 export function parseMyRoutinesPage(response: unknown): PageResult<AccountRoutine> {
   const parsed = myRoutinesResponseSchema.parse(response);
+  return { items: parsed.items.map(toMyRoutine), total: parsed.total };
+}
+
+export function parseExecutedRoutinesPage(response: unknown): PageResult<AccountRoutine> {
+  const parsed = executedRoutinesResponseSchema.parse(response);
   return { items: parsed.items.map(toMyRoutine), total: parsed.total };
 }
 

@@ -1,5 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+// @ts-expect-error Vitest executes this test in Node, while app code intentionally excludes Node types.
+import { readFileSync } from 'node:fs';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { clearAuthenticated, markAuthenticated, resetAuthenticationForTesting } from '../../auth/services/authSession';
@@ -30,6 +32,18 @@ describe('HomePage', () => {
 
     expect(screen.getByRole('heading', { name: 'HIBILIO' })).toBeInTheDocument();
     expect(document.querySelectorAll('header.home-page__header > .app-brand-header')).toHaveLength(1);
+  });
+
+  it('ルーティン一覧の見出しだけをルーティンと表示し、タブとそのアクセシブルな名前は対象別のままにする', async () => {
+    markAuthenticated();
+
+    render(<MemoryRouter><HomePage service={createService({ listLikesPage: async () => ({ items: [], total: 0 }) })} /></MemoryRouter>);
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'ルーティン' })).toBeInTheDocument();
+    expect(screen.getByRole('tablist', { name: 'Homeのルーティン表示切り替え' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'いいねしたルーティン', selected: true })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '最近実行したルーティン' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'よく実行するルーティン' })).toBeInTheDocument();
   });
 
   it('ログイン済みなら本人のプロフィールアイコン、名前の直後のlevel、改行を含む自己紹介をそのまま上部に表示する', async () => {
@@ -141,7 +155,7 @@ describe('HomePage', () => {
     expect(screen.getByRole('grid', { name: /実行履歴カレンダー/ })).toBeInTheDocument();
   });
 
-  it('認証世代の切替と同じ描画で旧プロフィール・いいね・履歴を隠し、3 APIを再取得して旧応答を破棄する', async () => {
+  it('認証世代の切替と同じ描画で旧プロフィール・いいね・履歴を隠し、未選択タブを取得せず旧応答を破棄する', async () => {
     markAuthenticated();
     const firstProfile = deferred<Awaited<ReturnType<AccountService['getProfile']>>>();
     const secondProfile = deferred<Awaited<ReturnType<AccountService['getProfile']>>>();
@@ -225,7 +239,7 @@ describe('HomePage', () => {
     expect(screen.getByRole('heading', { name: 'ルーティンを始めよう' })).toBeInTheDocument();
   });
 
-  it('GET /api/my/likes と GET /api/my/routine-executions の結果をAPI返却順のまま表示する', async () => {
+  it('Home初期はいいねと既存の実行履歴だけをAPI返却順のまま表示し、未選択タブのAPIを呼ばない', async () => {
     markAuthenticated();
     vi.stubGlobal('matchMedia', () => ({ addEventListener: vi.fn(), matches: false, removeEventListener: vi.fn() }));
     const fetchMock = vi.fn()
@@ -689,6 +703,200 @@ describe('HomePage', () => {
     await waitFor(() => expect(listLikesPage).toHaveBeenCalledTimes(2));
     expect(listLikesPage).toHaveBeenNthCalledWith(1, 1);
     expect(listLikesPage).toHaveBeenNthCalledWith(2, 2);
+  });
+
+  it('3つのルーティンタブを既存のTabsで切り替え、各一覧を独立して表示する', async () => {
+    markAuthenticated();
+    const user = userEvent.setup();
+    const listMostExecutedRoutinesPage = vi.fn().mockResolvedValue({ items: [{ ...routine, executions: 3, id: null, liked: null, likes: null, myExecutionCount: 125, title: 'よく実行する未投稿ルーティン' }], total: 1 });
+    const listRecentExecutedRoutinesPage = vi.fn().mockResolvedValue({ items: [{ ...routine, executions: 0, myExecutionCount: 0, title: '最近実行したルーティン' }], total: 1 });
+    const service = createService({
+      listLikesPage: async () => ({ items: [routine], total: 1 }),
+      listMostExecutedRoutinesPage,
+      listRecentExecutedRoutinesPage,
+    });
+
+    render(<MemoryRouter><HomePage service={service} /></MemoryRouter>);
+
+    expect(await screen.findByRole('tab', { name: 'いいねしたルーティン', selected: true })).toBeInTheDocument();
+    expect(listRecentExecutedRoutinesPage).not.toHaveBeenCalled();
+    expect(listMostExecutedRoutinesPage).not.toHaveBeenCalled();
+    expect(screen.queryByText(/自分の実行/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: '最近実行したルーティン' }));
+    expect(await screen.findByRole('heading', { name: '最近実行したルーティン' })).toBeInTheDocument();
+    expect(listRecentExecutedRoutinesPage).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('0回').closest('.routine-card__my-execution-count')).toHaveAccessibleName('本人の実行回数 0回');
+    await user.click(screen.getByRole('tab', { name: 'よく実行するルーティン' }));
+    expect(await screen.findByRole('heading', { name: 'よく実行する未投稿ルーティン' })).toBeInTheDocument();
+    expect(listMostExecutedRoutinesPage).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('125回').closest('.routine-card__my-execution-count')).toHaveAccessibleName('本人の実行回数 125回');
+    expect(screen.getByText('3', { selector: '.routine-card__action-value' })).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: '最近実行したルーティン' }));
+    expect(screen.getByRole('heading', { name: '最近実行したルーティン' })).toBeInTheDocument();
+    expect(listRecentExecutedRoutinesPage).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'いいねする' })).not.toBeInTheDocument();
+  });
+
+  it('未選択タブの401はHome初期表示に影響せず、選択時の401だけログインへ遷移する', async () => {
+    markAuthenticated();
+    const user = userEvent.setup();
+    const listRecentExecutedRoutinesPage = vi.fn().mockRejectedValue(new AccountUnauthorizedError());
+
+    render(<MemoryRouter><HomePage service={createService({
+      listLikesPage: async () => ({ items: [routine], total: 1 }),
+      listRecentExecutedRoutinesPage,
+    })} /><LocationProbe /></MemoryRouter>);
+
+    expect(await screen.findByRole('heading', { name: 'いいねしたルーティン' })).toBeInTheDocument();
+    expect(listRecentExecutedRoutinesPage).not.toHaveBeenCalled();
+    expect(screen.getByText('/')).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: '最近実行したルーティン' }));
+    expect(await screen.findByText('/login')).toBeInTheDocument();
+  });
+
+  it.each([
+    ['最近実行したルーティン', 'recent', '最近実行したルーティンを読み込めませんでした。時間をおいて再試行してください。'],
+    ['よく実行するルーティン', 'most', 'よく実行するルーティンを読み込めませんでした。時間をおいて再試行してください。'],
+  ])('%sは2ページ目の追加失敗後に表示済みカードを保って同じページを再試行する', async (tabName, key, errorMessage) => {
+    markAuthenticated();
+    const user = userEvent.setup();
+    let notifyIntersection: (() => void) | undefined;
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback: IntersectionObserverCallback) { notifyIntersection = () => callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver); }
+      disconnect() {}
+      observe() {}
+      unobserve() {}
+      root = null;
+      rootMargin = '';
+      thresholds = [];
+      takeRecords() { return []; }
+    });
+    const listPage = vi.fn()
+      .mockResolvedValueOnce({ items: [{ ...routine, title: `${key} 1ページ目` }], total: 2 })
+      .mockRejectedValueOnce(new Error('network error'))
+      .mockResolvedValueOnce({ items: [{ ...routine, id: `${key}-post-2`, routineId: `${key}-routine-2`, title: `${key} 2ページ目` }], total: 2 });
+
+    render(<MemoryRouter><HomePage service={createService({
+      listLikesPage: async () => ({ items: [], total: 0 }),
+      ...(key === 'recent' ? { listRecentExecutedRoutinesPage: listPage } : { listMostExecutedRoutinesPage: listPage }),
+    })} /></MemoryRouter>);
+
+    await user.click(await screen.findByRole('tab', { name: tabName }));
+    expect(await screen.findByRole('heading', { name: `${key} 1ページ目` })).toBeInTheDocument();
+    notifyIntersection?.();
+    expect(await screen.findByText(errorMessage)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: `${key} 1ページ目` })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '再試行' }));
+    expect(await screen.findByRole('heading', { name: `${key} 2ページ目` })).toBeInTheDocument();
+    expect(listPage).toHaveBeenNthCalledWith(1, 1);
+    expect(listPage).toHaveBeenNthCalledWith(2, 2);
+    expect(listPage).toHaveBeenNthCalledWith(3, 2);
+  });
+
+  it('同一投稿のいいねを3タブでoptimisticに同期し、遅延した各一覧の古い状態で上書きしない', async () => {
+    markAuthenticated();
+    const user = userEvent.setup();
+    const sharedRoutine = { ...routine, liked: false, likes: 2, title: '同一投稿' };
+    const recent = deferred<{ items: typeof sharedRoutine[]; total: number }>();
+    const most = deferred<{ items: typeof sharedRoutine[]; total: number }>();
+    const likeService = { create: vi.fn().mockResolvedValue(undefined), remove: vi.fn() };
+
+    render(<MemoryRouter><HomePage likeService={likeService} service={createService({
+      listLikesPage: async () => ({ items: [sharedRoutine], total: 1 }),
+      listMostExecutedRoutinesPage: () => most.promise,
+      listRecentExecutedRoutinesPage: () => recent.promise,
+    })} /></MemoryRouter>);
+
+    await user.click(await screen.findByRole('button', { name: 'いいねする' }));
+    expect(likeService.create).toHaveBeenCalledWith('post-1');
+    expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toHaveTextContent('3');
+    recent.resolve({ items: [sharedRoutine], total: 1 });
+    most.resolve({ items: [sharedRoutine], total: 1 });
+
+    await user.click(screen.getByRole('tab', { name: '最近実行したルーティン' }));
+    expect(await screen.findByRole('button', { name: 'いいねを取り消す' })).toHaveTextContent('3');
+    await user.click(screen.getByRole('tab', { name: 'よく実行するルーティン' }));
+    expect(await screen.findByRole('button', { name: 'いいねを取り消す' })).toHaveTextContent('3');
+  });
+
+  it('いいね解除の失敗は3タブでrollbackし、いいね一覧からカードを消さない', async () => {
+    markAuthenticated();
+    const user = userEvent.setup();
+    const sharedRoutine = { ...routine, title: '解除失敗の同一投稿' };
+    const likeService = { create: vi.fn(), remove: vi.fn().mockRejectedValue(new Error('network')) };
+    const listPage = async () => ({ items: [sharedRoutine], total: 1 });
+
+    render(<MemoryRouter><HomePage likeService={likeService} service={createService({ listLikesPage: listPage, listMostExecutedRoutinesPage: listPage, listRecentExecutedRoutinesPage: listPage })} /></MemoryRouter>);
+
+    await user.click(await screen.findByRole('button', { name: 'いいねを取り消す' }));
+    expect(await screen.findByText('いいねできませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '解除失敗の同一投稿' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toHaveTextContent('2');
+    await user.click(screen.getByRole('tab', { name: '最近実行したルーティン' }));
+    expect(await screen.findByRole('button', { name: 'いいねを取り消す' })).toHaveTextContent('2');
+    await user.click(screen.getByRole('tab', { name: 'よく実行するルーティン' }));
+    expect(await screen.findByRole('button', { name: 'いいねを取り消す' })).toHaveTextContent('2');
+  });
+
+  it('認証切替前の遅延いいね失敗は切替後の3タブ状態と遷移を変更しない', async () => {
+    markAuthenticated();
+    const user = userEvent.setup();
+    const firstLike = deferred<void>();
+    const first = { ...routine, liked: false, title: '切替前の投稿' };
+    const second = { ...routine, id: 'post-2', liked: true, title: '切替後の投稿' };
+    const listLikesPage = vi.fn().mockResolvedValueOnce({ items: [first], total: 1 }).mockResolvedValueOnce({ items: [second], total: 1 });
+    const listRecentExecutedRoutinesPage = vi.fn().mockResolvedValueOnce({ items: [first], total: 1 }).mockResolvedValueOnce({ items: [second], total: 1 });
+    const listMostExecutedRoutinesPage = vi.fn().mockResolvedValueOnce({ items: [first], total: 1 }).mockResolvedValueOnce({ items: [second], total: 1 });
+    const likeService = { create: vi.fn().mockReturnValue(firstLike.promise), remove: vi.fn() };
+
+    render(<MemoryRouter><HomePage likeService={likeService} service={createService({ listLikesPage, listMostExecutedRoutinesPage, listRecentExecutedRoutinesPage })} /><LocationProbe /></MemoryRouter>);
+
+    await user.click(screen.getByRole('tab', { name: '最近実行したルーティン' }));
+    expect(await screen.findByRole('heading', { name: '切替前の投稿' })).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'いいねしたルーティン' }));
+    await user.click(await screen.findByRole('button', { name: 'いいねする' }));
+    act(() => { markAuthenticated(); });
+    expect(await screen.findByRole('heading', { name: '切替後の投稿' })).toBeInTheDocument();
+    firstLike.reject(new AccountUnauthorizedError());
+    await act(async () => { await Promise.resolve(); });
+    expect(screen.getByText('/')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'いいねを取り消す' })).toHaveTextContent('2');
+    await user.click(screen.getByRole('tab', { name: '最近実行したルーティン' }));
+    expect(await screen.findByRole('heading', { name: '切替後の投稿' })).toBeInTheDocument();
+  });
+
+  it('ホームのTabsは一覧と同じMUIの色・サイズ・indicatorを、routine-feed-page外の専用scopeで適用する', async () => {
+    markAuthenticated();
+
+    render(<MemoryRouter><HomePage service={createService({ listLikesPage: async () => ({ items: [routine], total: 1 }) })} /></MemoryRouter>);
+
+    await screen.findByRole('tab', { name: 'いいねしたルーティン' });
+    const tabs = document.querySelector('.home-page .routine-feed-tabs');
+    expect(tabs).toBeInTheDocument();
+    expect(tabs).not.toHaveClass('routine-feed-page');
+    expect(document.querySelector('.home-page .routine-feed-tabs .MuiTabs-indicator')).toBeInTheDocument();
+    const feedCss = readFileSync('src/features/routineFeed/routineFeed.css', 'utf8');
+    const homeCss = readFileSync('src/features/home/pages/home.css', 'utf8');
+    const declarations = [
+      'min-height:\\s*42px;',
+      'color:\\s*var\\(--hibilio-color-muted-text\\);',
+      'font-family:\\s*Inter, sans-serif;',
+      'font-size:\\s*14px;',
+      'font-weight:\\s*500;',
+      'line-height:\\s*20px;',
+      'min-width:\\s*0;',
+      'padding:\\s*10px 16px;',
+      'text-transform:\\s*none;',
+      'color:\\s*var\\(--hibilio-color-primary\\);',
+      'background-color:\\s*var\\(--hibilio-color-primary\\);',
+      'height:\\s*2px;',
+    ];
+    declarations.forEach((declaration) => {
+      expect(feedCss).toMatch(new RegExp(declaration));
+      expect(homeCss).toMatch(new RegExp(declaration));
+    });
+    expect(homeCss).toMatch(/\.home-page \.routine-feed-tabs \.MuiTab-root\.Mui-selected/);
+    expect(homeCss).toMatch(/\.home-page \.routine-feed-tabs \.MuiTabs-indicator/);
   });
 
   it('いいね済みのルーティンを取り消し、件数と表示状態を更新する', async () => {
