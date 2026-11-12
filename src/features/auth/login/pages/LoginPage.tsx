@@ -19,14 +19,6 @@ function GoogleIcon() {
   );
 }
 
-function AppleIcon() {
-  return (
-    <svg aria-hidden="true" height="18" viewBox="0 0 24 24" width="18">
-      <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.42c1.29.06 2.18.73 2.95.74 1.12-.23 2.2-.92 3.37-.82 1.42.14 2.49.69 3.19 1.73-2.87 1.74-2.18 5.64.4 6.79-.39 1.16-.97 2.32-1.91 3.42zM13 3.5c.13 1.97-1.49 3.5-3.5 3.5C9.14 4.98 10.97 3 13 3.5z" fill="currentColor" />
-    </svg>
-  );
-}
-
 export function LoginPage() {
   const navigate = useNavigate();
   const login = useLoginPasscode(() => navigate('/'));
@@ -133,9 +125,6 @@ export function LoginPage() {
             <div className="hibilio-login__providers">
               <Button className="hibilio-login__provider hibilio-login__provider--google" component="a" fullWidth href={apiUrl('/auth/social/google')} startIcon={<GoogleIcon />} variant="outlined">
                 {messages.auth.googleLogin}
-              </Button>
-              <Button className="hibilio-login__provider hibilio-login__provider--apple" fullWidth startIcon={<AppleIcon />} type="button" variant="contained">
-                {messages.auth.appleLogin}
               </Button>
             </div>
 

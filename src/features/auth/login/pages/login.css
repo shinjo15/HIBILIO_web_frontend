@@ -190,16 +190,6 @@
   border-color: var(--hibilio-color-border);
 }
 
-.hibilio-login__provider--apple.MuiButton-root {
-  background-color: var(--hibilio-color-on-background);
-  box-shadow: none;
-  color: var(--hibilio-color-background);
-}
-
-.hibilio-login__provider--apple.MuiButton-root:hover {
-  background-color: var(--hibilio-color-on-background);
-  box-shadow: none;
-}
 
 .hibilio-login__footer,
 .hibilio-login__passcode-help {

@@ -28,6 +28,14 @@ describe('LoginPage', () => {
     expect(screen.getByRole('link', { name: 'Googleでログイン' })).toHaveAttribute('href', 'https://api.hibilio.com/auth/social/google');
   });
 
+  it('Appleログインを表示せず、Googleログインとメールログインを提供する', () => {
+    render(<MemoryRouter><LoginPage /></MemoryRouter>);
+
+    expect(screen.queryByText('Appleでログイン')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Googleでログイン' })).toHaveAttribute('href', '/auth/social/google');
+    expect(screen.getByLabelText('メールアドレス')).toBeEnabled();
+  });
+
   it('メールアドレスからパスコードを送信し、モック準拠の6桁入力画面で照合する', async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn((path: string) => Promise.resolve(path === '/api/csrf-token'
@@ -41,7 +49,7 @@ describe('LoginPage', () => {
     expect(screen.getByLabelText('メールアドレス')).toHaveAttribute('type', 'email');
     expect(screen.getByRole('button', { name: 'パスコードを送信' })).toBeDisabled();
     expect(screen.getByRole('link', { name: 'Googleでログイン' })).toHaveAttribute('href', '/auth/social/google');
-    expect(screen.getByRole('button', { name: 'Appleでログイン' })).toHaveAttribute('type', 'button');
+    expect(screen.queryByText('Appleでログイン')).not.toBeInTheDocument();
 
     await user.type(screen.getByLabelText('メールアドレス'), 'member@example.com');
     await user.click(screen.getByRole('button', { name: 'パスコードを送信' }));
