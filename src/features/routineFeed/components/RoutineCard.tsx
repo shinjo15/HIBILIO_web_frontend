@@ -1,7 +1,7 @@
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { Box, IconButton, Menu, MenuItem, Paper, Stack, Typography } from '@mui/material';
-import { useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import messages from '../../../shared/message/message.json';
 import { formatDuration, formatPostedAt, type Routine } from '../domain/routine';
 import { AccountAvatar } from '../../../shared/components/AccountImage';
@@ -25,6 +25,11 @@ type RoutineCardProps<T extends RoutineCardDisplay> = {
 
 export function RoutineCard<T extends RoutineCardDisplay>({ isLiking = false, likeAnimation = null, myExecutionCount, onLike, onReport, routine }: RoutineCardProps<T>) {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const navigate = useNavigate();
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const activePointerId = useRef<number | null>(null);
+  const wasDragged = useRef(false);
+  const pointerTracking = useRef<{ cancel: (event: PointerEvent) => void; move: (event: PointerEvent) => void; stop: (event?: PointerEvent) => void } | null>(null);
   const avatarClasses: Record<string, string> = {
     H: 'routine-card__avatar--h',
     N: 'routine-card__avatar--n',
@@ -46,10 +51,65 @@ export function RoutineCard<T extends RoutineCardDisplay>({ isLiking = false, li
     likeAnimation === 'unlike' && 'routine-card__like--unlike-animation',
   ].filter(Boolean).join(' ');
 
+  useEffect(() => {
+    function trackPointerMove(event: PointerEvent) {
+      const start = pointerStart.current;
+      if (activePointerId.current !== event.pointerId || start === null) return;
+      if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 8) wasDragged.current = true;
+    }
+
+    function stopTrackingPointer(event?: PointerEvent) {
+      if (event !== undefined && activePointerId.current !== event.pointerId) return;
+      document.removeEventListener('pointermove', trackPointerMove);
+      document.removeEventListener('pointerup', stopTrackingPointer);
+      document.removeEventListener('pointercancel', cancelPointer);
+      activePointerId.current = null;
+      pointerStart.current = null;
+    }
+
+    function cancelPointer(event: PointerEvent) {
+      if (activePointerId.current !== event.pointerId) return;
+      wasDragged.current = true;
+      stopTrackingPointer();
+    }
+
+    pointerTracking.current = { cancel: cancelPointer, move: trackPointerMove, stop: stopTrackingPointer };
+    return () => {
+      stopTrackingPointer();
+      pointerTracking.current = null;
+    };
+  }, []);
+
   return (
     <Paper
       component="article"
+      aria-label={routine.title}
       className="routine-card"
+      onClickCapture={(event) => {
+        const target = event.target as HTMLElement;
+        if (event.detail !== 0 && wasDragged.current && target.closest('a') !== null) {
+          event.preventDefault();
+          event.stopPropagation();
+          wasDragged.current = false;
+        }
+      }}
+      onClick={(event) => {
+        const target = event.target as HTMLElement;
+        const isInnerControl = target.closest('a, button, [role="menu"], [role="menuitem"], input, select, textarea, [contenteditable="true"]') !== null;
+        const hasSelection = globalThis.getSelection?.()?.type === 'Range';
+        if (!event.defaultPrevented && (event.detail === 0 || !wasDragged.current) && !hasSelection && !isInnerControl) navigate(`/routines/${routine.routineId}`);
+        wasDragged.current = false;
+      }}
+      onPointerDown={(event) => {
+        const tracking = pointerTracking.current;
+        if (activePointerId.current !== null || tracking === null) return;
+        pointerStart.current = { x: event.clientX, y: event.clientY };
+        activePointerId.current = event.pointerId;
+        wasDragged.current = false;
+        document.addEventListener('pointermove', tracking.move);
+        document.addEventListener('pointerup', tracking.stop);
+        document.addEventListener('pointercancel', tracking.cancel);
+      }}
     >
       <Box className="routine-card__content">
           <Stack className="routine-card__header">
