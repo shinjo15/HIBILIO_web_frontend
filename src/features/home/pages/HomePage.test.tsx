@@ -236,7 +236,7 @@ describe('HomePage', () => {
     render(<MemoryRouter><HomePage service={withUnauthorizedList(baseService)} /><LocationProbe /></MemoryRouter>);
 
     expect(await screen.findByText('/login')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'ルーティンを始めよう' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /今日のルーティンを\s*続けよう/ })).toBeInTheDocument();
   });
 
   it('Home初期はいいねと既存の実行履歴だけをAPI返却順のまま表示し、未選択タブのAPIを呼ばない', async () => {
@@ -272,13 +272,69 @@ describe('HomePage', () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
   });
 
-  it('未ログイン時はログイン導線を表示する', async () => {
+  it('未ログイン時は案2のHome案内とログインだけを表示し、ログインへ遷移する', async () => {
     clearAuthenticated();
+    const user = userEvent.setup();
 
-    render(<MemoryRouter><HomePage /></MemoryRouter>);
+    render(<MemoryRouter><HomePage /><LocationProbe /></MemoryRouter>);
 
-    expect(screen.getByRole('heading', { name: 'ルーティンを始めよう' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /今日のルーティンを\s*続けよう/ })).toBeInTheDocument();
+    expect(screen.getByText('ログインして、あなたのHomeを開きます。')).toBeInTheDocument();
+    expect(screen.getByText('お気に入りのルーティンや、実行した記録をHomeで確認できます。')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'ログイン' })).toHaveAttribute('href', '/login');
+    expect(screen.queryByRole('link', { name: '新規登録' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('link', { name: 'ログイン' }));
+
+    expect(screen.getByText('/login')).toBeInTheDocument();
+  });
+
+  it('認証復元がpendingから未認証になったときだけ、ゲストHomeを表示する', async () => {
+    const sessionCheck = deferred<Response>();
+    const fetchMock = vi.fn()
+      .mockReturnValueOnce(sessionCheck.promise)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'csrf-token' })))
+      .mockResolvedValueOnce(new Response(null, { status: 401 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MemoryRouter><HomePage service={createService({})} /></MemoryRouter>);
+
+    expect(screen.getByRole('status')).toHaveTextContent('読み込んでいます');
+    expect(screen.queryByRole('heading', { name: /今日のルーティンを\s*続けよう/ })).not.toBeInTheDocument();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    sessionCheck.resolve(new Response(null, { status: 401 }));
+
+    expect(await screen.findByRole('heading', { name: /今日のルーティンを\s*続けよう/ })).toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('認証復元がpendingから認証済みになったとき、ゲストHomeを一度も表示せず本人Homeを表示する', async () => {
+    const sessionCheck = deferred<Response>();
+    const fetchMock = vi.fn().mockReturnValueOnce(sessionCheck.promise);
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MemoryRouter><HomePage service={createService({ listLikesPage: async () => ({ items: [], total: 0 }) })} /></MemoryRouter>);
+
+    expect(screen.getByRole('status')).toHaveTextContent('読み込んでいます');
+    expect(screen.queryByRole('heading', { name: /今日のルーティンを\s*続けよう/ })).not.toBeInTheDocument();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    sessionCheck.resolve(new Response(JSON.stringify(profileResponse)));
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'ルーティン' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /今日のルーティンを\s*続けよう/ })).not.toBeInTheDocument();
+    expect(screen.queryByText('ログインして、あなたのHomeを開きます。')).not.toBeInTheDocument();
+  });
+
+  it('ログイン済みでは案2のゲスト案内を表示せず、既存の本人Homeを維持する', async () => {
+    markAuthenticated();
+
+    render(<MemoryRouter><HomePage service={createService({ listLikesPage: async () => ({ items: [], total: 0 }) })} /></MemoryRouter>);
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'ルーティン' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /今日のルーティンを\s*続けよう/ })).not.toBeInTheDocument();
+    expect(screen.queryByText('ログインして、あなたのHomeを開きます。')).not.toBeInTheDocument();
   });
 
   it('空の取得結果と取得失敗時に各一覧の状態を表示する', async () => {

@@ -6,6 +6,16 @@ const css = readFileSync('src/features/home/pages/home.css', 'utf8');
 const tokens = readFileSync('src/styles/tokens.css', 'utf8');
 
 describe('home.css calendar future days', () => {
+  it('未ログインHomeは案2の中央配置・案内カード・ログイン下部余白を、ライトとダーク共通のtokenで描画する', () => {
+    expect(css).toMatch(/\.home-page--guest \.home-page__content\s*\{[^}]*display:\s*flex;[^}]*flex:\s*1;[^}]*max-width:\s*430px;[^}]*padding:\s*24px 20px 88px;/);
+    expect(css).toMatch(/\.home-page__guest\s*\{[^}]*align-content:\s*center;[^}]*display:\s*grid;[^}]*gap:\s*18px;[^}]*max-width:\s*390px;[^}]*min-height:\s*100%;[^}]*width:\s*100%;/);
+    expect(css).toMatch(/\.home-page__guest h1\s*\{[^}]*color:\s*var\(--hibilio-color-on-background\);[^}]*font-family:\s*Fraunces, serif;[^}]*font-size:\s*28px;[^}]*line-height:\s*1\.4;/);
+    expect(css).toMatch(/\.home-page__guest > \.home-page__guest-note\s*\{[^}]*background:\s*var\(--hibilio-color-card\);[^}]*border:\s*1px solid var\(--hibilio-color-border\);[^}]*border-radius:\s*12px;[^}]*color:\s*var\(--hibilio-color-muted-text\);[^}]*font-size:\s*13px;[^}]*padding:\s*14px 16px;/);
+    expect(tokens).toMatch(/\.hibilio-theme-dark\s*\{[^}]*--hibilio-color-card:\s*[^;]+;/);
+    expect(tokens).toMatch(/\.hibilio-theme-dark\s*\{[^}]*--hibilio-color-border:\s*[^;]+;/);
+    expect(tokens).toMatch(/\.hibilio-theme-dark\s*\{[^}]*--hibilio-color-muted-text:\s*[^;]+;/);
+  });
+
   it('ライト・ダークテーマ共通のmuted tokenで未来日のセル背景と日付文字を非活性表示にする', () => {
     expect(tokens).toMatch(/:root\s*\{[^}]*--hibilio-color-muted:\s*[^;]+;[^}]*--hibilio-color-muted-text:\s*[^;]+;/);
     expect(tokens).toMatch(/\.hibilio-theme-dark\s*\{[^}]*--hibilio-color-muted:\s*[^;]+;[^}]*--hibilio-color-muted-text:\s*[^;]+;/);
