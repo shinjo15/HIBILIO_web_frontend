@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { apiFetch } from '../../../shared/api/apiFetch';
-import { parseLikedRoutinesPage, parseMyPostsPage, parseMyRoutinesPage } from './accountRoutinePosts';
+import { parseExecutedRoutinesPage, parseLikedRoutinesPage, parseMyPostsPage, parseMyRoutinesPage } from './accountRoutinePosts';
 import { parseAccountRoutineExecutionsPage } from './accountRoutineExecutions';
 import type { Routine } from '../../routineFeed/domain/routine';
 import type { PageResult } from '../../../shared/hooks/useInfiniteList';
@@ -89,6 +89,11 @@ type AccountRoutinesAdapter = {
   listRoutines: (page?: number) => Promise<unknown>;
 };
 
+type AccountExecutedRoutinesAdapter = {
+  listMostExecutedRoutines: (page?: number) => Promise<unknown>;
+  listRecentExecutedRoutines: (page?: number) => Promise<unknown>;
+};
+
 type AccountProfileAdapter = {
   getProfile: () => Promise<unknown>;
 };
@@ -129,10 +134,12 @@ export type AccountService = {
   listSentFollowRequests: () => Promise<AccountRelation[]>;
   listLikes: () => Promise<Routine[]>;
   listLikesPage?: (page: number) => Promise<PageResult<Routine>>;
+  listMostExecutedRoutinesPage?: (page: number) => Promise<PageResult<AccountRoutine>>;
   listPosts: () => Promise<AccountRoutine[]>;
   listPostsPage?: (page: number) => Promise<PageResult<AccountRoutine>>;
   listRoutines: () => Promise<AccountRoutine[]>;
   listRoutinesPage?: (page: number) => Promise<PageResult<AccountRoutine>>;
+  listRecentExecutedRoutinesPage?: (page: number) => Promise<PageResult<AccountRoutine>>;
 };
 
 const accountExecutionApiAdapter: AccountExecutionAdapter = {
@@ -283,12 +290,25 @@ const accountRoutinesApiAdapter: AccountRoutinesAdapter = {
   },
 };
 
+const accountExecutedRoutinesApiAdapter: AccountExecutedRoutinesAdapter = {
+  listMostExecutedRoutines: async (page = 1) => listExecutedRoutines('most-executed', page),
+  listRecentExecutedRoutines: async (page = 1) => listExecutedRoutines('recent-executions', page),
+};
+
+async function listExecutedRoutines(type: 'most-executed' | 'recent-executions', page: number) {
+  const response = await apiFetch(`/api/my/routines/${type}?page=${page}&number_of_items_per_page=40`, { credentials: 'include', method: 'GET' });
+  if (response.status === 401) throw new AccountUnauthorizedError('Executed routines require authentication');
+  if (!response.ok) throw new Error(`Failed to fetch ${type} routines: ${response.status}`);
+  return response.json();
+}
+
 export function createAccountService(
   executionAdapter: AccountExecutionAdapter = accountExecutionApiAdapter,
   likesAdapter: AccountLikesAdapter = accountLikesApiAdapter,
   profileAdapter: AccountProfileAdapter = accountProfileApiAdapter,
   postsAdapter: AccountPostsAdapter = accountPostsApiAdapter,
   routinesAdapter: AccountRoutinesAdapter = accountRoutinesApiAdapter,
+  executedRoutinesAdapter: AccountExecutedRoutinesAdapter = accountExecutedRoutinesApiAdapter,
 
   blocksAdapter: AccountBlocksAdapter = accountBlocksApiAdapter,
   receivedFollowRequestsAdapter: ReceivedFollowRequestsAdapter = receivedFollowRequestsApiAdapter,
@@ -298,6 +318,8 @@ export function createAccountService(
   const listLikesPage = async (page: number) => parseLikedRoutinesPage(await likesAdapter.listLikes(page));
   const listPostsPage = async (page: number) => parseMyPostsPage(await postsAdapter.listPosts(page));
   const listRoutinesPage = async (page: number) => parseMyRoutinesPage(await routinesAdapter.listRoutines(page));
+  const listMostExecutedRoutinesPage = async (page: number) => parseExecutedRoutinesPage(await executedRoutinesAdapter.listMostExecutedRoutines(page));
+  const listRecentExecutedRoutinesPage = async (page: number) => parseExecutedRoutinesPage(await executedRoutinesAdapter.listRecentExecutedRoutines(page));
 
   return {
     getExecutionHistory: async (executionId) => {
@@ -356,10 +378,12 @@ export function createAccountService(
     listSentFollowRequests: async () => parseFollowRequests(await sentFollowRequestsAdapter.listSentFollowRequests(), sentFollowRequestsResponseSchema),
     listLikes: async () => (await listLikesPage(1)).items,
     listLikesPage,
+    listMostExecutedRoutinesPage,
     listPosts: async () => (await listPostsPage(1)).items,
     listPostsPage,
     listRoutines: async () => (await listRoutinesPage(1)).items,
     listRoutinesPage,
+    listRecentExecutedRoutinesPage,
   };
 }
 

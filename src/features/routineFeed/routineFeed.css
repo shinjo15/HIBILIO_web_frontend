@@ -496,6 +496,34 @@
   gap: 6px;
 }
 
+.routine-feed-page .routine-card__my-execution-count,
+.routine-feed-card-scope .routine-card__my-execution-count {
+  background: var(--hibilio-color-primary);
+  border: 1px solid var(--hibilio-color-primary);
+  border-radius: 9999px;
+  box-sizing: border-box;
+  color: var(--hibilio-color-on-primary);
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 16px;
+  margin-left: auto;
+  padding: 2px 8px;
+  white-space: normal;
+}
+
+.routine-card__actions--with-my-execution-count {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.routine-feed-page .routine-card__my-execution-count > .MuiTypography-root,
+.routine-feed-card-scope .routine-card__my-execution-count > .MuiTypography-root {
+  color: inherit;
+  font-size: 12px;
+  line-height: 16px;
+}
+
 .routine-card__like {
   background: none;
   border: 0;

@@ -74,6 +74,7 @@ export const accountRoutineSchema = routineSchema.extend({
   id: z.string().min(1).nullable(),
   liked: z.boolean().nullable(),
   likes: z.number().int().nonnegative().nullable(),
+  myExecutionCount: z.number().int().nonnegative().optional(),
 });
 
 export type AccountProfile = z.infer<typeof accountProfileSchema>;

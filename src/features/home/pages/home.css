@@ -103,6 +103,35 @@
   margin: 0 0 16px;
 }
 
+.home-page__routine-tabs {
+  margin: -8px 0 16px;
+}
+
+.home-page .routine-feed-tabs {
+  min-height: 42px;
+}
+
+.home-page .routine-feed-tabs .MuiTab-root {
+  color: var(--hibilio-color-muted-text);
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  min-height: 42px;
+  min-width: 0;
+  padding: 10px 16px;
+  text-transform: none;
+}
+
+.home-page .routine-feed-tabs .MuiTab-root.Mui-selected {
+  color: var(--hibilio-color-primary);
+}
+
+.home-page .routine-feed-tabs .MuiTabs-indicator {
+  background-color: var(--hibilio-color-primary);
+  height: 2px;
+}
+
 .home-page__list {
   display: flex;
   flex-direction: column;

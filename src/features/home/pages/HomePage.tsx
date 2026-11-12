@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/refs */
+import { Tab, Tabs } from '@mui/material';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { accountService, AccountUnauthorizedError, type AccountService } from '../../account/services/accountService';
@@ -6,7 +7,7 @@ import { clearAuthenticated, getAuthenticationGeneration, getAuthenticationStatu
 import { RoutineCard } from '../../routineFeed/components/RoutineCard';
 import { routineLikeService, RoutineLikeUnauthorizedError, type RoutineLikeService } from '../../routineFeed/services/routineLikeService';
 import { ExecutionHistoryCard } from '../../../shared/components/ExecutionHistoryCard';
-import type { AccountExecutionSummary } from '../../account/domain/account';
+import type { AccountExecutionSummary, AccountRoutine } from '../../account/domain/account';
 import { AccountAvatar } from '../../../shared/components/AccountImage';
 import { AppBrandHeader } from '../../../shared/components/AppBrandHeader';
 import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
@@ -19,6 +20,13 @@ import './home.css';
 
 type HomePageProps = { likeService?: RoutineLikeService; service?: AccountService };
 type HomeProfile = Awaited<ReturnType<AccountService['getProfile']>>;
+type HomeRoutineTab = 'likes' | 'recentExecutions' | 'mostExecuted';
+
+const homeRoutineTabs: Array<{ label: string; value: HomeRoutineTab }> = [
+  { label: messages.home.likedRoutines, value: 'likes' },
+  { label: messages.home.recentExecutedRoutines, value: 'recentExecutions' },
+  { label: messages.home.mostExecutedRoutines, value: 'mostExecuted' },
+];
 
 export function HomePage({ likeService = routineLikeService, service = accountService }: HomePageProps) {
   const navigate = useNavigate();
@@ -26,6 +34,7 @@ export function HomePage({ likeService = routineLikeService, service = accountSe
   const authenticationGeneration = useSyncExternalStore(subscribeToAuthentication, getAuthenticationGeneration, getAuthenticationGeneration);
   const isDesktop = useDesktopLayout();
   const [profile, setProfile] = useState<{ generation: number; value: HomeProfile } | null>(null);
+  const likeOverridesRef = useRef(new Map<string, { liked: boolean; likes: number }>());
 
   useEffect(() => {
     if (authenticationStatus === 'loading') void restoreAuthentication();
@@ -37,19 +46,44 @@ export function HomePage({ likeService = routineLikeService, service = accountSe
       navigate('/login', { replace: true });
     }
   }, [authenticationGeneration, navigate]);
+  const applyLikeOverrides = useCallback(<Item extends AccountRoutine>(items: Item[]): Item[] => items.map((item) => {
+    if (item.id === null || item.liked === null || item.likes === null) return item;
+    const override = likeOverridesRef.current.get(item.id);
+    return override === undefined ? item : { ...item, ...override };
+  }), []);
   const fetchLikesPage = useCallback(async (page: number) => {
-    if (service.listLikesPage !== undefined) return service.listLikesPage(page);
+    if (service.listLikesPage !== undefined) {
+      const result = await service.listLikesPage(page);
+      return { ...result, items: applyLikeOverrides(result.items) };
+    }
     const items = await service.listLikes();
-    return { items, total: items.length };
-  }, [service]);
+    return { items: applyLikeOverrides(items), total: items.length };
+  }, [applyLikeOverrides, service]);
+  const fetchRecentExecutedRoutinesPage = useCallback(async (page: number) => {
+    if (service.listRecentExecutedRoutinesPage !== undefined) {
+      const result = await service.listRecentExecutedRoutinesPage(page);
+      return { ...result, items: applyLikeOverrides(result.items) };
+    }
+    return { items: [], total: 0 };
+  }, [applyLikeOverrides, service]);
+  const fetchMostExecutedRoutinesPage = useCallback(async (page: number) => {
+    if (service.listMostExecutedRoutinesPage !== undefined) {
+      const result = await service.listMostExecutedRoutinesPage(page);
+      return { ...result, items: applyLikeOverrides(result.items) };
+    }
+    return { items: [], total: 0 };
+  }, [applyLikeOverrides, service]);
   const fetchExecutionHistoryPage = useCallback(async (page: number) => {
     if (service.listExecutionHistoriesPage !== undefined) return service.listExecutionHistoriesPage(page);
     const items = await service.listExecutionHistories();
     return { items, total: items.length };
   }, [service]);
   const enabled = authenticationStatus === 'authenticated';
+  const [activeRoutineTab, setActiveRoutineTab] = useState<HomeRoutineTab>('likes');
   const [historyScrollRoot, setHistoryScrollRoot] = useState<Element | null>(null);
   const likes = useInfiniteList({ enabled, fetchPage: fetchLikesPage, key: `home-likes-${authenticationGeneration}`, onError: handleUnauthorized });
+  const recentExecutedRoutines = useInfiniteList({ enabled: enabled && activeRoutineTab === 'recentExecutions', fetchPage: fetchRecentExecutedRoutinesPage, key: `home-recent-executions-${authenticationGeneration}`, onError: handleUnauthorized, preserveWhenDisabled: true });
+  const mostExecutedRoutines = useInfiniteList({ enabled: enabled && activeRoutineTab === 'mostExecuted', fetchPage: fetchMostExecutedRoutinesPage, key: `home-most-executed-${authenticationGeneration}`, onError: handleUnauthorized, preserveWhenDisabled: true });
   const histories = useInfiniteList({ enabled, fetchPage: fetchExecutionHistoryPage, key: `home-execution-histories-${authenticationGeneration}`, observerRoot: historyScrollRoot, onError: handleUnauthorized });
 
   useEffect(() => {
@@ -73,23 +107,38 @@ export function HomePage({ likeService = routineLikeService, service = accountSe
   const [likeAnimations, setLikeAnimations] = useState<ReadonlyMap<string, 'like' | 'unlike'>>(() => new Map());
   const [likeError, setLikeError] = useState(false);
 
-  async function toggleLike(postIdentifier: string) {
-    const routine = likes.items.find((item) => item.id === postIdentifier);
-    if (routine === undefined) return;
+  useEffect(() => {
+    likeOverridesRef.current.clear();
+  }, [authenticationGeneration]);
+
+  function updateRoutineItems(update: (items: AccountRoutine[]) => AccountRoutine[]) {
+    likes.setItems((items) => update(items) as typeof items);
+    recentExecutedRoutines.setItems(update);
+    mostExecutedRoutines.setItems(update);
+  }
+
+  async function toggleLike(tab: HomeRoutineTab, postIdentifier: string) {
+    const routine = (tab === 'likes' ? likes.items : tab === 'recentExecutions' ? recentExecutedRoutines.items : mostExecutedRoutines.items).find((item) => item.id === postIdentifier);
+    if (routine === undefined || routine.liked === null || routine.likes === null) return;
     const requestGeneration = authenticationGeneration;
 
     const type = routine.liked ? 'unlike' : 'like';
+    const previousLikeOverride = likeOverridesRef.current.get(postIdentifier);
+    const nextLikeOverride = { liked: !routine.liked, likes: routine.likes + (routine.liked ? -1 : 1) };
+    likeOverridesRef.current.set(postIdentifier, nextLikeOverride);
     setLikingPostIdentifiers((current) => new Set(current).add(postIdentifier));
     setLikeAnimations((current) => new Map(current).set(postIdentifier, type));
     setLikeError(false);
-    likes.setItems((current) => current.map((item) => item.id === postIdentifier ? { ...item, liked: !routine.liked, likes: item.likes + (routine.liked ? -1 : 1) } : item));
+    updateRoutineItems((current) => current.map((item) => item.id === postIdentifier && item.liked !== null && item.likes !== null ? { ...item, ...nextLikeOverride } : item));
 
     try {
       if (routine.liked) await likeService.remove(postIdentifier);
       else await likeService.create(postIdentifier);
     } catch (error) {
       if (getAuthenticationGeneration() === requestGeneration) {
-        likes.setItems((current) => current.map((item) => item.id === postIdentifier ? routine : item));
+        if (previousLikeOverride === undefined) likeOverridesRef.current.delete(postIdentifier);
+        else likeOverridesRef.current.set(postIdentifier, previousLikeOverride);
+        updateRoutineItems((current) => current.map((item) => item.id === postIdentifier ? routine : item));
         if (error instanceof RoutineLikeUnauthorizedError) {
           clearAuthenticated();
           navigate('/login', { replace: true });
@@ -113,6 +162,27 @@ export function HomePage({ likeService = routineLikeService, service = accountSe
     }
   }
 
+  function renderRoutineList(tab: HomeRoutineTab, routines: ReturnType<typeof useInfiniteList<AccountRoutine>>) {
+    const labels = tab === 'likes'
+      ? { empty: messages.account.likesEmpty, error: messages.account.likesError, loading: messages.account.likesLoading, title: messages.home.likedRoutines }
+      : tab === 'recentExecutions'
+        ? { empty: messages.home.recentExecutedRoutinesEmpty, error: messages.home.recentExecutedRoutinesError, loading: messages.home.recentExecutedRoutinesLoading, title: messages.home.recentExecutedRoutines }
+        : { empty: messages.home.mostExecutedRoutinesEmpty, error: messages.home.mostExecutedRoutinesError, loading: messages.home.mostExecutedRoutinesLoading, title: messages.home.mostExecutedRoutines };
+
+    return <>
+      {routines.isInitialLoading && <p className="home-page__state">{labels.loading}</p>}
+      {!routines.isInitialLoading && routines.error && <StateError message={labels.error} retry={routines.retry} />}
+      {!routines.isInitialLoading && !routines.error && routines.items.length === 0 && <p className="home-page__state">{labels.empty}</p>}
+      {!routines.isInitialLoading && routines.items.length > 0 && <>
+        {likeError && <p className="home-page__state home-page__state--error">{messages.routineFeed.likeError}</p>}
+        <div aria-label={labels.title} className="home-page__likes-scroll routine-feed-card-scope">
+          {routines.items.map((routine) => <RoutineCard isLiking={routine.id !== null && likingPostIdentifiers.has(routine.id)} key={routine.id ?? routine.routineId} likeAnimation={routine.id === null ? null : likeAnimations.get(routine.id) ?? null} myExecutionCount={tab === 'likes' ? undefined : routine.myExecutionCount} onLike={(postIdentifier) => toggleLike(tab, postIdentifier)} routine={routine} />)}
+          <div aria-label={messages.home.loadMore} className="home-page__horizontal-sentinel" ref={routines.sentinelRef} />
+        </div>
+      </>}
+    </>;
+  }
+
   if (authenticationStatus === 'loading') return <p className="home-page__state" role="status">{messages.home.loading}</p>;
   if (authenticationStatus === 'unauthenticated') {
     return <main className="home-page home-page--guest"><header className="home-page__header"><AppBrandHeader /></header><div className="home-page__content"><section className="home-page__guest"><h1>{messages.home.guestTitle}</h1><Link className="home-page__login" to="/login">{messages.auth.login}</Link></section></div></main>;
@@ -126,17 +196,13 @@ export function HomePage({ likeService = routineLikeService, service = accountSe
       <div className="home-page__content">
         {displayedProfile !== null && <header className="home-page__profile"><AccountAvatar className="home-page__profile-avatar" iconImageUrl={displayedProfile.iconImageUrl ?? null} initial={displayedProfile.initial} /><div className="home-page__profile-copy"><div className="home-page__profile-name-row"><span className="home-page__profile-name">{displayedProfile.name}</span>{displayedProfile.level !== undefined && <span className="account-profile__level">{messages.account.level} {displayedProfile.level}</span>}</div>{displayedProfile.bio !== null && displayedProfile.bio !== '' && <span className="home-page__profile-bio">{displayedProfile.bio}</span>}</div></header>}
         <section aria-labelledby="home-liked-routines-title" className="home-page__section">
-          <h1 id="home-liked-routines-title">{messages.home.likedRoutines}</h1>
-          {likes.isInitialLoading && <p className="home-page__state">{messages.account.likesLoading}</p>}
-          {!likes.isInitialLoading && likes.error && <StateError message={messages.account.likesError} retry={likes.retry} />}
-          {!likes.isInitialLoading && !likes.error && likes.items.length === 0 && <p className="home-page__state">{messages.account.likesEmpty}</p>}
-          {!likes.isInitialLoading && likes.items.length > 0 && <>
-            {likeError && <p className="home-page__state home-page__state--error">{messages.routineFeed.likeError}</p>}
-            <div aria-label={messages.home.likedRoutines} className="home-page__likes-scroll routine-feed-card-scope">
-              {likes.items.map((routine) => <RoutineCard isLiking={likingPostIdentifiers.has(routine.id)} key={routine.id} likeAnimation={likeAnimations.get(routine.id) ?? null} onLike={toggleLike} routine={routine} />)}
-              <div aria-label={messages.home.loadMore} className="home-page__horizontal-sentinel" ref={likes.sentinelRef} />
-            </div>
-          </>}
+          <h1 id="home-liked-routines-title">{messages.home.routineTitle}</h1>
+          <Tabs aria-label={messages.home.routineTabsAriaLabel} className="home-page__routine-tabs routine-feed-tabs" onChange={(_, value: HomeRoutineTab) => setActiveRoutineTab(value)} value={activeRoutineTab}>
+            {homeRoutineTabs.map((tab) => <Tab key={tab.value} label={tab.label} value={tab.value} />)}
+          </Tabs>
+          {activeRoutineTab === 'likes' && renderRoutineList('likes', likes as ReturnType<typeof useInfiniteList<AccountRoutine>>)}
+          {activeRoutineTab === 'recentExecutions' && renderRoutineList('recentExecutions', recentExecutedRoutines)}
+          {activeRoutineTab === 'mostExecuted' && renderRoutineList('mostExecuted', mostExecutedRoutines)}
         </section>
         <section aria-labelledby="home-execution-history-title" className="home-page__section">
           <h2 id="home-execution-history-title">{messages.home.executionHistory}</h2>

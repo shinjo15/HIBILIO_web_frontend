@@ -17,12 +17,13 @@ export type RoutineCardDisplay = Omit<Routine, 'createdAt' | 'id' | 'liked' | 'l
 type RoutineCardProps<T extends RoutineCardDisplay> = {
   likeAnimation?: 'like' | 'unlike' | null;
   isLiking?: boolean;
+  myExecutionCount?: number;
   onLike?: (postIdentifier: string) => void;
   onReport?: (routine: T) => void;
   routine: T;
 };
 
-export function RoutineCard<T extends RoutineCardDisplay>({ isLiking = false, likeAnimation = null, onLike, onReport, routine }: RoutineCardProps<T>) {
+export function RoutineCard<T extends RoutineCardDisplay>({ isLiking = false, likeAnimation = null, myExecutionCount, onLike, onReport, routine }: RoutineCardProps<T>) {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const avatarClasses: Record<string, string> = {
     H: 'routine-card__avatar--h',
@@ -90,13 +91,14 @@ export function RoutineCard<T extends RoutineCardDisplay>({ isLiking = false, li
             {routine.steps.length > 3 && <Typography className="routine-card__more-steps">{messages.routineFeed.moreSteps.replace('{count}', String(routine.steps.length - 3))}</Typography>}
           </Stack>
 
-          <Stack className="routine-card__actions">
+          <Stack className={`routine-card__actions${myExecutionCount !== undefined ? ' routine-card__actions--with-my-execution-count' : ''}`}>
             {hasPostControls && <button aria-label={routine.liked ? messages.routineFeed.unlike : messages.routineFeed.like} className={likeClass} disabled={isLiking || onLike === undefined} onClick={(event) => { event.stopPropagation(); onLike?.(postIdentifier); }} type="button">
               <HeartIcon filled={routine.liked === true} />
               <Typography component="span" className="routine-card__action-value">{routine.likes}</Typography>
             </button>}
             <ActionItem icon={<RunIcon />} value={routine.executions} />
             <ActionItem icon={<ShuffleIcon />} value={routine.customizations} />
+            {myExecutionCount !== undefined && <Box aria-label={messages.home.myExecutionCountAriaLabel.replace('{count}', String(myExecutionCount))} className="routine-card__my-execution-count"><Typography component="span">{messages.home.myExecutionCount.replace('{count}', String(myExecutionCount))}</Typography></Box>}
           </Stack>
       </Box>
       <Menu anchorEl={menuAnchor} id={`routine-report-menu-${postIdentifier}`} onClose={() => setMenuAnchor(null)} open={menuAnchor !== null}><MenuItem onClick={(event) => { event.stopPropagation(); setMenuAnchor(null); onReport?.(routine); }}>{messages.report.postMenuReport}</MenuItem></Menu>
