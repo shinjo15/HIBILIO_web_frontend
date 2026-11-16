@@ -9,9 +9,12 @@ import type { AccountExecutionSummary } from '../../account/domain/account';
 import type { Routine } from '../../routineFeed/domain/routine';
 import { AccountUnauthorizedError, type AccountService } from '../../account/services/accountService';
 import { HomePage } from './HomePage';
+import { resetRoutineExecutionDraftListForTesting } from '../../routineExecution/services/routineExecutionDraftList';
+import { RoutineExecutionError, type RoutineExecutionService } from '../../routineExecution/services/routineExecutionService';
 
 afterEach(() => {
   cleanup();
+  resetRoutineExecutionDraftListForTesting();
   resetAuthenticationForTesting();
   vi.restoreAllMocks();
   vi.useRealTimers();
@@ -260,7 +263,7 @@ describe('HomePage', () => {
       .mockResolvedValueOnce(new Response(JSON.stringify(profileResponse)));
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<MemoryRouter><HomePage /></MemoryRouter>);
+    render(<MemoryRouter><HomePage showExecutionDrafts={false} /></MemoryRouter>);
 
     expect(await screen.findByRole('heading', { name: 'いいねしたルーティン' })).toBeInTheDocument();
     await waitFor(() => expect(document.querySelector('.home-page__likes-scroll')).toHaveClass('routine-feed-card-scope'));
@@ -276,7 +279,7 @@ describe('HomePage', () => {
     clearAuthenticated();
     const user = userEvent.setup();
 
-    render(<MemoryRouter><HomePage /><LocationProbe /></MemoryRouter>);
+    render(<MemoryRouter><HomePage showExecutionDrafts={false} /><LocationProbe /></MemoryRouter>);
 
     expect(screen.getByRole('heading', { name: /今日のルーティンを\s*続けよう/ })).toBeInTheDocument();
     expect(screen.getByText('ログインして、あなたのHomeを開きます。')).toBeInTheDocument();
@@ -345,7 +348,7 @@ describe('HomePage', () => {
       .mockResolvedValueOnce(new Response(JSON.stringify(profileResponse)));
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<MemoryRouter><HomePage /></MemoryRouter>);
+    render(<MemoryRouter><HomePage showExecutionDrafts={false} /></MemoryRouter>);
 
     expect(await screen.findByText('いいねしたルーティンはまだありません')).toBeInTheDocument();
     expect(await screen.findByText('実行履歴を読み込めませんでした。時間をおいて再試行してください。')).toBeInTheDocument();
@@ -981,12 +984,165 @@ describe('HomePage', () => {
       })))
       .mockResolvedValueOnce(new Response(JSON.stringify(profileResponse))));
 
-    render(<MemoryRouter><HomePage /><LocationProbe /></MemoryRouter>);
+    render(<MemoryRouter><HomePage showExecutionDrafts={false} /><LocationProbe /></MemoryRouter>);
 
     expect(await screen.findByRole('link', { name: '実行するルーティン' })).toHaveAttribute('href', '/routines/routine-1');
     expect(screen.queryByRole('link', { name: '実行する' })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /^確認する履歴/ }));
     expect(screen.getByText('/routines/routine-1/executions/execution-1')).toBeInTheDocument();
+  });
+
+  it('本人の実行中ドラフトを透明なHome section内の個別カードに並べ、空のroutine_nameは名称未設定として表示しても他のドラフトを再開できる', async () => {
+    markAuthenticated();
+    const user = userEvent.setup();
+    const fetchMock = vi.fn((path: string) => {
+      if (path === '/api/my/routine-execution-drafts') return Promise.resolve(new Response(JSON.stringify({
+        items: [
+          { executed_at: '2026-10-01T00:00:00.000000+00:00', executed_routine_action_identifiers: [], routine_execution_identifier: '50000000-0000-4000-8000-000000000001', routine_execution_memo: null, routine_identifier: '30000000-0000-4000-8000-000000000001', routine_name: '朝のストレッチ' },
+          { executed_at: '2026-10-02T00:00:00.000000+00:00', executed_routine_action_identifiers: [], routine_execution_identifier: '50000000-0000-4000-8000-000000000002', routine_execution_memo: null, routine_identifier: '30000000-0000-4000-8000-000000000002', routine_name: '夜の読書' },
+          { executed_at: '2026-10-03T00:00:00.000000+00:00', executed_routine_action_identifiers: [], routine_execution_identifier: '50000000-0000-4000-8000-000000000003', routine_execution_memo: null, routine_identifier: '30000000-0000-4000-8000-000000000003', routine_name: '' },
+        ], total: 3,
+      }), { status: 200 }));
+      if (path === '/api/my/account') return Promise.resolve(new Response(JSON.stringify(profileResponse)));
+      return Promise.resolve(new Response(JSON.stringify({ items: [], total: 0 })));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MemoryRouter><HomePage /><LocationProbe /></MemoryRouter>);
+
+    expect(await screen.findByRole('heading', { name: '実行中のルーティンがあります' })).toBeInTheDocument();
+    expect(screen.getByText('朝のストレッチ')).toBeInTheDocument();
+    expect(screen.getByText('夜の読書')).toBeInTheDocument();
+    const section = screen.getByRole('heading', { name: '実行中のルーティンがあります' }).closest('section');
+    expect(section).toHaveClass('home-page__section', 'home-page__execution-drafts');
+    const draftList = section?.querySelector('.home-page__execution-draft-list');
+    expect(draftList).toHaveAttribute('role', 'list');
+    expect(draftList?.querySelectorAll(':scope > [role="listitem"]')).toHaveLength(3);
+    expect(draftList?.querySelectorAll(':scope > [role="listitem"] > .home-page__execution-draft')).toHaveLength(3);
+    expect(screen.getByRole('link', { name: '名称未設定のルーティンを再開する' })).toHaveAttribute('href', '/routines/30000000-0000-4000-8000-000000000003/execute');
+    await user.click(screen.getByRole('link', { name: '朝のストレッチを再開する' }));
+    expect(screen.getByText('/routines/30000000-0000-4000-8000-000000000001/execute')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith('/api/my/routine-execution-drafts', { credentials: 'include', method: 'GET' });
+  });
+
+  it('実行中ルーティンsectionはカード背景にせず既存の区切り線を使い、各再開リンクだけを既存トークンのカードとして整える', () => {
+    const homeCss = readFileSync('src/features/home/pages/home.css', 'utf8');
+    const sectionRule = homeCss.match(/\.home-page__execution-drafts\s*\{([^}]*)\}/)?.[1];
+    const draftRule = homeCss.match(/\.home-page__execution-draft\s*\{([^}]*)\}/)?.[1];
+
+    expect(sectionRule).toMatch(/border-bottom:\s*1px solid var\(--hibilio-color-border\);/);
+    expect(sectionRule).toMatch(/padding-bottom:\s*24px;/);
+    expect(sectionRule).not.toMatch(/background(?:-color)?:/);
+    expect(sectionRule).not.toMatch(/border-radius:/);
+    expect(draftRule).toMatch(/background-color:\s*var\(--hibilio-color-card\);/);
+    expect(draftRule).toMatch(/border:\s*1px solid var\(--hibilio-color-border\);/);
+    expect(draftRule).toMatch(/border-radius:\s*12px;/);
+    expect(draftRule).toMatch(/padding:\s*12px 16px;/);
+  });
+
+  it('削除モードではチェックした実行中ルーティンだけを1件ずつ削除し、成功分を反映して失敗分を再試行できる', async () => {
+    markAuthenticated();
+    const user = userEvent.setup();
+    let deletionCount = 0;
+    const fetchMock = vi.fn((path: string, init?: RequestInit) => {
+      if (path === '/api/my/routine-execution-drafts') return Promise.resolve(new Response(JSON.stringify({
+        items: deletionCount === 0
+          ? [
+            { executed_at: '2026-10-01T00:00:00.000000+00:00', executed_routine_action_identifiers: [], routine_execution_identifier: '50000000-0000-4000-8000-000000000001', routine_execution_memo: null, routine_identifier: '30000000-0000-4000-8000-000000000001', routine_name: '朝のストレッチ' },
+            { executed_at: '2026-10-02T00:00:00.000000+00:00', executed_routine_action_identifiers: [], routine_execution_identifier: '50000000-0000-4000-8000-000000000002', routine_execution_memo: null, routine_identifier: '30000000-0000-4000-8000-000000000002', routine_name: '夜の読書' },
+          ]
+          : [{ executed_at: '2026-10-02T00:00:00.000000+00:00', executed_routine_action_identifiers: [], routine_execution_identifier: '50000000-0000-4000-8000-000000000002', routine_execution_memo: null, routine_identifier: '30000000-0000-4000-8000-000000000002', routine_name: '夜の読書' }],
+        total: deletionCount === 0 ? 2 : 1,
+      }), { status: 200 }));
+      if (path === '/api/csrf-token') return Promise.resolve(new Response(JSON.stringify({ csrf_token: 'csrf-token' }), { status: 200 }));
+      if (init?.method === 'DELETE') {
+        deletionCount += 1;
+        return Promise.resolve(new Response(null, { status: deletionCount === 1 ? 204 : 500 }));
+      }
+      if (path === '/api/my/account') return Promise.resolve(new Response(JSON.stringify(profileResponse)));
+      return Promise.resolve(new Response(JSON.stringify({ items: [], total: 0 })));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MemoryRouter><HomePage /><LocationProbe /></MemoryRouter>);
+
+    await screen.findByRole('link', { name: '朝のストレッチを再開する' });
+    await user.click(screen.getByRole('button', { name: '削除する' }));
+    const morning = screen.getByRole('checkbox', { name: '朝のストレッチを削除対象にする' });
+    const night = screen.getByRole('checkbox', { name: '夜の読書を削除対象にする' });
+    await user.click(morning);
+    await user.click(night);
+    expect(screen.getByText('/')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '選択した2件を削除する' })).toBeEnabled();
+
+    await user.click(screen.getByRole('button', { name: '選択した2件を削除する' }));
+
+    expect(await screen.findByText('1件を削除できませんでした。再試行してください。')).toBeInTheDocument();
+    expect(screen.queryByText('朝のストレッチ')).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: '夜の読書を削除対象にする' })).toBeChecked();
+    expect(fetchMock).toHaveBeenCalledWith('/api/routines/30000000-0000-4000-8000-000000000001/execution-draft', expect.objectContaining({ method: 'DELETE' }));
+    expect(fetchMock).toHaveBeenCalledWith('/api/routines/30000000-0000-4000-8000-000000000002/execution-draft', expect.objectContaining({ method: 'DELETE' }));
+  });
+
+  it('削除中に認証世代が切り替わったら削除UIをリセットし、旧キューの次のDELETEを送らない', async () => {
+    markAuthenticated();
+    const user = userEvent.setup();
+    const firstDelete = deferred<void>();
+    const deleteDraft = vi.fn().mockReturnValueOnce(firstDelete.promise).mockResolvedValue(undefined);
+    vi.stubGlobal('fetch', draftListFetch([
+      { id: '50000000-0000-4000-8000-000000000001', name: '朝のストレッチ', routineId: '30000000-0000-4000-8000-000000000001' },
+      { id: '50000000-0000-4000-8000-000000000002', name: '夜の読書', routineId: '30000000-0000-4000-8000-000000000002' },
+    ]));
+
+    render(<MemoryRouter><HomePage executionService={{ delete: deleteDraft } as Pick<RoutineExecutionService, 'delete'>} service={createService({})} showExecutionDrafts /><LocationProbe /></MemoryRouter>);
+
+    await selectExecutionDraftsForDeletion(user, ['朝のストレッチ', '夜の読書']);
+    await user.click(screen.getByRole('button', { name: '選択した2件を削除する' }));
+    await waitFor(() => expect(deleteDraft).toHaveBeenCalledTimes(1));
+    markAuthenticated();
+    firstDelete.resolve();
+
+    expect(await screen.findByRole('button', { name: '削除する' })).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: '朝のストレッチを削除対象にする' })).not.toBeInTheDocument();
+    expect(deleteDraft).toHaveBeenCalledTimes(1);
+  });
+
+  it('画面離脱後は未送信のDELETEを中止し、送信済みDELETEの完了後に共有ドラフト一覧を再取得する', async () => {
+    markAuthenticated();
+    const user = userEvent.setup();
+    const firstDelete = deferred<void>();
+    const deleteDraft = vi.fn().mockReturnValueOnce(firstDelete.promise).mockResolvedValue(undefined);
+    const fetchMock = draftListFetch([
+      { id: '50000000-0000-4000-8000-000000000001', name: '朝のストレッチ', routineId: '30000000-0000-4000-8000-000000000001' },
+      { id: '50000000-0000-4000-8000-000000000002', name: '夜の読書', routineId: '30000000-0000-4000-8000-000000000002' },
+    ]);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const page = render(<MemoryRouter><HomePage executionService={{ delete: deleteDraft } as Pick<RoutineExecutionService, 'delete'>} service={createService({})} showExecutionDrafts /></MemoryRouter>);
+    await selectExecutionDraftsForDeletion(user, ['朝のストレッチ', '夜の読書']);
+    await user.click(screen.getByRole('button', { name: '選択した2件を削除する' }));
+    await waitFor(() => expect(deleteDraft).toHaveBeenCalledTimes(1));
+    page.unmount();
+    firstDelete.resolve();
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(deleteDraft).toHaveBeenCalledTimes(1);
+  });
+
+  it('DELETEが404なら成功扱いにせず、一覧を再取得して失敗を明示する', async () => {
+    markAuthenticated();
+    const user = userEvent.setup();
+    const deleteDraft = vi.fn().mockRejectedValue(new RoutineExecutionError('missing', 404));
+    const fetchMock = draftListFetch([{ id: '50000000-0000-4000-8000-000000000001', name: '朝のストレッチ', routineId: '30000000-0000-4000-8000-000000000001' }]);
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MemoryRouter><HomePage executionService={{ delete: deleteDraft } as Pick<RoutineExecutionService, 'delete'>} service={createService({})} showExecutionDrafts /></MemoryRouter>);
+    await selectExecutionDraftsForDeletion(user, ['朝のストレッチ']);
+    await user.click(screen.getByRole('button', { name: '選択した1件を削除する' }));
+
+    expect(await screen.findByText('選択したルーティンを削除できませんでした。再試行してください。')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: '朝のストレッチを削除対象にする' })).toBeChecked();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
   });
 });
 
@@ -1052,6 +1208,26 @@ function deferred<T>() {
     reject = nextReject;
   });
   return { promise, reject, resolve };
+}
+
+function draftListFetch(items: Array<{ id: string; name: string; routineId: string }>) {
+  return vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({
+    items: items.map((item) => ({
+      executed_at: '2026-10-01T00:00:00.000000+00:00',
+      executed_routine_action_identifiers: [],
+      routine_execution_identifier: item.id,
+      routine_execution_memo: null,
+      routine_identifier: item.routineId,
+      routine_name: item.name,
+    })),
+    total: items.length,
+  }), { status: 200 })));
+}
+
+async function selectExecutionDraftsForDeletion(user: ReturnType<typeof userEvent.setup>, names: string[]) {
+  await screen.findByRole('link', { name: `${names[0]}を再開する` });
+  await user.click(screen.getByRole('button', { name: '削除する' }));
+  for (const name of names) await user.click(screen.getByRole('checkbox', { name: `${name}を削除対象にする` }));
 }
 
 function createService(overrides: Partial<AccountService>): AccountService {

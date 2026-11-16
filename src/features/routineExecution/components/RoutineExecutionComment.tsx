@@ -12,7 +12,8 @@ export function RoutineExecutionComment({ memo, onChange, readOnly = false }: Ro
       <label htmlFor="routine-execution-comment-input">{messages.routineExecution.commentLabel}</label>
       <input
         id="routine-execution-comment-input"
-        onChange={(event) => onChange(event.target.value)}
+        maxLength={62}
+        onChange={(event) => onChange(Array.from(event.target.value).slice(0, 31).join(''))}
         placeholder={messages.routineExecution.commentPlaceholder}
         readOnly={readOnly}
         type="text"

@@ -38,7 +38,7 @@ export function RoutineExecutionPage({ service = routineExecutionService }: Rout
   }
 
   if (execution.loadStatus === 'error') {
-    return <ExecutionState message={messages.routineExecution.error} />;
+    return <ExecutionState message={messages.routineExecution.error} onRetry={execution.retryLoad} />;
   }
 
   if (execution.loadStatus === 'notFound' || !execution.routine) {
@@ -70,15 +70,25 @@ export function RoutineExecutionPage({ service = routineExecutionService }: Rout
       />
       <main className="routine-execution-scroll">
         <p className="routine-execution-instruction">{messages.routineExecution.readyDescription}</p>
-        <RoutineExecutionStepList checked={execution.checked} onToggle={execution.toggleStep} steps={execution.routine.steps} />
-        <RoutineExecutionComment memo={execution.memo} onChange={execution.updateMemo} />
-        {execution.errorMessage && <p aria-live="polite" className="routine-execution-error" role="alert">{execution.errorMessage}</p>}
+        <RoutineExecutionStepList checked={execution.checked} onToggle={execution.toggleStep} readOnly={execution.isDraftMissing || execution.isMutationBlocked} steps={execution.routine.steps} />
+        <RoutineExecutionComment memo={execution.memo} onChange={execution.updateMemo} readOnly={execution.isDraftMissing || execution.isMutationBlocked} />
+        {execution.isSaving && <p aria-live="polite" className="routine-execution-instruction">{messages.routineExecution.saving}</p>}
+        {execution.errorMessage && (
+          <div className="routine-execution-error" role="alert">
+            <p>{execution.errorMessage}</p>
+            {execution.failedMutation && <button onClick={execution.failedMutation} type="button">{messages.routineExecution.retry}</button>}
+            {execution.errorMessage === messages.routineExecution.completionUncertain && <button onClick={() => navigate('/account')} type="button">{messages.routineExecution.checkHistory}</button>}
+          </div>
+        )}
       </main>
       <div className="routine-execution-action-bar">
+        <button className="routine-execution-pause-action" onClick={goBack} type="button">
+          {messages.routineExecution.pause}
+        </button>
         <button
           className="routine-execution-main-action"
-          disabled={achieved === 0 || execution.isSubmitting}
-          onClick={() => void execution.create()}
+          disabled={achieved === 0 || execution.isDraftMissing || execution.isMutationBlocked || execution.isSubmitting}
+          onClick={execution.complete}
           type="button"
         >
           {execution.isSubmitting ? messages.routineExecution.completing : messages.routineExecution.finish}
@@ -88,10 +98,11 @@ export function RoutineExecutionPage({ service = routineExecutionService }: Rout
   );
 }
 
-function ExecutionState({ message }: { message: string }) {
+function ExecutionState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <section className="routine-execution-page routine-execution-page--state">
       <p className="routine-execution-state">{message}</p>
+      {onRetry && <button onClick={onRetry} type="button">{messages.routineExecution.retry}</button>}
     </section>
   );
 }
