@@ -1,7 +1,10 @@
 import { z } from 'zod';
 import messages from '../../../shared/message/message.json';
 
-const memoSchema = z.string().trim().max(31, messages.routineExecution.validation.memoTooLong);
+export const routineExecutionMemoSchema = z.string().refine(
+  (value) => Array.from(value).length <= 31,
+  messages.routineExecution.validation.memoTooLong,
+);
 
 export const routineExecutionStepDtoSchema = z.object({
   action: z.string().min(1),
@@ -17,13 +20,16 @@ export const routineExecutionDtoSchema = z.object({
 
 export const routineExecutionFormSchema = z.object({
   executedRoutineActionIdentifiers: z.array(z.string().uuid()),
-  memo: memoSchema,
+  memo: routineExecutionMemoSchema,
   routineIdentifier: z.string().uuid(),
 });
 
 export const routineExecutionRequestSchema = z.object({
   executed_routine_action_identifiers: z.array(z.string().uuid()),
-  routine_execution_memo: z.string().min(1).max(31).optional(),
+  routine_execution_memo: z.string().min(1).refine(
+    (value) => Array.from(value).length <= 31,
+    messages.routineExecution.validation.memoTooLong,
+  ).optional(),
   routine_identifier: z.string().uuid(),
 });
 

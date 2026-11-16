@@ -6,6 +6,9 @@ import { accountService, AccountUnauthorizedError, type AccountService } from '.
 import { clearAuthenticated, getAuthenticationGeneration, getAuthenticationStatus, restoreAuthentication, subscribeToAuthentication } from '../../auth/services/authSession';
 import { RoutineCard } from '../../routineFeed/components/RoutineCard';
 import { routineLikeService, RoutineLikeUnauthorizedError, type RoutineLikeService } from '../../routineFeed/services/routineLikeService';
+import { useRoutineExecutionDraftList } from '../../routineExecution/hooks/useRoutineExecutionDraftList';
+import { refreshRoutineExecutionDraftList, removeRoutineExecutionDraft } from '../../routineExecution/services/routineExecutionDraftList';
+import { RoutineExecutionError, routineExecutionService, RoutineExecutionSessionChangedError, type RoutineExecutionService } from '../../routineExecution/services/routineExecutionService';
 import { ExecutionHistoryCard } from '../../../shared/components/ExecutionHistoryCard';
 import type { AccountExecutionSummary, AccountRoutine } from '../../account/domain/account';
 import { AccountAvatar } from '../../../shared/components/AccountImage';
@@ -18,7 +21,7 @@ import '../../routineFeed/routineFeed.css';
 import '../../routineFeed/routineFeedTypography.css';
 import './home.css';
 
-type HomePageProps = { likeService?: RoutineLikeService; service?: AccountService };
+type HomePageProps = { executionService?: Pick<RoutineExecutionService, 'delete'>; likeService?: RoutineLikeService; service?: AccountService; showExecutionDrafts?: boolean };
 type HomeProfile = Awaited<ReturnType<AccountService['getProfile']>>;
 type HomeRoutineTab = 'likes' | 'recentExecutions' | 'mostExecuted';
 
@@ -28,17 +31,33 @@ const homeRoutineTabs: Array<{ label: string; value: HomeRoutineTab }> = [
   { label: messages.home.mostExecutedRoutines, value: 'mostExecuted' },
 ];
 
-export function HomePage({ likeService = routineLikeService, service = accountService }: HomePageProps) {
+export function HomePage({ executionService = routineExecutionService, likeService = routineLikeService, service = accountService, showExecutionDrafts = service === accountService }: HomePageProps) {
   const navigate = useNavigate();
   const authenticationStatus = useSyncExternalStore(subscribeToAuthentication, getAuthenticationStatus, getAuthenticationStatus);
   const authenticationGeneration = useSyncExternalStore(subscribeToAuthentication, getAuthenticationGeneration, getAuthenticationGeneration);
+  const executionDrafts = useRoutineExecutionDraftList(showExecutionDrafts);
   const isDesktop = useDesktopLayout();
   const [profile, setProfile] = useState<{ generation: number; value: HomeProfile } | null>(null);
   const likeOverridesRef = useRef(new Map<string, { liked: boolean; likes: number }>());
+  const [isDeletingExecutionDraftsState, setIsDeletingExecutionDrafts] = useState(false);
+  const [isExecutionDraftDeleteModeState, setIsExecutionDraftDeleteMode] = useState(false);
+  const [selectedExecutionDraftIdsState, setSelectedExecutionDraftIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [executionDraftDeleteErrorState, setExecutionDraftDeleteError] = useState<'all' | 'partial' | null>(null);
+  const [executionDraftDeletionGeneration, setExecutionDraftDeletionGeneration] = useState(authenticationGeneration);
+  const executionDraftDeletionRun = useRef(0);
+  const isCurrentExecutionDraftDeletion = executionDraftDeletionGeneration === authenticationGeneration;
+  const isDeletingExecutionDrafts = isCurrentExecutionDraftDeletion && isDeletingExecutionDraftsState;
+  const isExecutionDraftDeleteMode = isCurrentExecutionDraftDeletion && isExecutionDraftDeleteModeState;
+  const selectedExecutionDraftIds = isCurrentExecutionDraftDeletion ? selectedExecutionDraftIdsState : new Set<string>();
+  const executionDraftDeleteError = isCurrentExecutionDraftDeletion ? executionDraftDeleteErrorState : null;
 
   useEffect(() => {
     if (authenticationStatus === 'loading') void restoreAuthentication();
   }, [authenticationStatus]);
+
+  useEffect(() => () => {
+    executionDraftDeletionRun.current += 1;
+  }, []);
 
   const handleUnauthorized = useCallback((error: unknown) => {
     if (error instanceof AccountUnauthorizedError && getAuthenticationGeneration() === authenticationGeneration) {
@@ -115,6 +134,50 @@ export function HomePage({ likeService = routineLikeService, service = accountSe
     likes.setItems((items) => update(items) as typeof items);
     recentExecutedRoutines.setItems(update);
     mostExecutedRoutines.setItems(update);
+  }
+
+  async function deleteSelectedExecutionDrafts() {
+    const drafts = executionDrafts.items.filter((draft) => selectedExecutionDraftIds.has(draft.id));
+    if (drafts.length === 0 || isDeletingExecutionDrafts) return;
+
+    const requestGeneration = authenticationGeneration;
+    const deletionRun = executionDraftDeletionRun.current + 1;
+    executionDraftDeletionRun.current = deletionRun;
+    const isCurrentDeletion = () => executionDraftDeletionRun.current === deletionRun && getAuthenticationGeneration() === requestGeneration;
+    let failed = 0;
+    let sentDelete = false;
+    setExecutionDraftDeletionGeneration(requestGeneration);
+    setExecutionDraftDeleteError(null);
+    setIsDeletingExecutionDrafts(true);
+    for (const draft of drafts) {
+      if (!isCurrentDeletion()) break;
+      try {
+        sentDelete = true;
+        await executionService.delete(draft.routineId, requestGeneration);
+        if (!isCurrentDeletion()) break;
+        removeRoutineExecutionDraft(draft.routineId, requestGeneration);
+        setSelectedExecutionDraftIds((current) => {
+          const next = new Set(current);
+          next.delete(draft.id);
+          return next;
+        });
+      } catch (error) {
+        if (!isCurrentDeletion()) break;
+        failed += 1;
+        if (error instanceof RoutineExecutionError && error.status === 401) {
+          clearAuthenticated();
+          navigate('/login', { replace: true });
+          break;
+        }
+        if (error instanceof RoutineExecutionSessionChangedError) break;
+      }
+    }
+    if (sentDelete && getAuthenticationGeneration() === requestGeneration) void refreshRoutineExecutionDraftList();
+    if (isCurrentDeletion()) {
+      if (failed > 0) setExecutionDraftDeleteError(failed === drafts.length ? 'all' : 'partial');
+      else setIsExecutionDraftDeleteMode(false);
+      setIsDeletingExecutionDrafts(false);
+    }
   }
 
   async function toggleLike(tab: HomeRoutineTab, postIdentifier: string) {
@@ -195,6 +258,16 @@ export function HomePage({ likeService = routineLikeService, service = accountSe
       <header className="home-page__header"><AppBrandHeader /></header>
       <div className="home-page__content">
         {displayedProfile !== null && <header className="home-page__profile"><AccountAvatar className="home-page__profile-avatar" iconImageUrl={displayedProfile.iconImageUrl ?? null} initial={displayedProfile.initial} /><div className="home-page__profile-copy"><div className="home-page__profile-name-row"><span className="home-page__profile-name">{displayedProfile.name}</span>{displayedProfile.level !== undefined && <span className="account-profile__level">{messages.account.level} {displayedProfile.level}</span>}</div>{displayedProfile.bio !== null && displayedProfile.bio !== '' && <span className="home-page__profile-bio">{displayedProfile.bio}</span>}</div></header>}
+        {showExecutionDrafts && (executionDrafts.status === 'error' || executionDrafts.items.length > 0) && <section aria-labelledby="home-execution-drafts-title" className="home-page__section home-page__execution-drafts">
+          <div className="home-page__execution-drafts-heading"><h2 id="home-execution-drafts-title">{messages.home.executionDraftsTitle}</h2>{executionDrafts.status === 'known' && executionDrafts.items.length > 0 && !isExecutionDraftDeleteMode && <button className="home-page__execution-drafts-delete-toggle" onClick={() => { setExecutionDraftDeletionGeneration(authenticationGeneration); setExecutionDraftDeleteError(null); setIsExecutionDraftDeleteMode(true); }} type="button">{messages.home.executionDraftDelete}</button>}</div>
+          {executionDrafts.status === 'error' && <StateError message={messages.home.executionDraftsError} retry={() => { void refreshRoutineExecutionDraftList(); }} />}
+          {executionDraftDeleteError !== null && <p className="home-page__state home-page__state--error">{executionDraftDeleteError === 'all' ? messages.home.executionDraftDeleteError : messages.home.executionDraftDeletePartialError.replace('{count}', String(selectedExecutionDraftIds.size))}</p>}
+          {executionDrafts.status === 'known' && executionDrafts.items.length > 0 && <><div className="home-page__execution-draft-list" role="list">
+            {executionDrafts.items.map((draft) => <div key={draft.id} role="listitem">{isExecutionDraftDeleteMode
+              ? <label className="home-page__execution-draft home-page__execution-draft--select"><input aria-label={messages.home.executionDraftDeleteSelect.replace('{routineName}', draft.routineName)} checked={selectedExecutionDraftIds.has(draft.id)} disabled={isDeletingExecutionDrafts} onChange={() => setSelectedExecutionDraftIds((current) => { const next = new Set(current); if (next.has(draft.id)) next.delete(draft.id); else next.add(draft.id); return next; })} type="checkbox" /><span>{draft.routineName}</span></label>
+              : <Link aria-label={messages.home.resumeExecutionDraft.replace('{routineName}', draft.routineName)} className="home-page__execution-draft" to={`/routines/${draft.routineId}/execute`}><span>{draft.routineName}</span><span className="home-page__execution-draft-resume">{messages.home.resumeExecutionDraft.replace('{routineName}', '')}</span></Link>}</div>)}
+          </div>{isExecutionDraftDeleteMode && <div className="home-page__execution-draft-actions"><button disabled={isDeletingExecutionDrafts || selectedExecutionDraftIds.size === 0} onClick={() => { void deleteSelectedExecutionDrafts(); }} type="button">{isDeletingExecutionDrafts ? messages.home.executionDraftDeleting : messages.home.executionDraftDeleteSelected.replace('{count}', String(selectedExecutionDraftIds.size))}</button><button className="home-page__execution-draft-cancel" disabled={isDeletingExecutionDrafts} onClick={() => { setExecutionDraftDeletionGeneration(authenticationGeneration); setExecutionDraftDeleteError(null); setSelectedExecutionDraftIds(new Set()); setIsExecutionDraftDeleteMode(false); }} type="button">{messages.auth.cancel}</button></div>}</>}
+        </section>}
         <section aria-labelledby="home-liked-routines-title" className="home-page__section">
           <h1 id="home-liked-routines-title">{messages.home.routineTitle}</h1>
           <Tabs aria-label={messages.home.routineTabsAriaLabel} className="home-page__routine-tabs routine-feed-tabs" onChange={(_, value: HomeRoutineTab) => setActiveRoutineTab(value)} value={activeRoutineTab}>

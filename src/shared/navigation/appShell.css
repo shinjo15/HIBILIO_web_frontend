@@ -2,6 +2,16 @@
   font-size: 25px !important;
 }
 
+.hibilio-desktop-nav .hibilio-navigation-item--execution-drafts.MuiListItemButton-root,
+.hibilio-desktop-nav .hibilio-navigation-item--execution-drafts.MuiListItemButton-root.Mui-selected,
+.hibilio-desktop-nav .hibilio-navigation-item--execution-drafts.MuiListItemButton-root:hover,
+.hibilio-desktop-nav .hibilio-navigation-item--execution-drafts.MuiListItemButton-root.Mui-selected:hover,
+.hibilio-mobile-nav .hibilio-navigation-item--execution-drafts.MuiButtonBase-root,
+.hibilio-mobile-nav .hibilio-navigation-item--execution-drafts.MuiButtonBase-root:hover {
+  background-color: transparent !important;
+  color: var(--hibilio-color-primary) !important;
+}
+
 .hibilio-mobile-nav.MuiBox-root {
   align-items: center;
   background-color: var(--hibilio-color-card);

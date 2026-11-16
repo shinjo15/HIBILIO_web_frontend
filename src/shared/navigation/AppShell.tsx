@@ -21,6 +21,7 @@ import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, 
 import { Link as RouterLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { clearAuthenticated, getAuthenticationGeneration, getAuthenticationStatus, restoreAuthentication, subscribeToAuthentication } from '../../features/auth/services/authSession';
 import { getUnreadNotificationCount, NotificationCountUnauthorizedError, unreadNotificationCountChangedEvent } from '../../features/notifications/services/unreadNotificationCount';
+import { useRoutineExecutionDraftList } from '../../features/routineExecution/hooks/useRoutineExecutionDraftList';
 import { HibilioMark } from '../brand/HibilioMark';
 import messages from '../message/message.json';
 import './appShell.css';
@@ -66,6 +67,10 @@ export function AppShell() {
     || /^\/routines\/[^/]+\/customize$/.test(location.pathname);
   const authenticationStatus = useSyncExternalStore(subscribeToAuthentication, getAuthenticationStatus, getAuthenticationStatus);
   const authenticationGeneration = useSyncExternalStore(subscribeToAuthentication, getAuthenticationGeneration, getAuthenticationGeneration);
+  const executionDrafts = useRoutineExecutionDraftList();
+  const executionDraftCount = executionDrafts.status === 'known' ? executionDrafts.items.length : 0;
+  const showExecutionDraftCount = executionDrafts.status === 'known' && executionDraftCount > 0;
+  const hasExecutionDrafts = showExecutionDraftCount;
   const [canSubmitRoutineCreate, setCanSubmitRoutineCreate] = useState(false);
   const unreadNotificationCount = useUnreadNotificationCount({
     authenticationGeneration,
@@ -120,8 +125,10 @@ export function AppShell() {
           </Box>
 
           <List aria-label={messages.navigation.ariaLabel} sx={{ p: 1.5 }}>
-            {navigationItems.map((item) => (
-              <ListItemButton
+            {navigationItems.map((item) => {
+              const navigationButton = <ListItemButton
+                aria-label={item.path === '/home' && showExecutionDraftCount ? messages.navigation.executionDrafts.replace('{count}', String(executionDraftCount)) : undefined}
+                className={item.path === '/home' && hasExecutionDrafts ? 'hibilio-navigation-item--execution-drafts' : undefined}
                 component={RouterLink}
                 key={item.path}
                 selected={activePath === item.path}
@@ -140,8 +147,12 @@ export function AppShell() {
               >
                 <ListItemIcon sx={{ color: 'inherit', minWidth: 28 }}>{item.icon}</ListItemIcon>
                 <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontSize: 14, fontWeight: 500 } } }} />
-              </ListItemButton>
-            ))}
+              </ListItemButton>;
+
+              return item.path === '/home'
+                ? <Badge anchorOrigin={{ horizontal: 'right', vertical: 'top' }} badgeContent={executionDraftCount} className="hibilio-draft-count-badge" color="primary" invisible={!showExecutionDraftCount} key={item.path} max={Number.MAX_SAFE_INTEGER} showZero sx={{ display: 'block' }}>{navigationButton}</Badge>
+                : navigationButton;
+            })}
           </List>
 
           <List sx={{ mt: 'auto', p: 1.5 }}>
@@ -175,10 +186,12 @@ export function AppShell() {
       <Box aria-label={messages.navigation.ariaLabel} className="hibilio-mobile-nav" component="nav">
         {navigationItems.slice(0, 2).map((item) => {
           const isSelected = activePath === item.path;
+          const draftCount = executionDraftCount;
           return (
             <ButtonBase
               aria-current={isSelected ? 'page' : undefined}
-              aria-label={item.label}
+              aria-label={item.path === '/home' && showExecutionDraftCount ? messages.navigation.executionDrafts.replace('{count}', String(draftCount)) : item.label}
+              className={item.path === '/home' && hasExecutionDrafts ? 'hibilio-navigation-item--execution-drafts' : undefined}
               key={item.path}
               onClick={() => navigate(protectedPath(item.path))}
               sx={{
@@ -187,7 +200,7 @@ export function AppShell() {
                 gap: 0.25, height: '100%', justifyContent: 'center', minWidth: 0, width: '100%',
               }}
             >
-              {item.icon}
+              {item.path === '/home' ? <Badge anchorOrigin={{ horizontal: 'right', vertical: 'top' }} badgeContent={draftCount} className="hibilio-draft-count-badge" color="primary" invisible={!showExecutionDraftCount} max={Number.MAX_SAFE_INTEGER} showZero>{item.icon}</Badge> : item.icon}
               {item.label}
             </ButtonBase>
           );

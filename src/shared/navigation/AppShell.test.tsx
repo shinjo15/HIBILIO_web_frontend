@@ -5,9 +5,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from './AppShell';
 import { clearAuthenticated, getAuthenticationStatus, markAuthenticated, resetAuthenticationForTesting } from '../../features/auth/services/authSession';
 import { RoutineCreatePage } from '../../features/routineCreate/pages/RoutineCreatePage';
+import { resetRoutineExecutionDraftListForTesting } from '../../features/routineExecution/services/routineExecutionDraftList';
 
 afterEach(() => {
   cleanup();
+  resetRoutineExecutionDraftListForTesting();
   vi.useRealTimers();
   vi.unstubAllGlobals();
   window.sessionStorage.clear();
@@ -38,6 +40,130 @@ describe('AppShell', () => {
 
     expect(screen.getAllByTestId('HomeOutlinedIcon')).toHaveLength(2);
     expect(screen.getAllByTestId('ViewAgendaOutlinedIcon')).toHaveLength(2);
+  });
+
+  it('認証済みで実行中ドラフトがある場合だけ、PCとモバイルのHomeナビに同じ件数badgeを表示する', async () => {
+    markAuthenticated();
+    const fetchMock = vi.fn((path: string) => {
+      if (path === '/api/my/routine-execution-drafts') return Promise.resolve(new Response(JSON.stringify({
+        items: [
+          { executed_at: '2026-10-01T00:00:00.000000+00:00', executed_routine_action_identifiers: [], routine_execution_identifier: '50000000-0000-4000-8000-000000000001', routine_execution_memo: null, routine_identifier: '30000000-0000-4000-8000-000000000001', routine_name: '朝のストレッチ' },
+          { executed_at: '2026-10-02T00:00:00.000000+00:00', executed_routine_action_identifiers: [], routine_execution_identifier: '50000000-0000-4000-8000-000000000002', routine_execution_memo: null, routine_identifier: '30000000-0000-4000-8000-000000000002', routine_name: '夜の読書' },
+        ], total: 2,
+      }), { status: 200 }));
+      return Promise.resolve(new Response(JSON.stringify({ unread_count: 0 })));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const router = createMemoryRouter([
+      { element: <AppShell />, children: [{ element: <h1>Home画面</h1>, path: 'home' }] },
+    ], { initialEntries: ['/home'] });
+
+    render(<RouterProvider router={router} />);
+
+    await waitFor(() => expect(document.querySelectorAll('.hibilio-draft-count-badge')).toHaveLength(2));
+    expect(Array.from(document.querySelectorAll('.hibilio-draft-count-badge .MuiBadge-badge')).map((badge) => badge.textContent)).toEqual(['2', '2']);
+    expect(screen.getByRole('link', { name: 'Home、実行中のルーティンが2件あります' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Home、実行中のルーティンが2件あります' })).toBeInTheDocument();
+  });
+
+  it.each(['/home', '/feed', '/search', '/account'])('実行中ドラフトが1件以上なら%sでもPCとモバイルのHomeをprimary色かつ背景なしにする', async (initialPath) => {
+    markAuthenticated();
+    vi.stubGlobal('fetch', vi.fn((path: string) => Promise.resolve(new Response(JSON.stringify(path === '/api/my/routine-execution-drafts'
+      ? { items: [{ executed_at: '2026-10-01T00:00:00.000000+00:00', executed_routine_action_identifiers: [], routine_execution_identifier: '50000000-0000-4000-8000-000000000001', routine_execution_memo: null, routine_identifier: '30000000-0000-4000-8000-000000000001', routine_name: '朝のストレッチ' }], total: 1 }
+      : { unread_count: 0 }), { status: 200 }))));
+    const router = createMemoryRouter([
+      {
+        element: <AppShell />,
+        children: [
+          { element: <h1>Home画面</h1>, path: 'home' },
+          { element: <h1>一覧画面</h1>, path: 'feed' },
+          { element: <h1>検索画面</h1>, path: 'search' },
+          { element: <h1>アカウント画面</h1>, path: 'account' },
+        ],
+      },
+    ], { initialEntries: [initialPath] });
+
+    render(<RouterProvider router={router} />);
+
+    const homeNavigationLabel = 'Home、実行中のルーティンが1件あります';
+    await waitFor(() => expect(screen.getAllByLabelText(homeNavigationLabel)).toHaveLength(2));
+    const [desktopHome, mobileHome] = screen.getAllByLabelText(homeNavigationLabel);
+    expect(desktopHome).toHaveClass('hibilio-navigation-item--execution-drafts');
+    expect(mobileHome).toHaveClass('hibilio-navigation-item--execution-drafts');
+  });
+
+  it('認証済みで0件の取得に成功したら、PCとモバイルのHomeに実行中badgeを表示しない', async () => {
+    markAuthenticated();
+    const fetchMock = vi.fn((path: string) => Promise.resolve(new Response(JSON.stringify(path === '/api/my/routine-execution-drafts'
+      ? { items: [], total: 0 }
+      : { unread_count: 0 }), { status: 200 })));
+    vi.stubGlobal('fetch', fetchMock);
+    const router = createMemoryRouter([
+      { element: <AppShell />, children: [{ element: <h1>一覧画面</h1>, path: 'feed' }, { element: <h1>Home画面</h1>, path: 'home' }] },
+    ], { initialEntries: ['/feed'] });
+
+    render(<RouterProvider router={router} />);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('/api/my/routine-execution-drafts', expect.anything()));
+    expect(document.querySelectorAll('.hibilio-draft-count-badge .MuiBadge-badge:not(.MuiBadge-invisible)')).toHaveLength(0);
+    expect(document.querySelectorAll('.hibilio-draft-count-badge.MuiBadge-root')).toHaveLength(2);
+    expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument();
+  });
+
+  it('Homeから別画面へ移動しても、取得済みのドラフト件数をPCとモバイルのHomeアイコンに維持する', async () => {
+    markAuthenticated();
+    vi.stubGlobal('fetch', vi.fn((path: string) => Promise.resolve(new Response(JSON.stringify(path === '/api/my/routine-execution-drafts'
+      ? { items: [{ executed_at: '2026-10-01T00:00:00.000000+00:00', executed_routine_action_identifiers: [], routine_execution_identifier: '50000000-0000-4000-8000-000000000001', routine_execution_memo: null, routine_identifier: '30000000-0000-4000-8000-000000000001', routine_name: '朝のストレッチ' }], total: 1 }
+      : { unread_count: 0 }), { status: 200 }))));
+    const router = createMemoryRouter([
+      { element: <AppShell />, children: [{ element: <h1>Home画面</h1>, path: 'home' }, { element: <h1>一覧画面</h1>, path: 'feed' }] },
+    ], { initialEntries: ['/home'] });
+
+    render(<RouterProvider router={router} />);
+
+    await waitFor(() => expect(document.querySelectorAll('.hibilio-draft-count-badge .MuiBadge-badge:not(.MuiBadge-invisible)')).toHaveLength(2));
+    await act(async () => { await router.navigate('/feed'); });
+    expect(screen.getByRole('heading', { name: '一覧画面' })).toBeInTheDocument();
+    expect(Array.from(document.querySelectorAll('.hibilio-draft-count-badge .MuiBadge-badge')).map((badge) => badge.textContent)).toEqual(['1', '1']);
+  });
+
+  it('ドラフト件数の取得中または取得失敗時はHomeアイコンに0件badgeを表示しない', async () => {
+    markAuthenticated();
+    let rejectRequest!: (reason?: unknown) => void;
+    const fetchMock = vi.fn((path: string) => path === '/api/my/routine-execution-drafts'
+      ? new Promise<Response>((_, reject) => { rejectRequest = reject; })
+      : Promise.resolve(new Response(JSON.stringify({ unread_count: 0 }), { status: 200 })));
+    vi.stubGlobal('fetch', fetchMock);
+    const router = createMemoryRouter([
+      { element: <AppShell />, children: [{ element: <h1>一覧画面</h1>, path: 'feed' }] },
+    ], { initialEntries: ['/feed'] });
+
+    render(<RouterProvider router={router} />);
+
+    expect(document.querySelectorAll('.hibilio-draft-count-badge .MuiBadge-badge:not(.MuiBadge-invisible)')).toHaveLength(0);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('/api/my/routine-execution-drafts', expect.anything()));
+    rejectRequest(new Error('network error'));
+    await waitFor(() => expect(document.querySelectorAll('.hibilio-draft-count-badge .MuiBadge-badge:not(.MuiBadge-invisible)')).toHaveLength(0));
+  });
+
+  it('現在の認証世代でドラフト一覧が401なら認証を失効させ、Homeの通常表示を維持する', async () => {
+    markAuthenticated();
+    const fetchMock = vi.fn((path: string) => path === '/api/my/routine-execution-drafts'
+      ? Promise.resolve(new Response(null, { status: 401 }))
+      : Promise.resolve(new Response(JSON.stringify({ unread_count: 0 }), { status: 200 })));
+    vi.stubGlobal('fetch', fetchMock);
+    const router = createMemoryRouter([
+      { element: <AppShell />, children: [{ element: <h1>Home画面</h1>, path: 'home' }] },
+    ], { initialEntries: ['/home'] });
+
+    render(<RouterProvider router={router} />);
+
+    await waitFor(() => expect(getAuthenticationStatus()).toBe('unauthenticated'));
+    expect(screen.getByRole('heading', { name: 'Home画面' })).toBeInTheDocument();
+    expect(document.querySelectorAll('.hibilio-draft-count-badge .MuiBadge-badge:not(.MuiBadge-invisible)')).toHaveLength(0);
+    expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument();
   });
 
   it('PCとモバイルのルーティン新規作成ボタンに拡大表示用のclassを付与する', () => {
@@ -243,9 +369,11 @@ describe('AppShell', () => {
 
   it('Homeの通知ベルにログインユーザーの正確な未読件数を表示し、フォーカス時に再取得する', async () => {
     markAuthenticated();
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ unread_count: 121 }), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ unread_count: 122 }), { status: 200 }));
+    let notificationCount = 121;
+    const fetchMock = vi.fn((path: string) => {
+      if (path === '/api/my/routine-execution-drafts') return Promise.resolve(new Response(JSON.stringify({ items: [], total: 0 }), { status: 200 }));
+      return Promise.resolve(new Response(JSON.stringify({ unread_count: notificationCount++ }), { status: 200 }));
+    });
     vi.stubGlobal('fetch', fetchMock);
     const router = createMemoryRouter([
       { element: <AppShell />, children: [{ element: <h1>Home画面</h1>, path: 'home' }] },
@@ -274,8 +402,8 @@ describe('AppShell', () => {
     render(<RouterProvider router={router} />);
 
     expect(await screen.findByRole('button', { name: '通知、未読件数を確認中' })).toBeInTheDocument();
-    expect(document.querySelector('.MuiBadge-badge')).toHaveClass('MuiBadge-invisible');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(document.querySelector('.hibilio-notifications .MuiBadge-badge')).toHaveClass('MuiBadge-invisible');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('未読が0件のときは通知ベルのbadgeを非表示にする', async () => {
@@ -287,12 +415,12 @@ describe('AppShell', () => {
 
     render(<RouterProvider router={router} />);
 
-    await waitFor(() => expect(document.querySelector('.MuiBadge-badge')).toHaveClass('MuiBadge-invisible'));
+    await waitFor(() => expect(document.querySelector('.hibilio-notifications .MuiBadge-badge')).toHaveClass('MuiBadge-invisible'));
   });
 
   it('未読がある通知ベルはテーマprimaryで、件数と未読状態をアクセシブル名で伝える', async () => {
     markAuthenticated();
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ unread_count: 3 }), { status: 200 })));
+    vi.stubGlobal('fetch', vi.fn((path: string) => Promise.resolve(new Response(JSON.stringify(path === '/api/my/routine-execution-drafts' ? { items: [], total: 0 } : { unread_count: 3 }), { status: 200 }))));
     const router = createMemoryRouter([
       { element: <AppShell />, children: [{ element: <h1>Home画面</h1>, path: 'home' }] },
     ], { initialEntries: ['/home'] });
@@ -306,7 +434,7 @@ describe('AppShell', () => {
 
   it('未読がない通知ベルは通常色・badgeなしで、未読なしをアクセシブル名で伝える', async () => {
     markAuthenticated();
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ unread_count: 0 }), { status: 200 })));
+    vi.stubGlobal('fetch', vi.fn((path: string) => Promise.resolve(new Response(JSON.stringify(path === '/api/my/routine-execution-drafts' ? { items: [], total: 0 } : { unread_count: 0 }), { status: 200 }))));
     const router = createMemoryRouter([
       { element: <AppShell />, children: [{ element: <h1>Home画面</h1>, path: 'home' }] },
     ], { initialEntries: ['/home'] });
@@ -315,7 +443,7 @@ describe('AppShell', () => {
 
     const notificationBell = await screen.findByRole('button', { name: '通知、未読はありません' });
     expect(notificationBell).not.toHaveClass('MuiIconButton-colorPrimary');
-    expect(document.querySelector('.MuiBadge-badge')).toHaveClass('MuiBadge-invisible');
+    expect(document.querySelector('.hibilio-notifications .MuiBadge-badge')).toHaveClass('MuiBadge-invisible');
   });
 
   it('未読件数の取得失敗は未読なしと区別して伝え、認証済み状態を維持する', async () => {
@@ -328,23 +456,26 @@ describe('AppShell', () => {
     render(<RouterProvider router={router} />);
 
     await screen.findByRole('button', { name: '通知、未読件数を取得できませんでした' });
-    expect(document.querySelector('.MuiBadge-badge')).toHaveClass('MuiBadge-invisible');
+    expect(document.querySelector('.hibilio-notifications .MuiBadge-badge')).toHaveClass('MuiBadge-invisible');
   });
 
   it('未読件数取得中に既読完了イベントを受けると、完了した旧値を表示せず再取得した値を表示する', async () => {
     markAuthenticated();
     let resolveFirst!: (response: Response) => void;
     const firstCount = new Promise<Response>((resolve) => { resolveFirst = resolve; });
-    const fetchMock = vi.fn()
-      .mockReturnValueOnce(firstCount)
-      .mockResolvedValueOnce(new Response(JSON.stringify({ unread_count: 0 }), { status: 200 }));
+    let notificationRequestCount = 0;
+    const fetchMock = vi.fn((path: string) => {
+      if (path === '/api/my/routine-execution-drafts') return Promise.resolve(new Response(JSON.stringify({ items: [], total: 0 }), { status: 200 }));
+      notificationRequestCount += 1;
+      return notificationRequestCount === 1 ? firstCount : Promise.resolve(new Response(JSON.stringify({ unread_count: 0 }), { status: 200 }));
+    });
     vi.stubGlobal('fetch', fetchMock);
     const router = createMemoryRouter([
       { element: <AppShell />, children: [{ element: <h1>Home画面</h1>, path: 'home' }] },
     ], { initialEntries: ['/home'] });
 
     render(<RouterProvider router={router} />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     window.dispatchEvent(new Event('unread-notification-count-changed'));
     resolveFirst(new Response(JSON.stringify({ unread_count: 1 }), { status: 200 }));
 
@@ -357,14 +488,16 @@ describe('AppShell', () => {
     markAuthenticated();
     let resolveCount!: (response: Response) => void;
     const count = new Promise<Response>((resolve) => { resolveCount = resolve; });
-    const fetchMock = vi.fn().mockReturnValue(count);
+    const fetchMock = vi.fn((path: string) => path === '/api/my/routine-execution-drafts'
+      ? Promise.resolve(new Response(JSON.stringify({ items: [], total: 0 }), { status: 200 }))
+      : count);
     vi.stubGlobal('fetch', fetchMock);
     const router = createMemoryRouter([
       { element: <AppShell />, children: [{ element: <h1>Home画面</h1>, path: 'home' }] },
     ], { initialEntries: ['/home'] });
 
     const view = render(<RouterProvider router={router} />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     view.unmount();
     resolveCount(new Response(null, { status: 401 }));
 
@@ -376,14 +509,16 @@ describe('AppShell', () => {
     markAuthenticated();
     let resolveCount!: (response: Response) => void;
     const count = new Promise<Response>((resolve) => { resolveCount = resolve; });
-    const fetchMock = vi.fn().mockReturnValue(count);
+    const fetchMock = vi.fn((path: string) => path === '/api/my/routine-execution-drafts'
+      ? Promise.resolve(new Response(JSON.stringify({ items: [], total: 0 }), { status: 200 }))
+      : count);
     vi.stubGlobal('fetch', fetchMock);
     const router = createMemoryRouter([
       { element: <AppShell />, children: [{ element: <h1>Home画面</h1>, path: 'home' }] },
     ], { initialEntries: ['/home'] });
 
     render(<RouterProvider router={router} />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     act(() => { clearAuthenticated(); });
     resolveCount(new Response(JSON.stringify({ unread_count: 9 }), { status: 200 }));
 
@@ -394,16 +529,20 @@ describe('AppShell', () => {
   it('認証セッションが切り替わった後に先行リクエストの件数を表示しない', async () => {
     markAuthenticated();
     let resolveFirst: (response: Response) => void = () => undefined;
-    const fetchMock = vi.fn()
-      .mockImplementationOnce(() => new Promise<Response>((resolve) => { resolveFirst = resolve; }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ unread_count: 2 }), { status: 200 }));
+    let notificationRequestCount = 0;
+    const fetchMock = vi.fn((path: string) => {
+      if (path === '/api/my/routine-execution-drafts') return Promise.resolve(new Response(JSON.stringify({ items: [], total: 0 }), { status: 200 }));
+      notificationRequestCount += 1;
+      if (notificationRequestCount === 1) return new Promise<Response>((resolve) => { resolveFirst = resolve; });
+      return Promise.resolve(new Response(JSON.stringify({ unread_count: 2 }), { status: 200 }));
+    });
     vi.stubGlobal('fetch', fetchMock);
     const router = createMemoryRouter([
       { element: <AppShell />, children: [{ element: <h1>Home画面</h1>, path: 'home' }] },
     ], { initialEntries: ['/home'] });
 
     render(<RouterProvider router={router} />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     act(() => { markAuthenticated(); });
 
     expect(await screen.findByText('2')).toBeInTheDocument();
@@ -426,9 +565,13 @@ describe('AppShell', () => {
   it('Homeを離れて戻ったときは旧件数を表示せず、再取得した値だけを表示する', async () => {
     markAuthenticated();
     let resolveReenteredCount: (response: Response) => void = () => undefined;
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ unread_count: 1 }), { status: 200 }))
-      .mockImplementationOnce(() => new Promise<Response>((resolve) => { resolveReenteredCount = resolve; }));
+    let notificationRequestCount = 0;
+    const fetchMock = vi.fn((path: string) => {
+      if (path === '/api/my/routine-execution-drafts') return Promise.resolve(new Response(JSON.stringify({ items: [], total: 0 }), { status: 200 }));
+      notificationRequestCount += 1;
+      if (notificationRequestCount === 1) return Promise.resolve(new Response(JSON.stringify({ unread_count: 1 }), { status: 200 }));
+      return new Promise<Response>((resolve) => { resolveReenteredCount = resolve; });
+    });
     vi.stubGlobal('fetch', fetchMock);
     const router = createMemoryRouter([
       { element: <AppShell />, children: [{ element: <h1>Home画面</h1>, path: 'home' }, { element: <h1>一覧画面</h1>, path: 'feed' }] },
@@ -437,11 +580,11 @@ describe('AppShell', () => {
     render(<RouterProvider router={router} />);
     await screen.findByText('1');
     await act(async () => { await router.navigate('/feed'); });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     await act(async () => { await router.navigate('/home'); });
     expect(await screen.findByRole('button', { name: '通知、未読件数を確認中' })).toBeInTheDocument();
     expect(screen.queryByText('1')).not.toBeInTheDocument();
-    expect(document.querySelector('.MuiBadge-badge')).toHaveClass('MuiBadge-invisible');
+    expect(document.querySelector('.hibilio-notifications .MuiBadge-badge')).toHaveClass('MuiBadge-invisible');
     resolveReenteredCount(new Response(JSON.stringify({ unread_count: 2 }), { status: 200 }));
     expect(await screen.findByRole('button', { name: '通知、未読が2件あります' })).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
@@ -450,16 +593,18 @@ describe('AppShell', () => {
   it('進行中の未読件数取得中にフォーカスしてもリクエストを重複させない', async () => {
     markAuthenticated();
     let resolveCount: (response: Response) => void = () => undefined;
-    const fetchMock = vi.fn(() => new Promise<Response>((resolve) => { resolveCount = resolve; }));
+    const fetchMock = vi.fn((path: string) => path === '/api/my/routine-execution-drafts'
+      ? Promise.resolve(new Response(JSON.stringify({ items: [], total: 0 }), { status: 200 }))
+      : new Promise<Response>((resolve) => { resolveCount = resolve; }));
     vi.stubGlobal('fetch', fetchMock);
     const router = createMemoryRouter([
       { element: <AppShell />, children: [{ element: <h1>Home画面</h1>, path: 'home' }] },
     ], { initialEntries: ['/home'] });
 
     render(<RouterProvider router={router} />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     fireEvent.focus(window);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     resolveCount(new Response(JSON.stringify({ unread_count: 1 }), { status: 200 }));
     expect(await screen.findByText('1')).toBeInTheDocument();
   });

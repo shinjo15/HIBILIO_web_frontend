@@ -227,11 +227,41 @@
 }
 
 .routine-execution-action-bar {
+  display: flex;
+  flex-direction: column;
   flex-shrink: 0;
+  gap: 8px;
   margin: 0 auto;
   max-width: 672px;
   padding: 16px 20px 20px;
   width: 100%;
+}
+
+.routine-execution-pause-action {
+  background-color: var(--hibilio-color-card);
+  border: 1px solid var(--hibilio-color-primary);
+  border-radius: 12px;
+  color: var(--hibilio-color-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px;
+  width: 100%;
+}
+
+.routine-execution-pause-action:hover {
+  background-color: var(--hibilio-color-muted);
+  border-color: var(--hibilio-color-primary);
+  color: var(--hibilio-color-primary);
+}
+
+.routine-execution-pause-action:focus-visible {
+  background-color: var(--hibilio-color-muted);
+  border-color: var(--hibilio-color-primary);
+  color: var(--hibilio-color-primary);
+  outline: 2px solid var(--hibilio-color-primary);
+  outline-offset: 2px;
 }
 
 .routine-execution-main-action {
