@@ -6,6 +6,7 @@ import { RoutineExecutionHeader } from '../../routineExecution/components/Routin
 import { RoutineExecutionStepList } from '../../routineExecution/components/RoutineExecutionStepList';
 import type { AccountExecutionHistory } from '../domain/account';
 import { accountService, type AccountService } from '../services/accountService';
+import { NotFoundPage } from '../../../shared/pages/NotFoundPage';
 import '../../routineExecution/routineExecution.css';
 
 type AccountExecutionHistoryPageProps = {
@@ -56,8 +57,12 @@ export function AccountExecutionHistoryPage({
     return <ExecutionHistoryState message={messages.account.loading} />;
   }
 
-  if (hasError || !history) {
-    return <ExecutionHistoryState message={hasError ? messages.account.error : messages.account.executionHistoryNotFound} />;
+  if (hasError) {
+    return <ExecutionHistoryState message={messages.account.error} />;
+  }
+
+  if (!history) {
+    return <NotFoundPage />;
   }
 
   const steps = history.actions.map((action) => ({ action: action.name, duration: action.minutes === null ? undefined : `${action.minutes}${messages.account.minuteUnit}` }));

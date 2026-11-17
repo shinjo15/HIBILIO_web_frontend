@@ -3,6 +3,13 @@
     "name": "HIBILIO",
     "tagline": "今日を重ねるSNS"
   },
+  "notFound": {
+    "backToHome": "Homeへ戻る",
+    "code": "404",
+    "description": "お探しのページは見つかりませんでした。",
+    "friendlyNote": "ちょっと寄り道しちゃったみたいです。",
+    "title": "ページが見つかりません"
+  },
   "navigation": {
     "ariaLabel": "メインナビゲーション",
     "notifications": "通知",

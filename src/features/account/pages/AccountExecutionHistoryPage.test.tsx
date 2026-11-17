@@ -97,7 +97,7 @@ describe('AccountExecutionHistoryPage', () => {
     expect(screen.getByText('/previous')).toBeInTheDocument();
   });
 
-  it('実行詳細が見つからない場合は見つからない状態を表示する', async () => {
+  it('実行詳細が見つからない場合は共通404画面を表示する', async () => {
     render(
       <MemoryRouter initialEntries={['/routines/routine-1/executions/execution-1']}>
         <Routes>
@@ -106,7 +106,8 @@ describe('AccountExecutionHistoryPage', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('実行履歴が見つかりませんでした。')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'ページが見つかりません' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Homeへ戻る' })).toHaveAttribute('href', '/home');
   });
 
   it('実行詳細の取得に失敗した場合はエラー状態を表示する', async () => {

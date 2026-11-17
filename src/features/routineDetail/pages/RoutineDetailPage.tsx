@@ -10,6 +10,7 @@ import { useInfiniteList } from '../../../shared/hooks/useInfiniteList';
 import messages from '../../../shared/message/message.json';
 import { AccountAvatar } from '../../../shared/components/AccountImage';
 import { RoutineVideoLink } from '../components/RoutineVideoLink';
+import { NotFoundPage } from '../../../shared/pages/NotFoundPage';
 import '../routineDetail.css';
 
 type RoutineDetailPageProps = { service?: RoutineDetailService };
@@ -52,7 +53,7 @@ export function RoutineDetailPage({ service = routineDetailService }: RoutineDet
   }
 
   if (!routine) {
-    return <DetailState message={messages.routineDetail.notFound} />;
+    return <NotFoundPage />;
   }
 
   return <RoutineDetailContent routine={routine} service={service} />;
