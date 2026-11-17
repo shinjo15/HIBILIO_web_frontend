@@ -339,7 +339,8 @@ describe('RoutineExecutionPage', () => {
     const start = vi.fn();
     renderPage(service({ get: vi.fn().mockResolvedValue(null), start }), '/routines/missing/execute');
 
-    expect(await screen.findByText('実行するルーティンが見つかりませんでした。')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'ページが見つかりません' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Homeへ戻る' })).toHaveAttribute('href', '/home');
     expect(start).not.toHaveBeenCalled();
   });
 });

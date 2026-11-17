@@ -12,6 +12,7 @@ import messages from '../../../shared/message/message.json';
 import { clearAuthenticated } from '../../auth/services/authSession';
 import { AccountAvatar, AccountHeaderImage } from '../../../shared/components/AccountImage';
 import { AccountBackButton } from '../components/AccountBackButton';
+import { NotFoundPage } from '../../../shared/pages/NotFoundPage';
 
 type PublicAccountPageProps = { blockService?: AccountBlockService; currentAccountService?: Pick<AccountService, 'getProfile'>; followService?: AccountFollowService; service?: PublicAccountService };
 
@@ -70,9 +71,10 @@ export function PublicAccountPage({ blockService = accountBlockService, currentA
 
   if (profileErrorAccountId === accountId) return <section className="account-page"><header className="account-page__header account-page__header--public"><AccountBackButton onBack={() => navigate(-1)} /></header><p className="account-page__state account-page__state--error">{messages.account.error}</p></section>;
   if (loadedProfile === undefined || loadedProfile.accountId !== accountId) return <p className="account-page__state account-page__state--loading">{messages.publicAccount.loading}</p>;
+  if (loadedProfile.profile === null) return <NotFoundPage />;
   if (loadedProfile.profile !== null && 'hasPendingFollowRequest' in loadedProfile.profile) return <PrivateAccountPage followService={followService} onBack={() => navigate(-1)} onProfileReload={reloadProfile} profile={loadedProfile.profile} service={service} />;
 
-  return <AccountPage blockService={blockService} currentAccountIdentifier={currentAccountIdentifier} followService={followService} isInitiallyFollowed={loadedProfile.profile?.isFollowing === true} isOwnAccount={false} key={accountId} notFoundMessage={messages.publicAccount.notFound} onBack={() => navigate(-1)} service={accountService} showPublicActions={currentAccountIdentifier !== undefined && currentAccountIdentifier !== accountId} />;
+  return <AccountPage blockService={blockService} currentAccountIdentifier={currentAccountIdentifier} followService={followService} isInitiallyFollowed={loadedProfile.profile.isFollowing === true} isOwnAccount={false} key={accountId} onBack={() => navigate(-1)} service={accountService} showPublicActions={currentAccountIdentifier !== undefined && currentAccountIdentifier !== accountId} />;
 }
 
 function PrivateAccountPage({ followService, onBack, onProfileReload, profile, service }: { followService: AccountFollowService; onBack: () => void; onProfileReload: (profile: PublicAccountProfile | null) => void; profile: PrivateAccountProfile; service: PublicAccountService }) {

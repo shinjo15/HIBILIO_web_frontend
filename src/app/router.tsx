@@ -18,6 +18,7 @@ import { InitialPage } from '../features/home/pages/InitialPage';
 import { FeedPage } from '../features/routineFeed/pages/FeedPage';
 import { NotificationsPage } from '../features/notifications/pages/NotificationsPage';
 import { AppShell } from '../shared/navigation/AppShell';
+import { NotFoundPage } from '../shared/pages/NotFoundPage';
 import { ScrollManager } from './ScrollManager';
 
 export const router = createBrowserRouter([
@@ -60,6 +61,7 @@ export const router = createBrowserRouter([
           { element: <RoutineDetailPage />, path: 'routines/:routineId' },
           { element: <PublicAccountPage />, path: 'accounts/:accountId' },
           { element: <SearchPage />, path: 'search' },
+          { element: <NotFoundPage />, path: '*' },
         ],
       },
     ],

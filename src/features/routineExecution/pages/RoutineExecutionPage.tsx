@@ -9,6 +9,7 @@ import { RoutineExecutionHeader } from '../components/RoutineExecutionHeader';
 import { RoutineExecutionStepList } from '../components/RoutineExecutionStepList';
 import { useRoutineExecution } from '../hooks/useRoutineExecution';
 import { routineExecutionService, type RoutineExecutionService } from '../services/routineExecutionService';
+import { NotFoundPage } from '../../../shared/pages/NotFoundPage';
 import '../routineExecution.css';
 
 type RoutineExecutionPageProps = {
@@ -42,7 +43,7 @@ export function RoutineExecutionPage({ service = routineExecutionService }: Rout
   }
 
   if (execution.loadStatus === 'notFound' || !execution.routine) {
-    return <ExecutionState message={messages.routineExecution.notFound} />;
+    return <NotFoundPage />;
   }
 
   if (execution.isCompleted) {

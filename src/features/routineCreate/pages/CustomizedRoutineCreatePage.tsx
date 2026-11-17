@@ -9,6 +9,7 @@ import {
 import { createCustomizedRoutineViewModel } from '../domain/routineCreate';
 import { RoutineCreatePage } from './RoutineCreatePage';
 import { routineCreateService, type RoutineCreateService } from '../services/routineCreateService';
+import { NotFoundPage } from '../../../shared/pages/NotFoundPage';
 
 type CustomizedRoutineCreatePageProps = {
   detailService?: RoutineDetailService;
@@ -47,12 +48,12 @@ export function CustomizedRoutineCreatePage({
     return () => { cancelled = true; };
   }, [detailService, routineId]);
 
+  if (status === 'notFound') {
+    return <NotFoundPage />;
+  }
+
   if (status !== 'ready' || routine === null) {
-    const message = status === 'error'
-      ? messages.routineCustomize.error
-      : status === 'notFound'
-        ? messages.routineCustomize.notFound
-        : messages.routineCustomize.loading;
+    const message = status === 'error' ? messages.routineCustomize.error : messages.routineCustomize.loading;
 
     return (
       <section className="routine-create-page routine-create-page--state">

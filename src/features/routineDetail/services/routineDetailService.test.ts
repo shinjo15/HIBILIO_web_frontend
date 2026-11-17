@@ -136,6 +136,16 @@ describe('routineDetailService', () => {
     await expect(service.get('missing')).resolves.toBeNull();
   });
 
+  it('詳細取得APIが404の場合はnullを返す', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(null, { status: 404 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [], total: 0 }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [], total: 0 }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createRoutineDetailService(apiRoutineDetailAdapter).get('30000000-0000-4000-8000-000000000001')).resolves.toBeNull();
+  });
+
   it('カスタマイズと実行投稿のページ結果を items と total で返す', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({

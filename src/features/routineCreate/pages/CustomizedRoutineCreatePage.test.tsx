@@ -41,6 +41,22 @@ function renderPage(service: RoutineCreateService) {
 }
 
 describe('CustomizedRoutineCreatePage', () => {
+  it('元のルーティンが見つからない場合は共通404画面を表示する', async () => {
+    render(
+      <MemoryRouter initialEntries={['/routines/missing/customize']}>
+        <Routes>
+          <Route
+            element={<CustomizedRoutineCreatePage detailService={createRoutineDetailService({ get: async () => null })} service={{ create: async () => undefined, loadFavoriteTags: async () => [] }} />}
+            path="/routines/:routineId/customize"
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'ページが見つかりません' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Homeへ戻る' })).toHaveAttribute('href', '/home');
+  });
+
   it('親ルーティンを初期値として表示するが、動画URLは引き継がず親ルーティン識別子を送信する', async () => {
     const create = vi.fn().mockRejectedValueOnce(new Error('failed')).mockResolvedValueOnce(undefined);
     renderPage({

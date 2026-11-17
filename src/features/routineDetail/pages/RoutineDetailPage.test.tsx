@@ -286,13 +286,13 @@ describe('RoutineDetailPage', () => {
     expect(listExecutionPostsPage).toHaveBeenCalledTimes(2);
   });
 
-  it('一覧へ戻るリンクと、存在しないルーティンの空状態を表示する', async () => {
+  it('存在しないルーティンでは共通404画面を表示する', async () => {
     const service: RoutineDetailService = createRoutineDetailService({ get: async () => null });
 
     renderPage(service, '/routines/missing');
 
-    expect(await screen.findByText('ルーティンが見つかりませんでした。')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '一覧へ戻る' })).toHaveAttribute('href', '/feed');
+    expect(await screen.findByRole('heading', { name: 'ページが見つかりません' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Homeへ戻る' })).toHaveAttribute('href', '/home');
   });
 
   it('実行する操作から実行画面の URL へ遷移する', async () => {

@@ -299,14 +299,11 @@ describe('PublicAccountPage', () => {
     expect(screen.getByRole('button', { name: 'いいねする' })).not.toHaveClass('routine-card__like--liked');
   });
 
-  it('非表示または存在しない公開アカウントの状態を表示する', async () => {
+  it('非表示または存在しない公開アカウントでは共通404画面を表示する', async () => {
     renderPage(createPublicAccountService({ get: async () => null }));
 
-    expect(await screen.findByText('アカウントが見つかりませんでした。')).toBeInTheDocument();
-    const backButton = screen.getByRole('button', { name: '戻る' });
-    expect(backButton).toBeInTheDocument();
-    expect(backButton.querySelector('svg.account-page__back-icon')).toBeInTheDocument();
-    expect(backButton.querySelector('span')).toHaveTextContent('戻る');
+    expect(await screen.findByRole('heading', { name: 'ページが見つかりません' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Homeへ戻る' })).toHaveAttribute('href', '/home');
   });
 
   it('詳細取得の通信障害では見つからない状態にせず、戻る付きエラーを表示する', async () => {
