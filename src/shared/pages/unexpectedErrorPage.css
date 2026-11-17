@@ -1,0 +1,103 @@
+.unexpected-error-page {
+  align-items: center;
+  background: var(--hibilio-color-background);
+  color: var(--hibilio-color-on-background);
+  display: flex;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.unexpected-error-page__content {
+  max-width: 560px;
+  width: 100%;
+}
+
+.unexpected-error-page__icon {
+  vertical-align: middle;
+}
+
+.unexpected-error-page__fallback-icon {
+  color: var(--hibilio-color-primary);
+  height: clamp(72px, 16vw, 104px);
+  margin: 0 0 24px;
+  width: clamp(72px, 16vw, 104px);
+}
+
+.unexpected-error-page__fallback-icon {
+  display: inline-block;
+  font-family: Fraunces, serif;
+  font-size: clamp(72px, 16vw, 104px);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.unexpected-error-page h1 {
+  font-family: Fraunces, serif;
+  font-size: clamp(28px, 6vw, 34px);
+  line-height: 1.3;
+  margin: 0 0 24px;
+}
+
+.unexpected-error-page p {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.unexpected-error-page__note {
+  color: var(--hibilio-color-muted-text);
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  margin-top: 8px !important;
+}
+
+.unexpected-error-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.unexpected-error-page__fallback-action {
+  border: 1px solid currentcolor;
+  border-radius: 4px;
+  color: var(--hibilio-color-primary);
+  display: inline-flex;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 96px;
+  padding: 10px 20px;
+  text-decoration: none;
+}
+
+.unexpected-error-page__fallback-action--primary {
+  background: var(--hibilio-color-primary);
+  border-color: var(--hibilio-color-primary);
+  color: var(--hibilio-color-on-primary);
+}
+
+.unexpected-error-page__fallback-action:focus-visible {
+  outline: 3px solid var(--hibilio-color-on-background);
+  outline-offset: 3px;
+}
+
+@media (min-width: 600px) {
+  .unexpected-error-page {
+    padding: 80px 48px;
+  }
+
+  .unexpected-error-page p {
+    font-size: 17px;
+  }
+
+  .unexpected-error-page__note {
+    font-size: 15px !important;
+  }
+}
