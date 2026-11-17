@@ -19,11 +19,13 @@ import { FeedPage } from '../features/routineFeed/pages/FeedPage';
 import { NotificationsPage } from '../features/notifications/pages/NotificationsPage';
 import { AppShell } from '../shared/navigation/AppShell';
 import { NotFoundPage } from '../shared/pages/NotFoundPage';
+import { UnexpectedErrorPage } from '../shared/pages/UnexpectedErrorPage';
 import { ScrollManager } from './ScrollManager';
 
 export const router = createBrowserRouter([
   {
     element: <ScrollManager />,
+    errorElement: <UnexpectedErrorPage />,
     children: [
       {
         element: <LoginPage />,

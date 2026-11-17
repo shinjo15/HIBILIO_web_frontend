@@ -1,12 +1,26 @@
+import { isValidElement } from 'react';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { RouterProvider } from 'react-router-dom';
+import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearAuthenticated, markAuthenticated, resetAuthenticationForTesting } from '../features/auth/services/authSession';
 import { router } from './router';
+import { UnexpectedErrorPage } from '../shared/pages/UnexpectedErrorPage';
 
 function flattenRoutes(routes: typeof router.routes): typeof router.routes {
   return routes.flatMap((route) => [route, ...flattenRoutes(route.children ?? [])]);
+}
+
+function ThrowInHomeRoute(): never {
+  throw new Error('home render failure');
+}
+
+function replaceHomeWithThrowingRoute(routes: RouteObject[]): RouteObject[] {
+  return routes.map((route) => ({
+    ...route,
+    children: route.children === undefined ? undefined : replaceHomeWithThrowingRoute(route.children),
+    element: route.path === 'home' ? <ThrowInHomeRoute /> : route.element,
+  })) as RouteObject[];
 }
 
 beforeEach(() => {
@@ -21,6 +35,23 @@ afterEach(() => {
 });
 
 describe('router', () => {
+  it('実routerのroot errorElementに共通エラー画面を結線する', () => {
+    const rootRoute = router.routes[0];
+
+    expect(isValidElement(rootRoute.errorElement)).toBe(true);
+    expect(rootRoute.errorElement).toMatchObject({ type: UnexpectedErrorPage });
+  });
+
+  it('実routerのroot errorElementからHomeへの通常遷移を提供する', async () => {
+    const routerWithFailingHome = createMemoryRouter(replaceHomeWithThrowingRoute(router.routes), { initialEntries: ['/home'] });
+
+    render(<RouterProvider router={routerWithFailingHome} />);
+
+    expect(await screen.findByRole('heading', { name: '問題が発生しました' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Homeへ戻る' })).toHaveAttribute('href', '/home');
+    expect(screen.queryByText('home render failure')).not.toBeInTheDocument();
+  });
+
   it('ホーム画面のルートを持つ', () => {
     expect(flattenRoutes(router.routes).some((route) => route.path === 'home')).toBe(true);
   });
